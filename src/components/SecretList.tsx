@@ -3,7 +3,7 @@ import {ReactNode} from 'react'
 export default function SecretList({secrets}): ReactNode {
   return (
     <div className='mt-12'>
-      <h2 className='text-xl font-semibold'>Stored Secrets</h2>
+      <h2 className='text-3xl'>Stored Secrets</h2>
 
       {secrets.length !== 0 && (
         <button
@@ -15,7 +15,7 @@ export default function SecretList({secrets}): ReactNode {
       )}
 
       {secrets.length === 0 ?
-        <p className='text-sm text-gray-500 mt-2'>No stored secrets yet</p>
+        <p className='text-md mt-2'>No stored secrets yet</p>
       : <ul className='mt-2 space-y-2'>
           {secrets.map((secret, idx) => (
             <li key={idx} className='border rounded px-3 py-2 bg-gray-50'>

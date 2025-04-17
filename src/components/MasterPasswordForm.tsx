@@ -3,7 +3,7 @@ import {ReactNode} from 'react'
 export default function MasterPasswordForm(): ReactNode {
   return (
     <div className='text-center max-w-sm mx-auto'>
-      <h2 className='text-2xl font-semibold mb-2'>Set Master Password</h2>
+      <h1 className='text-xl font-semibold mb-2'>Set Master Password</h1>
       <p className='text-sm text-gray-600 mb-4'>
         It will allow you to hide secrets on your device while you’re idle.
       </p>
