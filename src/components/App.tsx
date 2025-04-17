@@ -1,24 +1,30 @@
-import './index.css'
-import {APITester} from './APITester'
+import React from 'react'
+
+import 'normalize.css'
+import './App.css'
+
+import Layout from './Layout.tsx'
+import AddSecretForm from './AddSecretForm.tsx'
+import SecretList from './SecretList.tsx'
+import MasterPasswordForm from './MasterPasswordForm.tsx'
 
 import logo from './logo.svg'
 import reactLogo from './react.svg'
 
-export function App() {
-  return (
-    <div className='app'>
-      <div className='logo-container'>
-        <img src={logo} alt='Bun Logo' className='logo bun-logo' />
-        <img src={reactLogo} alt='React Logo' className='logo react-logo' />
-      </div>
+export default function App() {
+  const [secrets, setSecrets] = React.useState([])
+  const hasSecrets = secrets.length > 0
 
-      <h1>Bun + React</h1>
-      <p>
-        Edit <code>src/App.tsx</code> and save to test HMR
-      </p>
-      <APITester />
-    </div>
+  function handleAddSecret(secret: string): void {
+    setSecrets([...secrets, secret])
+  }
+
+  return (
+    <Layout>
+      {hasSecrets ?
+        <MasterPasswordForm />
+      : <AddSecretForm onAdd={handleAddSecret} />}
+      <SecretList secrets={secrets} />
+    </Layout>
   )
 }
-
-export default App
