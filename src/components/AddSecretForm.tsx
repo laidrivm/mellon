@@ -5,13 +5,15 @@ import InputNewPassword from './InputNewPassword.tsx'
 import InputTextArea from './InputTextArea.tsx'
 import Button from './Button.tsx'
 
+import type {Secret} from '../types.ts'
+
 export default function AddSecretForm({
   secretsNumber,
   addSecret,
   setShowSecretForm
 }: {
   secretsNumber: number
-  addSecret: (secret: any) => void
+  addSecret: (secret: Secret) => void
   setShowSecretForm: (showSecretForm: boolean) => void
 }): ReactNode {
   const [name, setName] = React.useState('')

@@ -7,7 +7,7 @@ export default function Button({
 }: {
   children: ReactNode
   inline: boolean
-  onClick: Function
+  onClick: () => void
 }): ReactNode {
   let styles =
     'w-full bg-black text-white rounded-lg py-2 hover:bg-gray-800 transition'

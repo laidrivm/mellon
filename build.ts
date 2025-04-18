@@ -41,6 +41,7 @@ const toCamelCase = (str: string): string => {
 };
 
 // Helper function to parse a value into appropriate type
+// eslint-disable-next-line
 const parseValue = (value: string): any => {
   // Handle true/false strings
   if (value === "true") return true;
@@ -59,6 +60,7 @@ const parseValue = (value: string): any => {
 
 // Magical argument parser that converts CLI args to BuildConfig
 function parseArgs(): Partial<BuildConfig> {
+  // eslint-disable-next-line
   const config: Record<string, any> = {};
   const args = process.argv.slice(2);
 

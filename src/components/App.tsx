@@ -8,9 +8,6 @@ import AddSecretForm from './AddSecretForm.tsx'
 import StoredSecrets from './StoredSecrets.tsx'
 import MasterPasswordForm from './MasterPasswordForm.tsx'
 
-import logo from './logo.svg'
-import reactLogo from './react.svg'
-
 export default function App() {
   const [secrets, setSecrets] = React.useState([])
   const [onboarding, setOnboarding] = React.useState('secret')

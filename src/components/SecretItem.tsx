@@ -2,7 +2,9 @@ import React, {ReactNode} from 'react'
 
 import ButtonShowPassword from './ButtonShowPassword.tsx'
 
-export default function Secret({secret}): ReactNode {
+import type {Secret} from '../types.ts'
+
+export default function SecretItem({secret}: {secret: Secret}): ReactNode {
   const [open, setOpen] = React.useState(false)
   const [showPassword, setShowPassword] = React.useState(false)
 

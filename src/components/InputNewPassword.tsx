@@ -8,7 +8,7 @@ export default function InputNewPassword({
   isGenerationAvailable
 }: {
   password: string
-  setValue: (password: string) => void
+  setPassword: (password: string) => void
   isGenerationAvailable: string
 }): ReactNode {
   const [showPassword, setShowPassword] = React.useState(false)
