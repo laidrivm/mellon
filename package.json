@@ -22,6 +22,7 @@
     "@types/bun": "latest",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "prettier": "3.5.3"
+    "prettier": "3.5.3",
+    "prettier-plugin-tailwindcss": "^0.6.11"
   }
 }

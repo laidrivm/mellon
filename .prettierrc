@@ -7,4 +7,6 @@
   "experimentalTernaries": true,
   "bracketSpacing": false,
   "useTabs": false,
+  "plugins": ["prettier-plugin-tailwindcss"],
+  "tailwindStylesheet": "./src/components/App.css"
 }

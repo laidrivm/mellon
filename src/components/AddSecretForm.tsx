@@ -7,17 +7,19 @@ import Button from './Button.tsx'
 
 export default function AddSecretForm({
   secretsNumber,
-  addSecret
+  addSecret,
+  setShowSecretForm
 }: {
   secretsNumber: number
   addSecret: (secret: any) => void
+  setShowSecretForm: (showSecretForm: boolean) => void
 }): ReactNode {
   const [name, setName] = React.useState('')
   const [username, setUsername] = React.useState('')
   const [password, setPassword] = React.useState('')
   const [notes, setNotes] = React.useState('')
 
-  const handleAdd = (event) => {
+  function handleAdd(event): void {
     event.preventDefault()
     if (!name || !username || !password) return
     addSecret({name, username, password, notes})
@@ -25,24 +27,21 @@ export default function AddSecretForm({
     setUsername('')
     setPassword('')
     setNotes('')
+    setShowSecretForm(false)
   }
 
   return (
     <div className='space-y-4'>
-      <h1 className='text-xl text-center'>
+      <h1 className='text-center text-xl'>
         {secretsNumber ? 'Add New Secret' : 'Add Your First Secret'}
       </h1>
 
       <p className='text-md leading-6'>
-        It will be encrypted and stored on your device. You will be able to
-        restore it from an encrypted backup from our server in case you clean up
-        browser local storage.
+        Secrets are encrypted and stored on your device. Might be restored from
+        an encrypted server backup.
       </p>
 
-      <form
-        className='space-y-4'
-        onSubmit={handleAdd}
-      >
+      <form className='space-y-4' onSubmit={handleAdd}>
         <Input name='Secret Name' value={name} setValue={setName} />
         <Input name='Username' value={username} setValue={setUsername} />
         <InputNewPassword

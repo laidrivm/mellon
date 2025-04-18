@@ -5,7 +5,7 @@ import './App.css'
 
 import Layout from './Layout.tsx'
 import AddSecretForm from './AddSecretForm.tsx'
-import SecretList from './SecretList.tsx'
+import StoredSecrets from './StoredSecrets.tsx'
 import MasterPasswordForm from './MasterPasswordForm.tsx'
 
 import logo from './logo.svg'
@@ -14,7 +14,8 @@ import reactLogo from './react.svg'
 export default function App() {
   const [secrets, setSecrets] = React.useState([])
   const [onboarding, setOnboarding] = React.useState('secret')
-  const [mPassword, setMPassword] = React.useState(null)
+  const [masterPassword, setMasterPassword] = React.useState(null)
+  const [showSecretForm, setShowSecretForm] = React.useState(false)
 
   switch (onboarding) {
     case 'secret':
@@ -23,7 +24,7 @@ export default function App() {
       }
       break
     case 'master':
-      if (mPassword) {
+      if (masterPassword) {
         setOnboarding('sign')
       }
       break
@@ -37,16 +38,21 @@ export default function App() {
 
   return (
     <Layout>
-      {onboarding === 'secret' && (
+      {onboarding === 'master' && (
+        <MasterPasswordForm setMasterPassword={setMasterPassword} />
+      )}
+      {(onboarding === 'secret' || showSecretForm) && (
         <AddSecretForm
           secretsNumber={secrets.length}
           addSecret={handleAddSecret}
+          setShowSecretForm={setShowSecretForm}
         />
       )}
-      {onboarding === 'master' && (
-        <MasterPasswordForm setMPassword={setMPassword} />
-      )}
-      <SecretList secrets={secrets} />
+      <StoredSecrets
+        secrets={secrets}
+        showSecretForm={showSecretForm}
+        setShowSecretForm={setShowSecretForm}
+      />
     </Layout>
   )
 }

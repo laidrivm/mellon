@@ -1,27 +1,37 @@
-import {ReactNode} from 'react'
+import React, {ReactNode} from 'react'
 
-export default function MasterPasswordForm(): ReactNode {
+import InputNewPassword from './InputNewPassword.tsx'
+import InputTextArea from './InputTextArea.tsx'
+import Button from './Button.tsx'
+
+export default function MasterPasswordForm({
+  setMasterPassword
+}: {
+  setMasterPassword: (secret: any) => void
+}): ReactNode {
+  const [password, setPassword] = React.useState('')
+  const [hint, setHint] = React.useState('')
+
+  function handleMasterPassword(event): void {
+    event.preventDefault()
+    setMasterPassword({password, hint})
+  }
+
   return (
-    <div className='text-center max-w-sm mx-auto'>
-      <h1 className='text-xl font-semibold mb-2'>Set Master Password</h1>
-      <p className='text-sm text-gray-600 mb-4'>
-        It will allow you to hide secrets on your device while you’re idle.
+    <div className='space-y-4'>
+      <h1 className='text-center text-xl'>Set Master Password</h1>
+      <p className='text-md leading-6'>
+        Hide secrets on your device while you’re idle.
       </p>
-      <input
-        type='password'
-        placeholder='Master Password'
-        className='w-full px-3 py-2 border rounded mb-2'
-      />
-      <textarea
-        placeholder='Hint'
-        className='w-full px-3 py-2 border rounded mb-4'
-      />
-      <button
-        className='bg-neutral-800 text-white px-4 py-1 rounded'
-        onClick={() => {}}
-      >
-        Set Master Password
-      </button>
+      <form className='space-y-4' onSubmit={handleMasterPassword}>
+        <InputNewPassword
+          password={password}
+          setPassword={setPassword}
+          isGenerationAvailable={false}
+        />
+        <InputTextArea name='Hint' value={hint} setValue={setHint} />
+        <Button>Set Master Password</Button>
+      </form>
     </div>
   )
 }
