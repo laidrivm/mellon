@@ -1,21 +1,36 @@
 import React, {ReactNode} from 'react'
 
+import type {ButtonStyle} from '../types.ts'
+
 export default function Button({
   children,
-  inline = false,
+  style = 'primary',
   onClick = () => {}
 }: {
   children: ReactNode
-  inline: boolean
+  style: ButtonStyle
   onClick: () => void
 }): ReactNode {
-  let styles =
-    'w-full bg-black text-white rounded-lg py-2 hover:bg-gray-800 transition'
-  if (inline) {
-    styles = 'bg-black text-white text-sm px-3 py-1 rounded-lg'
+  let className = ''
+
+  switch (style) {
+    case 'primary':
+      className =
+        'bg-black text-white rounded-lg py-2 px-3 hover:bg-gray-800 transition'
+      break
+    case 'secondary':
+      className = 'hover:underline'
+      break
+    case 'inline':
+      className =
+        'bg-black text-white text-sm px-3 py-1 rounded-lg hover:bg-gray-800 transition'
+      break
+    default:
+      break
   }
+
   return (
-    <button className={styles} onClick={onClick}>
+    <button className={className} onClick={onClick}>
       {children}
     </button>
   )

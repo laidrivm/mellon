@@ -4,3 +4,10 @@ export type Secret = {
   password: string
   notes: string
 }
+
+export type ButtonStyle = 'primary' | 'secondary' | 'inline' | 'single'
+
+export type MasterPassword = {
+  password: string
+  hint: string
+}

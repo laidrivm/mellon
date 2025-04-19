@@ -24,7 +24,7 @@ export default function StoredSecrets({
         <h2 className='text-3xl'>Stored Secrets</h2>
 
         {secrets.length !== 0 && !showSecretForm && (
-          <Button inline={true} onClick={onClick}>
+          <Button style='inline' onClick={onClick}>
             Add New
           </Button>
         )}
