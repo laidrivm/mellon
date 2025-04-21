@@ -5,7 +5,9 @@ import type {ButtonStyle} from '../types.ts'
 export default function Button({
   children,
   style = 'primary',
-  onClick = () => {}
+  onClick = () => {
+    // do nothing
+  }
 }: {
   children: ReactNode
   style: ButtonStyle

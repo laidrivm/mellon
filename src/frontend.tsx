@@ -9,7 +9,7 @@ import {createRoot} from 'react-dom/client'
 import React, {StrictMode} from 'react'
 import App from './components/App.tsx'
 
-const elem = document.getElementById('root')!
+const elem = document.getElementById('root')
 const app = (
   <StrictMode>
     <App />

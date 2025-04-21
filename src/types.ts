@@ -1,4 +1,4 @@
-export type Secret = {
+export interface Secret {
   name: string
   username: string
   password: string
@@ -7,7 +7,7 @@ export type Secret = {
 
 export type ButtonStyle = 'primary' | 'secondary' | 'inline' | 'single'
 
-export type MasterPassword = {
+export interface MasterPassword {
   password: string
   hint: string
 }
