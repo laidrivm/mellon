@@ -16,6 +16,19 @@ const app = (
   </StrictMode>
 )
 
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker
+      .register('/service-worker.ts')
+      .then((registration) => {
+        console.log('Service Worker registered:', registration)
+      })
+      .catch((error) => {
+        console.log('Service Worker registration failed:', error)
+      })
+  })
+}
+
 if (import.meta.hot) {
   // With hot module reloading, `import.meta.hot.data` is persisted.
   const root = (import.meta.hot.data.root ??= createRoot(elem))
