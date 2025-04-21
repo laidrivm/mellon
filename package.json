@@ -6,7 +6,7 @@
   "main": "src/index.tsx",
   "module": "src/index.tsx",
   "scripts": {
-    "format": "prettier --write 'src/**/*.{css,html,ts,tsx}'",
+    "format": "prettier --write 'src/**/*.{css,html,js,ts,tsx}'",
     "lint": "bun eslint --fix",
     "dev": "bun run format && bun run lint && BUN_RUNTIME_TRANSPILER_CACHE_PATH=0 bun --hot --no-clear-screen src/index.ts",
     "start": "NODE_ENV=production bun src/index.ts",
@@ -21,7 +21,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.25.0",
-    "@types/bun": "latest",
+    "@types/bun": "^1.2.10",
     "@types/react": "^19.1.2",
     "@types/react-dom": "^19.1.2",
     "eslint": "^9.25.0",
