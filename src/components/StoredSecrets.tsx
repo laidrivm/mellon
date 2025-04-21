@@ -3,6 +3,8 @@ import React, {ReactNode} from 'react'
 import Button from './Button.tsx'
 import SecretItem from './SecretItem.tsx'
 
+//import {getAllSecrets} from '../hooks/secrets.ts'
+
 import type {Secret} from '../types.ts'
 
 export default function StoredSecrets({
@@ -17,6 +19,8 @@ export default function StoredSecrets({
   function onClick(): void {
     setShowSecretForm(true)
   }
+
+  //console.log(getAllSecrets())
 
   return (
     <div className='mt-12'>

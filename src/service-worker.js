@@ -1,8 +1,6 @@
 const CACHE_NAME = 'mellon-cache-v1'
 const urlsToCache = ['/']
 
-const isDev = self.location.hostname === 'localhost'
-
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => cache.addAll(urlsToCache))
@@ -10,52 +8,28 @@ self.addEventListener('install', (event) => {
 })
 
 self.addEventListener('fetch', (event) => {
-  const url = new URL(event.request.url)
-  const isBunAsset = url.pathname.startsWith('/_bun/')
-  console.log(`url.pathname: ${url.pathname}`)
-  console.log(`isBunAsset: ${isBunAsset}`)
-
-  if (isDev && isBunAsset) {
-    event.respondWith(
-      fetch(event.request)
-        .then((response) => {
-          // Cache a copy of the response
-          const responseToCache = response.clone()
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(event.request, responseToCache)
-          })
-          return response
-        })
-        .catch(() => {
-          // Try to get it from cache if network fails
-          return caches.match(event.request)
-        })
-    )
-    return
-  }
-
   event.respondWith(
-    caches.match(event.request).then((response) => {
-      // Return cached response if found
-      if (response) {
-        return response
+    caches.match(event.request).then((cachedResponse) => {
+      if (cachedResponse) {
+        return cachedResponse
       }
 
-      // Clone the request because it can only be used once
+      // Clone the request because it's a stream
       const fetchRequest = event.request.clone()
 
       return fetch(fetchRequest)
         .then((response) => {
-          // Check if response is valid
+          // Skip opaque or error responses
           if (
             !response ||
             response.status !== 200 ||
+            response.type === 'opaque' ||
             response.type !== 'basic'
           ) {
             return response
           }
 
-          // Clone response because it can only be used once
+          // Clone the response before caching
           const responseToCache = response.clone()
 
           caches.open(CACHE_NAME).then((cache) => {
@@ -65,7 +39,7 @@ self.addEventListener('fetch', (event) => {
           return response
         })
         .catch(() => {
-          // Return fallback content when offline
+          // Offline fallback for navigation
           if (event.request.mode === 'navigate') {
             return (
               caches.match('/') ||
@@ -75,6 +49,8 @@ self.addEventListener('fetch', (event) => {
               })
             )
           }
+
+          // Return a 404 fallback for other resources
           return new Response('', {status: 404})
         })
     })
