@@ -1,8 +1,8 @@
-import {localDB} from './db.ts'
+import {localUserDB} from './pouchDB.ts'
 
 async function getKeyFromDB() {
   try {
-    const keyDoc = await localDB.get('key:encryptionKey')
+    const keyDoc = await localUserDB.get('key:encryptionKey')
 
     if (keyDoc && keyDoc.key) {
       return await window.crypto.subtle.importKey(
@@ -44,7 +44,7 @@ async function storeKeyInDB(key) {
       type: 'encryptionKey'
     }
 
-    return await localDB.put(keyDoc)
+    return await localUserDB.put(keyDoc)
   } catch (error) {
     console.error('Failed to store encryption key:', error)
   }

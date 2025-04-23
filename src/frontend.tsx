@@ -6,15 +6,11 @@
  */
 
 import {createRoot} from 'react-dom/client'
-import React, {StrictMode} from 'react'
+import React from 'react'
 import App from './components/App.tsx'
 
 const elem = document.getElementById('root')
-const app = (
-  <StrictMode>
-    <App />
-  </StrictMode>
-)
+const app = <App />
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {

@@ -11,6 +11,7 @@ import UnlockForm from './UnlockForm.tsx'
 import SignUpForm from './SignUpForm.tsx'
 import ConnectionManager from './ConnectionManager.tsx'
 import Footer from './Footer.tsx'
+import UuidManager from './UuidManager.tsx'
 
 import {createSecret, getAllSecrets} from '../hooks/secrets.ts'
 
@@ -58,8 +59,10 @@ export default function App() {
     async function setInitSecrets() {
       const pulledSecrets = await getAllSecrets()
       const secrets = []
-      for (const row of pulledSecrets.rows) {
-        secrets.push(row.doc)
+      if (pulledSecrets) {
+        for (const row of pulledSecrets.rows) {
+          secrets.push(row.doc)
+        }
       }
       setSecrets(secrets)
     }
@@ -74,6 +77,7 @@ export default function App() {
   return (
     <>
       <ConnectionManager />
+      <UuidManager />
       <Layout>
         {locked ?
           <UnlockForm masterPassword={masterPassword} setLocked={setLocked} />

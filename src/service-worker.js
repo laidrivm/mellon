@@ -1,13 +1,20 @@
 const CACHE_NAME = 'mellon-cache-v1'
-const urlsToCache = ['/']
+const URLS_TO_CACHE = ['/']
+const NEVER_CACHE = ['/api/generate-uuid']
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(urlsToCache))
+    caches.open(CACHE_NAME).then((cache) => cache.addAll(URLS_TO_CACHE))
   )
 })
 
 self.addEventListener('fetch', (event) => {
+  // Never cache API requests
+  if (NEVER_CACHE.some((url) => event.request.url.includes(url))) {
+    event.respondWith(fetch(event.request))
+    return
+  }
+
   // For HTML documents (navigation requests), always go to network first, then cache
   if (event.request.mode === 'navigate') {
     event.respondWith(
@@ -41,6 +48,12 @@ self.addEventListener('fetch', (event) => {
           })
         })
     )
+    return
+  }
+
+  // Skip caching for POST requests
+  if (event.request.method !== 'GET') {
+    event.respondWith(fetch(event.request))
     return
   }
 

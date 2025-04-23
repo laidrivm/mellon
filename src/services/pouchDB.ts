@@ -3,7 +3,8 @@ import FindPlugin from 'pouchdb-find'
 
 PouchDB.plugin(FindPlugin)
 
-export const localDB = new PouchDB('mellon')
+export const localSecretsDB = new PouchDB('mellon')
+export const localUserDB = new PouchDB('user_data')
 
 export const remoteDB = new PouchDB(
   'http://admin:password@localhost:5984/mellon'
@@ -11,7 +12,7 @@ export const remoteDB = new PouchDB(
 
 export async function syncOnce() {
   try {
-    await localDB.sync(remoteDB)
+    await localSecretsDB.sync(remoteDB)
     console.log('Sync completed:', result)
   } catch (error) {
     console.error('Sync failed:', error)
@@ -28,7 +29,7 @@ export function startLiveSync() {
   }
 
   // Start bidirectional sync
-  syncHandler = localDB
+  syncHandler = localSecretsDB
     .sync(remoteDB, {
       live: true, // Keep sync going
       retry: true, // Retry if connection fails

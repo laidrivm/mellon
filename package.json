@@ -14,18 +14,20 @@
     "build": "bun run build.ts"
   },
   "dependencies": {
-    "@types/pouchdb": "^6.4.2",
     "bun-plugin-tailwind": "^0.0.15",
+    "nano": "^10.1.4",
     "normalize.css": "^8.0.1",
     "pouchdb-browser": "^9.0.0",
     "pouchdb-find": "^9.0.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
-    "tailwindcss": "^4.1.4"
+    "tailwindcss": "^4.1.4",
+    "uuid": "^11.1.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.25.0",
     "@types/bun": "^1.2.10",
+    "@types/pouchdb": "^6.4.2",
     "@types/react": "^19.1.2",
     "@types/react-dom": "^19.1.2",
     "eslint": "^9.25.0",

@@ -1,6 +1,6 @@
 import React, {ReactNode} from 'react'
 
-import {startLiveSync, stopSync} from '../services/db.ts'
+import {startLiveSync, stopSync} from '../services/pouchDB.ts'
 
 function useOnlineStatus() {
   const [isOnline, setIsOnline] = React.useState(navigator.onLine)
