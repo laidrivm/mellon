@@ -56,7 +56,6 @@ export default function App() {
   React.useEffect(() => {
     async function setInitSecrets() {
       const pulledSecrets = await getAllSecrets()
-      console.log(pulledSecrets.rows)
       const secrets = []
       for (const row of pulledSecrets.rows) {
         secrets.push(row.doc)
