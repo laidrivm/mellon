@@ -9,6 +9,7 @@ import StoredSecrets from './StoredSecrets.tsx'
 import MasterPasswordForm from './MasterPasswordForm.tsx'
 import UnlockForm from './UnlockForm.tsx'
 import SignUpForm from './SignUpForm.tsx'
+import ConnectionManager from './ConnectionManager.tsx'
 
 import {createSecret, getAllSecrets} from '../hooks/secrets.ts'
 
@@ -71,28 +72,31 @@ export default function App() {
   }
 
   return (
-    <Layout>
-      {locked ?
-        <UnlockForm masterPassword={masterPassword} setLocked={setLocked} />
-      : <>
-          {onboarding === 'sign' && <SignUpForm setEmail={setEmail} />}
-          {onboarding === 'master' && (
-            <MasterPasswordForm setMasterPassword={setMasterPassword} />
-          )}
-          {(onboarding === 'secret' || showSecretForm) && (
-            <AddSecretForm
-              secretsNumber={secrets.length}
-              addSecret={handleAddSecret}
+    <>
+      <ConnectionManager />
+      <Layout>
+        {locked ?
+          <UnlockForm masterPassword={masterPassword} setLocked={setLocked} />
+        : <>
+            {onboarding === 'sign' && <SignUpForm setEmail={setEmail} />}
+            {onboarding === 'master' && (
+              <MasterPasswordForm setMasterPassword={setMasterPassword} />
+            )}
+            {(onboarding === 'secret' || showSecretForm) && (
+              <AddSecretForm
+                secretsNumber={secrets.length}
+                addSecret={handleAddSecret}
+                setShowSecretForm={setShowSecretForm}
+              />
+            )}
+            <StoredSecrets
+              secrets={secrets}
+              showSecretForm={showSecretForm}
               setShowSecretForm={setShowSecretForm}
             />
-          )}
-          <StoredSecrets
-            secrets={secrets}
-            showSecretForm={showSecretForm}
-            setShowSecretForm={setShowSecretForm}
-          />
-        </>
-      }
-    </Layout>
+          </>
+        }
+      </Layout>
+    </>
   )
 }
