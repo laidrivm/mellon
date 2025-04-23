@@ -12,7 +12,7 @@ export default function Footer(): ReactNode {
         <a className='underline' href='https://github.com/laidrivm/mellon'>
           Source code
         </a>
-        . Don’t use to store anything meaningful!
+        . Don’t store anything meaningful!
       </p>
     </footer>
   )

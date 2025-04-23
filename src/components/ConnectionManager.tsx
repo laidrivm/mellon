@@ -27,7 +27,7 @@ export default function ConnectionManager(): ReactNode {
   React.useEffect(() => {
     if (isOnline) {
       console.log('Connection restored, syncing data...')
-      startLiveSync()
+      //startLiveSync(window.remoteDB)
     } else {
       console.log('Connection lost, working offline...')
       stopSync()

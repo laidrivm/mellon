@@ -6,10 +6,6 @@ PouchDB.plugin(FindPlugin)
 export const localSecretsDB = new PouchDB('mellon')
 export const localUserDB = new PouchDB('user_data')
 
-export const remoteDB = new PouchDB(
-  'http://admin:password@localhost:5984/mellon'
-)
-
 export async function syncOnce() {
   try {
     await localSecretsDB.sync(remoteDB)
@@ -22,7 +18,7 @@ export async function syncOnce() {
 
 let syncHandler = null
 
-export function startLiveSync() {
+export function startLiveSync(remoteDB) {
   // Cancel any existing sync
   if (syncHandler) {
     syncHandler.cancel()
@@ -63,5 +59,30 @@ export function stopSync() {
   if (syncHandler) {
     syncHandler.cancel()
     syncHandler = null
+  }
+}
+
+export async function initializeRemoteDb(uuid, password, dbName) {
+  try {
+    const couchDbHost = 'localhost:5984'
+
+    const remoteDbUrl = `http://${uuid}:${password}@${couchDbHost}/${dbName}`
+    console.log(`remoteDbUrl ${remoteDbUrl}`)
+
+    const remoteDB = new PouchDB(remoteDbUrl, {
+      skip_setup: true
+    })
+
+    await remoteDB.info()
+
+    startLiveSync(remoteDB)
+
+    window.remoteDB = remoteDB
+
+    console.log('Remote database connection established')
+    return true
+  } catch (err) {
+    console.error('Error connecting to remote database:', err)
+    return false
   }
 }

@@ -1,8 +1,8 @@
 import {localUserDB} from '../services/pouchDB.ts'
 
-export async function getUserID() {
+export async function getUserCredentials() {
   try {
-    return await localUserDB.get('user_uuid')
+    return await localUserDB.get('user_credentials')
   } catch (error) {
     if (error.name !== 'not_found') {
       console.error('Error checking local PouchDB:', error)
@@ -10,11 +10,13 @@ export async function getUserID() {
   }
 }
 
-export async function createUserID(uuid) {
+export async function createUserCredentials(uuid, password, dbName) {
   try {
     await localUserDB.put({
-      _id: 'user_uuid',
+      _id: 'user_credentials',
       uuid,
+      password,
+      dbName,
       createdAt: new Date().toISOString()
     })
   } catch (error) {
