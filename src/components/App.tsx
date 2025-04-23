@@ -10,6 +10,7 @@ import MasterPasswordForm from './MasterPasswordForm.tsx'
 import UnlockForm from './UnlockForm.tsx'
 import SignUpForm from './SignUpForm.tsx'
 import ConnectionManager from './ConnectionManager.tsx'
+import Footer from './Footer.tsx'
 
 import {createSecret, getAllSecrets} from '../hooks/secrets.ts'
 
@@ -96,6 +97,7 @@ export default function App() {
           </>
         }
       </Layout>
+      <Footer />
     </>
   )
 }
