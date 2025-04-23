@@ -27,6 +27,9 @@
     "noPropertyAccessFromIndexSignature": true,
     "forceConsistentCasingInFileNames": true,
 
+    // For PuuchDB
+    "allowSyntheticDefaultImports": true,
+
     "baseUrl": "."
   }
 }

@@ -8,49 +8,69 @@ self.addEventListener('install', (event) => {
 })
 
 self.addEventListener('fetch', (event) => {
-  event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
-      if (cachedResponse) {
-        return cachedResponse
-      }
-
-      // Clone the request because it's a stream
-      const fetchRequest = event.request.clone()
-
-      return fetch(fetchRequest)
+  // For HTML documents (navigation requests), always go to network first, then cache
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      fetch(event.request)
         .then((response) => {
-          // Skip opaque or error responses
+          // Only cache valid responses
           if (
             !response ||
             response.status !== 200 ||
-            response.type === 'opaque' ||
             response.type !== 'basic'
           ) {
             return response
           }
-
-          // Clone the response before caching
           const responseToCache = response.clone()
-
           caches.open(CACHE_NAME).then((cache) => {
             cache.put(event.request, responseToCache)
           })
-
           return response
         })
         .catch(() => {
           // Offline fallback for navigation
-          if (event.request.mode === 'navigate') {
+          return caches.match(event.request).then((cachedResponse) => {
             return (
+              cachedResponse ||
               caches.match('/') ||
               new Response('You are offline. Please check your connection.', {
                 headers: {'Content-Type': 'text/html'},
                 status: 200
               })
             )
-          }
+          })
+        })
+    )
+    return
+  }
 
-          // Return a 404 fallback for other resources
+  // For other assets, check cache first, then network
+  event.respondWith(
+    caches.match(event.request).then((cachedResponse) => {
+      if (cachedResponse) {
+        return cachedResponse
+      }
+      // Clone the request because it's a stream
+      const fetchRequest = event.request.clone()
+      return fetch(fetchRequest)
+        .then((response) => {
+          // Skip opaque or error responses
+          if (
+            !response ||
+            response.status !== 200 ||
+            response.type !== 'basic'
+          ) {
+            return response
+          }
+          // Clone the response before caching
+          const responseToCache = response.clone()
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(event.request, responseToCache)
+          })
+          return response
+        })
+        .catch(() => {
+          // Return a 404 fallback for non-navigation resources
           return new Response('', {status: 404})
         })
     })

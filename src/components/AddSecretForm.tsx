@@ -5,8 +5,6 @@ import InputNewPassword from './InputNewPassword.tsx'
 import InputTextArea from './InputTextArea.tsx'
 import Button from './Button.tsx'
 
-//import {createSecret} from '../hooks/secrets.ts'
-
 import type {Secret} from '../types.ts'
 
 export default function AddSecretForm({
@@ -27,7 +25,6 @@ export default function AddSecretForm({
     event.preventDefault()
     if (!name || !username || !password) return
     addSecret({name, username, password, notes})
-    //createSecret({name, username, password, notes})
     setName('')
     setUsername('')
     setPassword('')

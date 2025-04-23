@@ -10,6 +10,8 @@ import MasterPasswordForm from './MasterPasswordForm.tsx'
 import UnlockForm from './UnlockForm.tsx'
 import SignUpForm from './SignUpForm.tsx'
 
+import {createSecret, getAllSecrets} from '../hooks/secrets.ts'
+
 export default function App() {
   const [secrets, setSecrets] = React.useState([])
   const [onboarding, setOnboarding] = React.useState('secret')
@@ -50,8 +52,22 @@ export default function App() {
     )
   }
 
+  React.useEffect(() => {
+    async function setInitSecrets() {
+      const pulledSecrets = await getAllSecrets()
+      console.log(pulledSecrets.rows)
+      const secrets = []
+      for (const row of pulledSecrets.rows) {
+        secrets.push(row.doc)
+      }
+      setSecrets(secrets)
+    }
+    setInitSecrets()
+  }, [])
+
   function handleAddSecret(secret: string): void {
-    setSecrets([...secrets, secret])
+    setSecrets([secret, ...secrets])
+    createSecret(secret)
   }
 
   return (

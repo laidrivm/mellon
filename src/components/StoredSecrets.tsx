@@ -20,8 +20,6 @@ export default function StoredSecrets({
     setShowSecretForm(true)
   }
 
-  //console.log(getAllSecrets())
-
   return (
     <div className='mt-12'>
       <div className='flex justify-between'>
