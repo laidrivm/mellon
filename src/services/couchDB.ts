@@ -20,12 +20,59 @@ export async function createCouchDbUser(uuid) {
     const response = await usersDb.insert(userDoc)
 
     if (response.ok) {
-      return {success: true, message: 'User created successfully'}
+      return {
+        success: true,
+        uuid,
+        password: userDoc.password,
+        message: 'User created successfully'
+      }
     } else {
-      return {success: false, message: 'Failed to create user'}
+      return {
+        success: false,
+        uuid,
+        password: userDoc.password,
+        message: 'Failed to create user'
+      }
     }
   } catch (error) {
     console.error('Error creating CouchDB user:', error)
-    return {success: false, message: 'Error creating user in CouchDB'}
+    return {success: false, uuid, message: 'Error creating user in CouchDB'}
+  }
+}
+
+export async function createUserRelatedCouchDb(uuid) {
+  const dbName = `userdb-${uuid}`
+
+  try {
+    await nanodb.db.create(dbName)
+
+    const securityDoc = {
+      admins: {names: [], roles: []},
+      members: {names: [uuid], roles: []}
+    }
+
+    const securityResponse = await nanodb.request({
+      db: dbName,
+      path: '_security',
+      method: 'PUT',
+      body: securityDoc
+    })
+
+    if (securityResponse.ok) {
+      return {success: true, db: dbName, message: 'User created successfully'}
+    } else {
+      return {
+        success: false,
+        db: dbName,
+        message: `Could not set security for ${dbName}`
+      }
+    }
+  } catch (error) {
+    console.error('Error creating database:', error)
+    return {
+      success: false,
+      db: dbName,
+      message: 'User created but failed to create database'
+    }
   }
 }

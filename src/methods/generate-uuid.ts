@@ -1,17 +1,24 @@
 import {v7 as uuidv7} from 'uuid'
-import {createCouchDbUser} from '../services/couchDB.ts'
+import {
+  createCouchDbUser,
+  createUserRelatedCouchDb
+} from '../services/couchDB.ts'
 
 export default async function generateUUID() {
   try {
-    // Generate UUIDv7
     const uuid = uuidv7()
 
-    // Create user in CouchDB
-    const response = await createCouchDbUser(uuid)
+    const user = await createCouchDbUser(uuid)
+    const db = await createUserRelatedCouchDb(uuid)
+
+    const response = {
+      ...user,
+      ...db
+    }
 
     return new Response(
       JSON.stringify({
-        uuid,
+        ...response,
         success: response.success,
         message: response.message
       }),
