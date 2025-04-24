@@ -13,7 +13,7 @@ import ConnectionManager from './ConnectionManager.tsx'
 import Footer from './Footer.tsx'
 import UuidManager from './UuidManager.tsx'
 
-import {createSecret, getAllSecrets} from '../hooks/secrets.ts'
+import {createSecret, getAllSecrets} from '../services/secrets.ts'
 
 export default function App() {
   const [secrets, setSecrets] = React.useState([])
@@ -58,13 +58,11 @@ export default function App() {
   React.useEffect(() => {
     async function setInitSecrets() {
       const pulledSecrets = await getAllSecrets()
-      const secrets = []
-      if (pulledSecrets) {
-        for (const row of pulledSecrets.rows) {
-          secrets.push(row.doc)
-        }
+      if (pulledSecrets.success) {
+        setSecrets(pulledSecrets.data)
+      } else {
+        setSecrets([])
       }
-      setSecrets(secrets)
     }
     setInitSecrets()
   }, [])
