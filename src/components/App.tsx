@@ -25,7 +25,9 @@ const INACTIVITY_TIMEOUT = 5 * 60 * 1000
 export default function App(): JSX.Element {
   const [secrets, setSecrets] = React.useState<Secret[]>([])
   const [onboarding, setOnboarding] = React.useState<OnboardingStage>('secret')
-  const [masterPassword, setMasterPassword] = React.useState<string | null>(null)
+  const [masterPassword, setMasterPassword] = React.useState<string | null>(
+    null
+  )
   const [showSecretForm, setShowSecretForm] = React.useState<boolean>(false)
   const [email, setEmail] = React.useState<string | null>(null)
   const [locked, setLocked] = React.useState<boolean>(false)
