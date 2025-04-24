@@ -1,3 +1,5 @@
+import {v7 as uuidv7} from 'uuid'
+
 import {localSecretsDB} from '../services/pouchDB.ts'
 import {
   encryptField,
@@ -10,7 +12,7 @@ import type {Secret} from '../types.ts'
 export async function createSecret(secret: Secret) {
   try {
     const encryptionKey = await getEncryptionKey()
-    secret._id = `secret:${Date.now()}`
+    secret._id = `secret:${uuidv7()}`
     secret.createdAt = new Date().toISOString()
     secret.password = await encryptField(secret.password, encryptionKey)
     await localSecretsDB.put(secret)

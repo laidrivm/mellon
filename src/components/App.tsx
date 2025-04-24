@@ -70,8 +70,9 @@ export default function App() {
   }, [])
 
   function handleAddSecret(secret: string): void {
-    setSecrets([secret, ...secrets])
-    createSecret(secret)
+    const nextSecret = secret
+    setSecrets([nextSecret, ...secrets])
+    createSecret(nextSecret)
   }
 
   return (

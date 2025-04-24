@@ -1,10 +1,14 @@
 import PouchDB from 'pouchdb-browser'
 import FindPlugin from 'pouchdb-find'
 
+import {getUserCredentials} from '../hooks/userdata.ts'
+
 PouchDB.plugin(FindPlugin)
 
 export const localSecretsDB = new PouchDB('mellon')
 export const localUserDB = new PouchDB('user_data')
+
+let syncHandler = null
 
 export async function syncOnce() {
   try {
@@ -15,8 +19,6 @@ export async function syncOnce() {
     throw error
   }
 }
-
-let syncHandler = null
 
 export function startLiveSync(remoteDB) {
   // Cancel any existing sync
@@ -75,14 +77,40 @@ export async function initializeRemoteDb(uuid, password, dbName) {
 
     await remoteDB.info()
 
-    startLiveSync(remoteDB)
-
     window.remoteDB = remoteDB
 
     console.log('Remote database connection established')
-    return true
+    return remoteDB
   } catch (err) {
     console.error('Error connecting to remote database:', err)
-    return false
+    return null
+  }
+}
+
+export async function setupRemoteConnection() {
+  try {
+    const credentials = await getUserCredentials()
+
+    if (!credentials) {
+      console.error('No credentials found')
+      return {success: false, error: 'No credentials found'}
+    }
+
+    const remoteDB = await initializeRemoteDb(
+      credentials.uuid,
+      credentials.password,
+      credentials.dbName
+    )
+
+    if (!remoteDB) {
+      return {success: false, error: 'Failed to connect to remote database'}
+    }
+
+    startLiveSync(remoteDB)
+
+    return {success: true, uuid: credentials.uuid, dbName: credentials.dbName}
+  } catch (error) {
+    console.error('Error setting up remote connection:', error)
+    return {success: false, error: error.message}
   }
 }

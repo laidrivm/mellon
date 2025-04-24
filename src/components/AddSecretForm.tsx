@@ -24,7 +24,8 @@ export default function AddSecretForm({
   function handleAdd(event): void {
     event.preventDefault()
     if (!name || !username || !password) return
-    addSecret({name, username, password, notes})
+    const nextSecret = {name, username, password, notes}
+    addSecret(nextSecret)
     setName('')
     setUsername('')
     setPassword('')
