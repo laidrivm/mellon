@@ -19,6 +19,7 @@ export default function UuidManager() {
           setDbName(doc.dbName)
 
           // Initialize the connection to the remote database
+          console.log(`first ${doc.uuid} ${doc.password} ${doc.dbName}`)
           await initializeRemoteDb(doc.uuid, doc.password, doc.dbName)
 
           setStatus('connected_to_remote')
@@ -54,6 +55,7 @@ export default function UuidManager() {
         setUuid(uuid)
         setDbName(data.dbName)
 
+        console.log(`second ${data.uuid} ${data.password} ${data.dbName}`)
         await initializeRemoteDb(data.uuid, data.password, data.dbName)
 
         setStatus('generated_and_stored')
