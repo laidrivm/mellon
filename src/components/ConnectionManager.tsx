@@ -1,4 +1,4 @@
-import React, {ReactNode} from 'react'
+import React from 'react'
 
 import {stopSync, setupRemoteConnection} from '../services/pouchDB.ts'
 import {getUserCredentials, isAuthenticated} from '../services/users.ts'
