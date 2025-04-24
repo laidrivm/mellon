@@ -1,8 +1,15 @@
 import {localUserDB} from './pouchDB.ts'
+import {DocType, EncryptionKeyDocument} from '../types.ts'
 
-async function getKeyFromDB() {
+/**
+ * Retrieve encryption key from database
+ * @returns {Promise<CryptoKey | null>} Encryption key or null if not found
+ */
+async function getKeyFromDB(): Promise<CryptoKey | null> {
   try {
-    const keyDoc = await localUserDB.get('key:encryptionKey')
+    const keyDoc = (await localUserDB.get(
+      `${DocType.ENCRYPTION_KEY}`
+    )) as EncryptionKeyDocument
 
     if (keyDoc && keyDoc.key) {
       return await window.crypto.subtle.importKey(
@@ -19,10 +26,15 @@ async function getKeyFromDB() {
       return null
     }
     console.error('Error retrieving encryption key:', error)
+    throw error
   }
 }
 
-async function generateNewKey() {
+/**
+ * Generate a new encryption key
+ * @returns {Promise<CryptoKey>} Generated encryption key
+ */
+async function generateNewKey(): Promise<CryptoKey> {
   return await window.crypto.subtle.generateKey(
     {
       name: 'AES-GCM',
@@ -33,12 +45,17 @@ async function generateNewKey() {
   )
 }
 
-async function storeKeyInDB(key) {
+/**
+ * Store encryption key in database
+ * @param {CryptoKey} key - Encryption key to store
+ * @returns {Promise<PouchDB.Core.Response>} Storage operation result
+ */
+async function storeKeyInDB(key: CryptoKey): Promise<PouchDB.Core.Response> {
   try {
     const keyData = await window.crypto.subtle.exportKey('jwk', key)
 
-    const keyDoc = {
-      _id: `key:encryptionKey`,
+    const keyDoc: EncryptionKeyDocument = {
+      _id: DocType.ENCRYPTION_KEY,
       key: keyData,
       createdAt: new Date().toISOString(),
       type: 'encryptionKey'
@@ -47,10 +64,15 @@ async function storeKeyInDB(key) {
     return await localUserDB.put(keyDoc)
   } catch (error) {
     console.error('Failed to store encryption key:', error)
+    throw error
   }
 }
 
-export async function getEncryptionKey() {
+/**
+ * Get or create encryption key
+ * @returns {Promise<CryptoKey>} Encryption key
+ */
+export async function getEncryptionKey(): Promise<CryptoKey> {
   const key = await getKeyFromDB()
   if (key) return key
 
@@ -59,7 +81,16 @@ export async function getEncryptionKey() {
   return newKey
 }
 
-export async function encryptField(data, key) {
+/**
+ * Encrypt single field using AES-GCM
+ * @param {string} data - Data to encrypt
+ * @param {CryptoKey} key - Encryption key
+ * @returns {Promise<string>} Encrypted data as base64 string
+ */
+export async function encryptField(
+  data: string,
+  key: CryptoKey
+): Promise<string> {
   // Create a random initialization vector
   const iv = window.crypto.getRandomValues(new Uint8Array(12))
 
@@ -83,10 +114,19 @@ export async function encryptField(data, key) {
   combined.set(new Uint8Array(encryptedBuffer), iv.length)
 
   // Convert to Base64 string for storage
-  return btoa(String.fromCharCode.apply(null, combined))
+  return btoa(String.fromCharCode.apply(null, Array.from(combined)))
 }
 
-export async function decryptField(ciphertext, key) {
+/**
+ * Decrypt single field using AES-GCM
+ * @param {string} ciphertext - Encrypted data as base64 string
+ * @param {CryptoKey} key - Decryption key
+ * @returns {Promise<sting>} Decrypted data
+ */
+export async function decryptField(
+  ciphertext: string,
+  key: CryptoKey
+): Promise<string> {
   try {
     // Convert from Base64 string
     const binary = atob(ciphertext)
