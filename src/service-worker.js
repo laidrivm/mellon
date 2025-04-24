@@ -1,3 +1,4 @@
+// TODO: Change this automatically when updating cached resources
 const CACHE_NAME = 'mellon-cache-v1'
 const URLS_TO_CACHE = ['/']
 const NEVER_CACHE = ['/api/generate-uuid']

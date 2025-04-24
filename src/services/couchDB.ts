@@ -1,6 +1,10 @@
 import nano from 'nano'
 
-const nanodb = nano('http://admin:password@localhost:5984')
+import {ServiceResponse, UserCreationResponse} from '../types.ts'
+
+const COUCHDB_URL = 'http://admin:password@localhost:5984'
+
+const nanodb = nano(COUCHDB_URL)
 
 /**
  * Generate a secure password using UUID and timestamp
