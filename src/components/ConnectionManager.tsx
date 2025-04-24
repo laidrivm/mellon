@@ -1,7 +1,7 @@
 import React, {ReactNode} from 'react'
 
 import {stopSync, setupRemoteConnection} from '../services/pouchDB.ts'
-import {isAuthenticated} from '../hooks/userdata.ts'
+import {isAuthenticated} from '../services/users.ts'
 
 function useOnlineStatus() {
   const [isOnline, setIsOnline] = React.useState(navigator.onLine)

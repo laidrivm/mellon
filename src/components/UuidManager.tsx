@@ -1,6 +1,6 @@
 import React from 'react'
 
-import {getUserCredentials, createUserCredentials} from '../hooks/userdata.ts'
+import {getUserCredentials, createUserCredentials} from '../services/users.ts'
 import {initializeRemoteDb} from '../services/pouchDB.ts'
 
 export default function UuidManager() {
@@ -55,8 +55,8 @@ export default function UuidManager() {
         setUuid(uuid)
         setDbName(data.dbName)
 
-        console.log(`second ${data.uuid} ${data.password} ${data.dbName}`)
-        await initializeRemoteDb(data.uuid, data.password, data.dbName)
+        console.log(`second ${data.uuid} ${data.password} ${data.db}`)
+        await initializeRemoteDb(data.uuid, data.password, data.db)
 
         setStatus('generated_and_stored')
       } catch (error) {

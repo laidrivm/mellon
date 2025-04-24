@@ -37,41 +37,6 @@ function isValidDbCredentials(
 }
 
 /**
- * Initialize connection to remote database
- * @param {string} uuid - User UUID
- * @param {string} password - User password
- * @param {string} dbName - Database name
- * @returns {Promise<PouchDB.Database | null>} Connected remote database or null
- */
-export async function initializeRemoteDb(
-  uuid: string,
-  password: string,
-  dbName: string
-): Promise<PouchDB.Database | null> {
-  try {
-    // Validate inputs to prevent injection
-    if (!isValidDbCredentials(uuid, password, dbName)) {
-      console.error('Invalid database credentials')
-      return null
-    }
-
-    const couchDbHost = 'localhost:5984'
-    const remoteDbUrl = `http://${uuid}:${password}@${couchDbHost}/${dbName}`
-
-    const remoteDB = new PouchDB(remoteDbUrl, {skip_setup: true})
-
-    // Test connection by fetching database info
-    await remoteDB.info()
-
-    console.log('Remote database connection established')
-    return remoteDB
-  } catch (error) {
-    console.error('Error connecting to remote database:', error)
-    return null
-  }
-}
-
-/**
  * Start live synchronization with remote database
  * @param {PouchDB.Database} remoteDB - Remote database instance
  * @returns {PouchDB.Replication.Sync<{}>} Sync handler
@@ -149,6 +114,45 @@ export async function syncOnce(
 }
 
 /**
+ * Initialize connection to remote database
+ * @param {string} uuid - User UUID
+ * @param {string} password - User password
+ * @param {string} dbName - Database name
+ * @returns {Promise<PouchDB.Database | null>} Connected remote database or null
+ */
+export async function initializeRemoteDb(
+  uuid: string,
+  password: string,
+  dbName: string
+): Promise<PouchDB.Database | null> {
+  try {
+    // Validate inputs to prevent injection
+    if (!isValidDbCredentials(uuid, password, dbName)) {
+      console.error('Invalid database credentials')
+      return null
+    }
+
+    const couchDbHost = 'localhost:5984'
+    const remoteDbUrl = `http://${uuid}:${password}@${couchDbHost}/${dbName}`
+
+    const remoteDB = new PouchDB(remoteDbUrl, {skip_setup: true})
+
+    // Test connection by fetching database info
+    await remoteDB.info()
+
+    // TODO: Probably should be moved to setupRemoteConnection
+    // or both funcs ought to be rewritten
+    startLiveSync(remoteDB)
+
+    console.log('Remote database connection established')
+    return remoteDB
+  } catch (error) {
+    console.error('Error connecting to remote database:', error)
+    return null
+  }
+}
+
+/**
  * Setup remote connection using stored credentials
  * @param {UserCredentials} credentials - User credentials
  * @returns {Promise<ServiceResponse>} Connection result
@@ -175,8 +179,6 @@ export async function setupRemoteConnection(
     if (!remoteDB) {
       return {success: false, message: 'Failed to connect to remote database'}
     }
-
-    startLiveSync(remoteDB)
 
     return {
       success: true,

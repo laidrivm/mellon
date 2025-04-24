@@ -2,7 +2,18 @@ import nano from 'nano'
 
 const nanodb = nano('http://admin:password@localhost:5984')
 
-export async function createCouchDbUser(uuid) {
+/**
+ * Generate a secure password using UUID and timestamp
+ * @param {string} uuid - User UUID
+ * @returns {string} Secure password
+ */
+function generateSecurePassword(uuid: string): string {
+  // TODO: Update on proper password generation function
+  const timestamp = Date.now()
+  return Bun.hash(uuid + timestamp).toString(16)
+}
+
+export async function createCouchDbUser(uuid: string) {
   try {
     // Connect to _users database
     const usersDb = nanodb.use('_users')
@@ -13,7 +24,7 @@ export async function createCouchDbUser(uuid) {
       name: uuid,
       type: 'user',
       roles: [],
-      password: Bun.hash(uuid + Date.now()).toString(16) // Generate a secure password
+      password: generateSecurePassword(uuid)
     }
 
     // Insert the user document

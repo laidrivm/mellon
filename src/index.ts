@@ -1,7 +1,7 @@
 import {serve} from 'bun'
 import {file} from 'bun'
 import index from './index.html'
-import generateUUID from './methods/generate-uuid.ts'
+import {generateUUID} from './api/generate-uuid.ts'
 
 const server = serve({
   port: 3001,
@@ -9,7 +9,13 @@ const server = serve({
     '/service-worker.js': () => new Response(file('./src/service-worker.js')),
     '/api/generate-uuid': {
       POST: async (req) => {
-        return await generateUUID(req)
+        const res = await generateUUID(req)
+        return new Response(JSON.stringify(res), {
+          headers: {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*'
+          }
+        })
       }
     },
     '/*': index
