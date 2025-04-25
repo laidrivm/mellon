@@ -4,7 +4,7 @@ import index from './index.html'
 import {generateUUID} from './api/generate-uuid.ts'
 
 const server = serve({
-  port: 3001,
+  port: process.env.PORT,
   routes: {
     '/service-worker.js': () => new Response(file('./src/service-worker.js')),
     '/api/generate-uuid': {

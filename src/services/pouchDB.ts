@@ -132,8 +132,8 @@ export async function initializeRemoteDb(
       return null
     }
 
-    const couchDbHost = 'localhost:5984'
-    const remoteDbUrl = `http://${uuid}:${password}@${couchDbHost}/${dbName}`
+    const couchDbHost = document.location.hostname
+    const remoteDbUrl = `http://${uuid}:${password}@${couchDbHost}:5984/${dbName}`
 
     const remoteDB = new PouchDB(remoteDbUrl, {skip_setup: true})
 

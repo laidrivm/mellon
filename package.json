@@ -1,10 +1,10 @@
 {
-  "name": "bun-react-template",
+  "name": "mellon-password-manager",
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "main": "src/index.tsx",
-  "module": "src/index.tsx",
+  "main": "src/index.ts",
+  "module": "src/index.ts",
   "scripts": {
     "format": "prettier --write 'src/**/*.{css,html,js,ts,tsx}'",
     "lint": "bun eslint --fix",

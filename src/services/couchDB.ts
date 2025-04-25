@@ -2,7 +2,7 @@ import nano from 'nano'
 
 //import {ServiceResponse, UserCreationResponse} from '../types.ts'
 
-const COUCHDB_URL = 'http://admin:password@localhost:5984'
+const COUCHDB_URL = process.env.COUCH_URL
 
 const nanodb = nano(COUCHDB_URL)
 

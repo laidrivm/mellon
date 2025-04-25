@@ -14,6 +14,7 @@ export default function Footer(): ReactNode {
         </a>{' '}
         and Evgenii Antonenkov for the IAMPEI application № 1561.
         <br />
+        Check out the{' '}
         <a className='underline' href='https://github.com/laidrivm/mellon'>
           Source code
         </a>
