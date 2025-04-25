@@ -1,6 +1,6 @@
 import nano from 'nano'
 
-import {ServiceResponse, UserCreationResponse} from '../types.ts'
+//import {ServiceResponse, UserCreationResponse} from '../types.ts'
 
 const COUCHDB_URL = 'http://admin:password@localhost:5984'
 
