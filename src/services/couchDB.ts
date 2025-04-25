@@ -6,6 +6,8 @@ const COUCHDB_URL = process.env.COUCH_URL
 
 const nanodb = nano(COUCHDB_URL)
 
+//const nanodb = require('nano')(process.env.COUCH_URL)
+
 /**
  * Generate a secure password using UUID and timestamp
  * @param {string} uuid - User UUID
