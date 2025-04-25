@@ -18,7 +18,7 @@ const server = serve({
         })
       }
     },
-    '/*': index
+    '/': index
   },
   development: process.env.NODE_ENV !== 'production'
 })

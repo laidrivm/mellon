@@ -27,6 +27,8 @@ Common Options:
   --banner <text>          Add banner text to output
   --footer <text>          Add footer text to output
   --define <obj>           Define global constants (e.g. --define.VERSION=1.0.0)
+  --compile                Build a standalone executable (server only)
+  --bytecode               Enable bytecode compilation for faster startup (only with --compile)
   --help, -h               Show this help message
 
 Example:
@@ -59,7 +61,7 @@ const parseValue = (value: string): any => {
 };
 
 // Magical argument parser that converts CLI args to BuildConfig
-function parseArgs(): Partial<BuildConfig> {
+function parseArgs(): Partial<BuildConfig> & { compile?: boolean, bytecode?: boolean } {
   // eslint-disable-next-line
   const config: Record<string, any> = {};
   const args = process.argv.slice(2);
@@ -106,7 +108,7 @@ function parseArgs(): Partial<BuildConfig> {
     }
   }
 
-  return config as Partial<BuildConfig>;
+  return config as Partial<BuildConfig> & { compile?: boolean, bytecode?: boolean };
 }
 
 // Helper function to format file sizes
@@ -136,36 +138,82 @@ if (existsSync(outdir)) {
 
 const start = performance.now();
 
-// Scan for all HTML files in the project
-const entrypoints = [...new Bun.Glob("**.html").scanSync("src")]
+// Build client-side assets
+console.log("📦 Building client-side assets...");
+
+// Find HTML entrypoints
+const htmlEntrypoints = [...new Bun.Glob("**.html").scanSync("src")]
   .map(a => path.resolve("src", a))
   .filter(dir => !dir.includes("node_modules"));
-console.log(`📄 Found ${entrypoints.length} HTML ${entrypoints.length === 1 ? "file" : "files"} to process\n`);
+console.log(`📄 Found ${htmlEntrypoints.length} HTML ${htmlEntrypoints.length === 1 ? "file" : "files"} to process\n`);
 
-// Build all the HTML files
-const result = await build({
-  entrypoints,
+// Build client-side assets
+const clientResult = await build({
+  entrypoints: htmlEntrypoints,
   outdir,
   plugins: [plugin],
-  minify: true,
+  minify: cliConfig.minify ?? true,
   target: "browser",
-  sourcemap: "linked",
+  sourcemap: cliConfig.sourceMap || "linked",
   define: {
     "process.env.NODE_ENV": JSON.stringify("production"),
   },
-  ...cliConfig, // Merge in any CLI-provided options
+  ...cliConfig,
 });
+
+// Copy service worker if it exists
+if (existsSync("src/service-worker.js")) {
+  console.log("📋 Copying service worker...");
+  await Bun.write(
+    path.join(outdir, "service-worker.js"), 
+    await Bun.file("src/service-worker.js").text()
+  );
+}
+
+// Build server-side code
+console.log("🔧 Building server-side code...");
+
+// Define server entrypoint (index.ts) and any additional server files to include
+const serverEntrypoint = path.resolve("src/index.ts");
+
+// Server-side build configuration
+const serverConfig: BuildConfig & { compile?: boolean, bytecode?: boolean } = {
+  entrypoints: [serverEntrypoint],
+  minify: cliConfig.minify ?? true,
+  target: "bun",
+  sourcemap: cliConfig.sourceMap || "linked",
+  // For standalone executables
+  compile: cliConfig.compile,
+  bytecode: cliConfig.bytecode,
+  // Use outfile for executables, outdir otherwise
+  ...(cliConfig.compile 
+    ? { outfile: path.join(outdir, "server") } 
+    : { outdir }
+  ),
+};
+
+// Build server
+const serverResult = await build(serverConfig);
 
 // Print the results
 const end = performance.now();
 
-const outputTable = result.outputs.map(output => ({
+console.log("\n📊 Client-side build results:");
+const clientOutputTable = clientResult.outputs.map(output => ({
   "File": path.relative(process.cwd(), output.path),
   "Type": output.kind,
   "Size": formatFileSize(output.size),
 }));
+console.table(clientOutputTable);
 
-console.table(outputTable);
+console.log("\n📊 Server-side build results:");
+const serverOutputTable = serverResult.outputs.map(output => ({
+  "File": path.relative(process.cwd(), output.path),
+  "Type": output.kind,
+  "Size": formatFileSize(output.size),
+}));
+console.table(serverOutputTable);
+
 const buildTime = (end - start).toFixed(2);
-
-console.log(`\n✅ Build completed in ${buildTime}ms\n`);
+console.log(`\n✅ Production build completed in ${buildTime}ms\n`);
+console.log(`🚀 To run the production server: ${cliConfig.compile ? './dist/server' : 'bun ./dist/index.js'}\n`);
