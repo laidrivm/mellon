@@ -9,9 +9,8 @@ import StoredSecrets from './StoredSecrets.tsx'
 import MasterPasswordForm from './MasterPasswordForm.tsx'
 import UnlockForm from './UnlockForm.tsx'
 import SignUpForm from './SignUpForm.tsx'
-import ConnectionManager from './ConnectionManager.tsx'
+import Header from './Header.tsx'
 import Footer from './Footer.tsx'
-import UuidManager from './UuidManager.tsx'
 
 import {createSecret, getAllSecrets} from '../services/secrets.ts'
 import {OnboardingStage, Secret} from '../types.ts'
@@ -144,8 +143,7 @@ export default function App(): JSX.Element {
 
   return (
     <>
-      <ConnectionManager />
-      <UuidManager />
+      <Header />
       <Layout>
         {locked ?
           <UnlockForm masterPassword={masterPassword} setLocked={setLocked} />

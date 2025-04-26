@@ -2,8 +2,8 @@ import React, {ReactNode} from 'react'
 
 export default function Footer(): ReactNode {
   return (
-    <footer className='mt-12 flex justify-center'>
-      <p className='text-md leading-6 font-light'>
+    <footer className='container mx-auto mt-16 flex w-full max-w-md items-center justify-center border-t-1 border-black bg-white font-light text-black antialiased md:subpixel-antialiased'>
+      <p className='text-md leading-6'>
         Prototyped by{' '}
         <a className='underline' href='https://laidrivm.com/'>
           Vladimir Lazarev
@@ -16,7 +16,7 @@ export default function Footer(): ReactNode {
         <br />
         Check out the{' '}
         <a className='underline' href='https://github.com/laidrivm/mellon'>
-          Source code
+          source code
         </a>
         . Don’t store anything meaningful!
       </p>

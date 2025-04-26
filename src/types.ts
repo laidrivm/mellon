@@ -47,14 +47,19 @@ export interface MasterPassword {
 
 /**
  * Connection status states
- * @type ConnectionStatus
+ * @type ConnectionState
  */
-export type ConnectionStatus =
-  | 'checking'
+export type ConnectionState =
+  | 'connecting'
   | 'connected'
-  | 'error'
-  | 'no_credentials'
+  | 'local_only'
   | 'offline'
+
+/**
+ * User status states
+ * @type UserState
+ */
+export type UserState = 'loading' | 'no_uuid' | 'has_uuid' | 'has_email'
 
 /**
  * Response from remote services

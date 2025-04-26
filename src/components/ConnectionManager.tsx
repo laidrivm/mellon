@@ -1,8 +1,8 @@
 import React from 'react'
 
 import {stopSync, setupRemoteConnection} from '../services/pouchDB.ts'
-import {getUserCredentials, isAuthenticated} from '../services/users.ts'
-import {ConnectionStatus} from '../types.ts'
+import {getUserCredentials} from '../services/users.ts'
+import {ConnectionState} from '../types.ts'
 
 /**
  * Custom hook to track online status
@@ -28,105 +28,120 @@ function useOnlineStatus(): boolean {
 }
 
 /**
- * Custom hook to track connection status with remote database
- * @returns {ConnectionStatus} Current connection status
- */
-function useConnectionStatus(): ConnectionStatus {
-  const [connectionStatus, setConnectionStatus] =
-    React.useState<ConnectionStatus>('checking')
-
-  React.useEffect(() => {
-    let isMounted = true
-
-    const checkConnection = async () => {
-      if (!isMounted) return
-
-      setConnectionStatus('checking')
-
-      try {
-        // First check if user is authenticated
-        const auth = await isAuthenticated()
-
-        if (!auth) {
-          setConnectionStatus('no_credentials')
-          return
-        }
-
-        // Get credentials and try to establish connection
-        const credentials = await getUserCredentials()
-
-        if (!credentials) {
-          setConnectionStatus('no_credentials')
-          return
-        }
-
-        const result = await setupRemoteConnection(credentials)
-
-        if (result.success) {
-          setConnectionStatus('connected')
-        } else {
-          setConnectionStatus('error')
-        }
-      } catch (error) {
-        console.error('Connection check failed:', error)
-        setConnectionStatus('error')
-      }
-    }
-
-    // Check connection immediately and then every minute
-    checkConnection()
-    const interval = setInterval(checkConnection, 60 * 1000)
-
-    return () => {
-      isMounted = false
-      clearInterval(interval)
-    }
-  }, [])
-
-  return connectionStatus
-}
-
-/**
- * ConnectionManager component
+ * ConnectionManager component to handle connection states with remote database
  * @returns {JSX.Element} ConnectionManager component
  */
-export default function ConnectionManager(): JSX.Element {
+export default function ConnectionManager({
+  connectionState,
+  setConnectionState
+}: {
+  connectionState: ConnectionState
+  setConnectionState: (connectionState: ConnectionState) => void
+}): JSX.Element {
   const isOnline = useOnlineStatus()
-  const connectionStatus = useConnectionStatus()
-  const isConnected = connectionStatus === 'connected'
+  const [retryCount, setRetryCount] = React.useState(0)
+  const retryTimeoutRef = React.useRef<NodeJS.Timeout | null>(null)
+
+  const checkConnection = React.useCallback(async () => {
+    if (!isOnline) {
+      setConnectionState('offline')
+      return
+    }
+
+    try {
+      setConnectionState('connecting')
+
+      // Get credentials and try to establish connection
+      const credentials = await getUserCredentials()
+      if (!credentials) {
+        setConnectionState('local_only')
+        console.log('No credentials found, working in local-only mode')
+        return
+      }
+
+      const result = await setupRemoteConnection(credentials)
+
+      if (result.success) {
+        setConnectionState('connected')
+        setRetryCount(0)
+      } else {
+        console.error('Failed to connect to remote database:', result.error)
+        setConnectionState('local_only')
+        scheduleRetry()
+      }
+    } catch (error) {
+      console.error('Connection check failed:', error)
+      setConnectionState('local_only')
+      scheduleRetry()
+    }
+  }, [isOnline])
+
+  const scheduleRetry = React.useCallback(() => {
+    if (retryTimeoutRef.current) {
+      clearTimeout(retryTimeoutRef.current)
+    }
+
+    // Progressive backoff: 1s, 2s, 4s, ... 64s max
+    const delay = Math.min(1000 * Math.pow(2, retryCount), 64 * 1000)
+
+    console.log(`Scheduling connection retry in ${delay / 1000} seconds`)
+
+    retryTimeoutRef.current = setTimeout(() => {
+      setRetryCount((prev) => prev + 1)
+      checkConnection()
+    }, delay)
+  }, [retryCount, checkConnection])
 
   React.useEffect(() => {
-    if (isOnline && isConnected) {
-      console.log('Connection restored, syncing data...')
-    } else {
-      console.log('Connection lost, working offline...')
+    checkConnection()
+
+    // Clean up any pending retry on unmount
+    return () => {
+      if (retryTimeoutRef.current) {
+        clearTimeout(retryTimeoutRef.current)
+      }
+    }
+  }, [isOnline, checkConnection])
+
+  React.useEffect(() => {
+    if (isOnline && connectionState === 'connected') {
+      console.log('Connection established, syncing data...')
+    } else if (!isOnline) {
+      console.log('Device offline, working locally...')
       stopSync()
     }
-  }, [isOnline, isConnected])
+  }, [isOnline, connectionState])
 
   const getStatusMessage = (): string => {
-    if (!isOnline) return 'Offline — Working locally'
-
-    switch (connectionStatus) {
+    switch (connectionState) {
+      case 'offline':
+        return 'Offline — Working locally'
+      case 'connecting':
+        return 'Connecting to database...'
       case 'connected':
         return 'Online — Changes will sync'
-      case 'checking':
-        return 'Checking connection...'
-      case 'no_credentials':
-        return 'Online — Local only (no account)'
-      case 'error':
-        return 'Online — Sync error (retrying)'
+      case 'local_only':
+        return 'Online — Local only (retrying)'
       default:
-        return 'Connection status unknown'
+        return 'Unknown connection state'
     }
   }
 
   return (
-    <div className='connection-status' role='status' aria-live='polite'>
+    <div
+      className='connection-status flex items-center'
+      role='status'
+      aria-live='polite'
+    >
       <span
-        className={`status-indicator ${isOnline ? 'online' : 'offline'}`}
+        className={`mr-2 h-2 w-2 rounded-full ${
+          connectionState === 'offline' ? 'bg-gray-500'
+          : connectionState === 'connecting' ? 'animate-pulse bg-yellow-500'
+          : connectionState === 'connected' ? 'bg-green-500'
+          : 'bg-red-500'
+        }`}
       ></span>
-      {getStatusMessage()}
+      <span>{getStatusMessage()}</span>
     </div>
   )
 }
