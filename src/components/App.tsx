@@ -171,7 +171,7 @@ export default function App(): JSX.Element {
   }
 
   return (
-    <>
+    <div className='flex flex-col items-center bg-white px-4 font-light text-black antialiased md:subpixel-antialiased'>
       {!locked && <Header email={email} />}
       <Layout>
         {locked ?
@@ -197,6 +197,6 @@ export default function App(): JSX.Element {
         }
       </Layout>
       <Footer />
-    </>
+    </div>
   )
 }

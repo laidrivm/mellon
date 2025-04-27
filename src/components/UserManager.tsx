@@ -106,7 +106,7 @@ export default function UuidManager({
       )}
       {userState === 'no_uuid' && <span>Anonymous</span>}
       {userState === 'has_uuid' && <span>ID ...{uuid.slice(-5)}</span>}
-      {userState === 'has_email' && <span>{email}</span>}
+      {userState === 'has_email' && <span>{email.slice(0, 8)}...</span>}
     </div>
   )
 }
