@@ -135,9 +135,9 @@ export default function ConnectionManager({
     >
       <span
         className={`mr-2 h-2 w-2 rounded-full ${
-          connectionState === 'offline' ? 'bg-gray-500'
-          : connectionState === 'connecting' ? 'animate-pulse bg-yellow-500'
-          : connectionState === 'connected' ? 'bg-green-500'
+          connectionState === 'offline' ? 'border border-black bg-white'
+          : connectionState === 'connecting' ? 'animate-pulse bg-gray-500'
+          : connectionState === 'connected' ? 'bg-black'
           : 'bg-red-500'
         }`}
       ></span>

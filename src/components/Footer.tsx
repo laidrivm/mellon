@@ -2,23 +2,23 @@ import React, {ReactNode} from 'react'
 
 export default function Footer(): ReactNode {
   return (
-    <footer className='container mx-auto mt-16 flex w-full max-w-md items-center justify-center border-t-1 border-black bg-white font-light text-black antialiased md:subpixel-antialiased'>
+    <footer className='container mx-auto mt-20 flex max-w-md items-center justify-center space-y-1 text-center font-light text-black antialiased md:subpixel-antialiased'>
       <p className='text-md leading-6'>
-        Prototyped by{' '}
-        <a className='underline' href='https://laidrivm.com/'>
+        Built by{' '}
+        <a href='#' className='underline hover:text-gray-500'>
           Vladimir Lazarev
         </a>
         ,{' '}
-        <a className='underline' href='https://sofiaazzheurova.site/'>
+        <a href='#' className='underline hover:text-gray-500'>
           Sofia Azzheurova
         </a>{' '}
-        and Evgenii Antonenkov for the IAMPEI application № 1561.
-        <br />
-        Check out the{' '}
-        <a className='underline' href='https://github.com/laidrivm/mellon'>
-          source code
+        and Evgenii Antonenkov for IAMPEI Application №1561.{' '}
+        <a href='#' className='underline hover:text-gray-500'>
+          Source Code
         </a>
-        . Don’t store anything meaningful!
+        .
+        <br />
+        Don’t store anything meaningful!
       </p>
     </footer>
   )

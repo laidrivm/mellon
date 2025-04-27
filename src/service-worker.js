@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mellon-cache-v1'
+const CACHE_NAME = 'mellon-cache-v2'
 const STATIC_URLS_TO_CACHE = ['/', '/service-worker.js']
 const NEVER_CACHE = ['/api/generate-uuid']
 
