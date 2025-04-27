@@ -9,7 +9,7 @@ console.log(logo)
  * Header component containing logo, connection manager, and user manager
  * @returns {JSX.Element} Header component
  */
-export default function Header(): JSX.Element {
+export default function Header({email}: {email: string}): JSX.Element {
   const [connectionState, setConnectionState] =
     React.useState<ConnectionState>('connecting')
 
@@ -26,7 +26,7 @@ export default function Header(): JSX.Element {
         />
       </div>
 
-      <UserManager setConnectionState={setConnectionState} />
+      <UserManager email={email} setConnectionState={setConnectionState} />
     </header>
   )
 }

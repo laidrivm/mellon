@@ -4,15 +4,15 @@ import Input from './Input.tsx'
 import Button from './Button.tsx'
 
 export default function SignUpForm({
-  setEmail
+  addEmail
 }: {
-  setEmail: (email: string) => void
+  addEmail: (email: string) => void
 }): ReactNode {
   const [emailInput, setEmailInput] = React.useState('')
 
   function handleEmail(event): void {
     event.preventDefault()
-    setEmail(emailInput)
+    addEmail(emailInput)
   }
 
   return (

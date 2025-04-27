@@ -13,9 +13,15 @@ import Header from './Header.tsx'
 import Footer from './Footer.tsx'
 
 import {createSecret, getAllSecrets} from '../services/secrets.ts'
+import {
+  storeMasterPassword,
+  hasMasterPassword,
+  getEmail,
+  createUserAccount
+} from '../services/users.ts'
 import {OnboardingStage, Secret} from '../types.ts'
 
-const INACTIVITY_TIMEOUT = 5 * 60 * 1000
+const INACTIVITY_TIMEOUT = 2 * 60 * 1000
 
 /**
  * Main application component
@@ -24,9 +30,6 @@ const INACTIVITY_TIMEOUT = 5 * 60 * 1000
 export default function App(): JSX.Element {
   const [secrets, setSecrets] = React.useState<Secret[]>([])
   const [onboarding, setOnboarding] = React.useState<OnboardingStage>('secret')
-  const [masterPassword, setMasterPassword] = React.useState<string | null>(
-    null
-  )
   const [showSecretForm, setShowSecretForm] = React.useState<boolean>(false)
   const [email, setEmail] = React.useState<string | null>(null)
   const [locked, setLocked] = React.useState<boolean>(false)
@@ -41,7 +44,9 @@ export default function App(): JSX.Element {
       window.clearTimeout(lockTimer)
     }
 
-    if (masterPassword && !locked) {
+    console.log(`resetLockTimer, onboarding: ${onboarding}, locked: ${locked}`)
+
+    if ((onboarding === 'sign' || onboarding === 'finished') && !locked) {
       const timerId = window.setTimeout(() => {
         console.log('Inactivity timeout - locking application')
         setLocked(true)
@@ -55,8 +60,6 @@ export default function App(): JSX.Element {
    * Handle user activity to reset lock timer
    */
   React.useEffect(() => {
-    if (!masterPassword) return
-
     // Reset timer on mount
     resetLockTimer()
 
@@ -81,32 +84,16 @@ export default function App(): JSX.Element {
         document.removeEventListener(event, handleUserActivity)
       })
     }
-  }, [masterPassword, locked]) // Only run when these values change
+  }, [locked, onboarding]) // Only run when these values change
 
   /**
    * Update onboarding stage based on state changes
    */
   React.useEffect(() => {
-    switch (onboarding) {
-      case 'secret':
-        if (secrets.length > 0) {
-          setOnboarding('master')
-        }
-        break
-      case 'master':
-        if (masterPassword) {
-          setOnboarding('sign')
-        }
-        break
-      case 'sign':
-        if (email) {
-          setOnboarding('finished')
-        }
-        break
-      default:
-        break
+    if (onboarding === 'secret' && secrets.length > 0) {
+      setOnboarding('master')
     }
-  }, [secrets.length, masterPassword, email, onboarding])
+  }, [secrets.length])
 
   /**
    * Load secrets from database on mount
@@ -124,10 +111,41 @@ export default function App(): JSX.Element {
   }, [])
 
   /**
+   * Load Master Password from database on mount
+   */
+  React.useEffect(() => {
+    async function loadMasterPassword() {
+      const result = await hasMasterPassword()
+
+      if (result.success) {
+        setOnboarding('sign')
+      }
+    }
+
+    loadMasterPassword()
+  }, [])
+
+  /**
+   * Load Master Password from database on mount
+   */
+  React.useEffect(() => {
+    async function loadEmail() {
+      const result = await getEmail()
+
+      if (result.success && result.data.email) {
+        setOnboarding('finished')
+        setEmail(result.data.email)
+      }
+    }
+
+    loadEmail()
+  }, [])
+
+  /**
    * Handle adding a new secret
    * @param {Secret} secret - New secret to add
    */
-  const handleAddSecret = async (secret: Secret): Promise<void> => {
+  async function handleAddSecret(secret: Secret): Promise<void> {
     setSecrets((prevSecrets) => [secret, ...prevSecrets])
 
     const result = await createSecret(secret)
@@ -141,16 +159,27 @@ export default function App(): JSX.Element {
     }
   }
 
+  async function handleMasterPassword(masterPassword: MasterPassword) {
+    await storeMasterPassword(masterPassword)
+    setOnboarding('sign')
+  }
+
+  async function handleEmail(email: string) {
+    await createUserAccount(email)
+    setOnboarding('finished')
+    setEmail(email)
+  }
+
   return (
     <>
-      <Header />
+      {!locked && <Header email={email} />}
       <Layout>
         {locked ?
-          <UnlockForm masterPassword={masterPassword} setLocked={setLocked} />
+          <UnlockForm setLocked={setLocked} />
         : <>
-            {onboarding === 'sign' && <SignUpForm setEmail={setEmail} />}
+            {onboarding === 'sign' && <SignUpForm addEmail={handleEmail} />}
             {onboarding === 'master' && (
-              <MasterPasswordForm setMasterPassword={setMasterPassword} />
+              <MasterPasswordForm addMasterPassword={handleMasterPassword} />
             )}
             {(onboarding === 'secret' || showSecretForm) && (
               <AddSecretForm

@@ -1,5 +1,11 @@
 import {localUserDB} from '../services/pouchDB.ts'
 import {DocType, UserCredentials, ServiceResponse} from '../types.ts'
+import {
+  encryptField,
+  decryptField,
+  getEncryptionKey
+} from '../services/encryption.ts'
+import {MasterPassword} from '../types.ts'
 
 /**
  * Retrieve user credentials from local database
@@ -11,6 +17,7 @@ export async function getUserCredentials(): Promise<UserCredentials | null> {
     return {
       uuid: doc.uuid,
       password: doc.password,
+      email: doc.email,
       dbName: doc.dbName,
       createdAt: doc.createdAt
     }
@@ -40,7 +47,7 @@ export async function createUserCredentials(
     }
 
     await localUserDB.put({
-      _id: DocType.USER_CREDENTIALS,
+      _id: `${DocType.USER_CREDENTIALS}`,
       uuid,
       password,
       dbName,
@@ -76,26 +83,22 @@ export async function isAuthenticated(): Promise<boolean> {
  * @returns {Promise<ServiceResponse>} Operation result
  */
 export async function storeMasterPassword(
-  password: string,
-  hint?: string
+  masterPassword: MasterPassword
 ): Promise<ServiceResponse> {
+  const password = masterPassword.password
+  const hint = masterPassword.hint || 'Hint has never been set'
   try {
-    if (!password || password.length < 8) {
-      return {
-        success: false,
-        message: 'Password must be at least 8 characters long'
-      }
-    }
+    const encryptionKey = await getEncryptionKey()
+    const encryptedPassword = await encryptField(password, encryptionKey)
 
-    await localUserDB.put({
-      _id: DocType.MASTER_PASSWORD,
-      // TODO: Hash master password
-      password,
+    const result = await localUserDB.put({
+      _id: `${DocType.MASTER_PASSWORD}`,
+      password: encryptedPassword,
       hint,
       createdAt: new Date().toISOString()
     })
 
-    return {success: true}
+    return {success: true, data: result}
   } catch (error) {
     console.error('Error storing master password:', error)
     return {
@@ -112,12 +115,55 @@ export async function storeMasterPassword(
  */
 export async function verifyMasterPassword(password: string): Promise<boolean> {
   try {
-    const doc = await localUserDB.get(DocType.MASTER_PASSWORD)
-    // TODO: Maybe it'll require to rewrite this comparision
-    return doc.password === password
+    const doc = await localUserDB.get(`${DocType.MASTER_PASSWORD}`)
+    const encryptionKey = await getEncryptionKey()
+    const decryptedPassword = await decryptField(doc.password, encryptionKey)
+
+    return decryptedPassword === password
   } catch (error) {
     console.error('Error verifying master password:', error)
     return false
+  }
+}
+
+/**
+ * Check if master password is stored in the database
+ * @returns {Promise<boolean>} Return true when set
+ */
+export async function hasMasterPassword(): Promise<boolean> {
+  try {
+    const doc = await localUserDB.get(`${DocType.MASTER_PASSWORD}`)
+
+    return {
+      success: doc.password ? true : false
+    }
+  } catch (error) {
+    console.error('Error getting master password:', error)
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : String(error)
+    }
+  }
+}
+
+/**
+ * Get master password hint from the database
+ * @returns {Promise<string>} Return hint for master password
+ */
+export async function getMasterPasswordHint(): Promise<string> {
+  try {
+    const doc = await localUserDB.get(`${DocType.MASTER_PASSWORD}`)
+
+    return {
+      success: true,
+      data: {hint: doc.hint}
+    }
+  } catch (error) {
+    console.error('Error getting master password:', error)
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : String(error)
+    }
   }
 }
 
@@ -144,13 +190,39 @@ export async function createUserAccount(
       return {success: false, message: 'Invalid email address'}
     }
 
-    // TODO: Actually store email and create non-anonumous user
+    const currentCreds = await localUserDB.get(DocType.USER_CREDENTIALS)
+
+    const updatedCreds = {
+      ...currentCreds,
+      email,
+      updatedAt: new Date().toISOString()
+    }
+
+    const result = await localUserDB.put(updatedCreds)
+
     return {
       success: true,
-      message: 'Account created successfully'
+      data: result
     }
   } catch (error) {
     console.error('Error creating user account:', error)
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : String(error)
+    }
+  }
+}
+
+export async function getEmail(): Promise<ServiceResponse> {
+  try {
+    const doc = await localUserDB.get(DocType.USER_CREDENTIALS)
+
+    return {
+      success: true,
+      data: {email: doc.email}
+    }
+  } catch (error) {
+    console.error('Error getting email:', error)
     return {
       success: false,
       error: error instanceof Error ? error.message : String(error)

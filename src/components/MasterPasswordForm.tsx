@@ -4,19 +4,19 @@ import InputNewPassword from './InputNewPassword.tsx'
 import InputTextArea from './InputTextArea.tsx'
 import Button from './Button.tsx'
 
-import type {Secret} from '../types.ts'
+import {MasterPassword} from '../types.ts'
 
 export default function MasterPasswordForm({
-  setMasterPassword
+  addMasterPassword
 }: {
-  setMasterPassword: (secret: Secret) => void
+  addMasterPassword: (masterPassword: MasterPassword) => void
 }): ReactNode {
   const [password, setPassword] = React.useState('')
   const [hint, setHint] = React.useState('')
 
   function handleMasterPassword(event): void {
     event.preventDefault()
-    setMasterPassword({password, hint})
+    addMasterPassword({password, hint})
   }
 
   return (

@@ -10,12 +10,13 @@ import type {UserState, ConnectionState} from '../types.ts'
  * @returns {JSX.Element} UserManager component
  */
 export default function UuidManager({
+  email,
   setConnectionState
 }: {
+  email: string
   setConnectionState: (connectionState: ConnectionState) => void
 }): JSX.Element {
   const [uuid, setUuid] = React.useState<string | null>(null)
-  const [email, setEmail] = React.useState<string | null>(null)
   const [userState, setUserState] = React.useState<UserState>('loading')
 
   async function requestNewUuid() {
@@ -74,13 +75,12 @@ export default function UuidManager({
           setUuid(doc.uuid)
           setUserState('has_uuid')
 
-          if (doc.email) {
-            setEmail(doc.email)
+          if (email || doc.email) {
             setUserState('has_email')
           }
         } else {
           if (!isMounted) return
-          await requestNewUuid() // missing
+          await requestNewUuid()
         }
       } catch (error) {
         console.error('Error in user setup:', error)
@@ -94,7 +94,7 @@ export default function UuidManager({
     return () => {
       isMounted = false
     }
-  }, [])
+  }, [email])
 
   return (
     <div className='user-status flex items-center'>
@@ -110,45 +110,3 @@ export default function UuidManager({
     </div>
   )
 }
-
-/*
-
-  if (isInitializing) {
-    return (
-      <div className="user-status flex items-center">
-        
-      </div>
-    );
-  }
-  
-  return (
-    <div className="user-status">
-      {userState === 'no_uuid' ? (
-        <button 
-          onClick={requestNewUuid}
-          className="text-sm px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
-        >
-          Create Account
-        </button>
-      ) : userState === 'has_uuid' ? (
-        <div className="flex items-center">
-          <div className="flex items-center">
-            <div className="h-4 w-4 rounded-full bg-blue-500 mr-1"></div>
-            <span className="text-sm mr-2">Anonymous</span>
-          </div>
-          <button 
-            onClick={handleAddEmail}
-            className="text-sm px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
-          >
-            Add Email
-          </button>
-        </div>
-      ) : (
-        <div className="flex items-center">
-          <div className="h-4 w-4 rounded-full bg-green-500 mr-1"></div>
-          <span className="text-sm">{email}</span>
-        </div>
-      )}
-    </div>
-  );
-*/
