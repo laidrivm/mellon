@@ -138,6 +138,11 @@ export async function hasMasterPassword(): Promise<boolean> {
       success: doc.password ? true : false
     }
   } catch (error) {
+    if (error.name === 'not_found') {
+      return {
+        success: false
+      }
+    }
     console.error('Error getting master password:', error)
     return {
       success: false,
@@ -222,6 +227,11 @@ export async function getEmail(): Promise<ServiceResponse> {
       data: {email: doc.email}
     }
   } catch (error) {
+    if (error.name === 'not_found') {
+      return {
+        success: false
+      }
+    }
     console.error('Error getting email:', error)
     return {
       success: false,
