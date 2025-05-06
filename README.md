@@ -31,7 +31,12 @@ To start a development server:
 
 ```bash
 cp .env.example .env
-bun db
+docker run -d --name couchdb -p 5984:5984 -e COUCHDB_USER=admin -e COUCHDB_PASSWORD=password couchdb:latest
+docker exec couchdb curl -X PUT http://admin:password@localhost:5984/_users
+docker exec couchdb curl -X PUT http://admin:password@localhost:5984/_node/nonode@nohost/_config/httpd/enable_cors -d '"true"'
+docker exec couchdb curl -X PUT http://admin:password@localhost:5984/_node/nonode@nohost/_config/cors/origins -d '"*"'
+docker exec couchdb curl -X PUT http://admin:password@localhost:5984/_node/nonode@nohost/_config/cors/credentials -d '"true"'
+docker restart couchdb
 bun dev
 ```
 

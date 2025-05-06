@@ -8,7 +8,6 @@
   "scripts": {
     "format": "prettier --write 'src/**/*.{css,html,js,ts,tsx}'",
     "lint": "bun eslint --fix",
-    "db": "docker run -d -p 5984:5984 -e COUCHDB_USER=admin -e COUCHDB_PASSWORD=password couchdb:latest",
     "dev": "bun run format && bun run lint && BUN_RUNTIME_TRANSPILER_CACHE_PATH=0 bun --hot --no-clear-screen src/index.ts",
     "start": "NODE_ENV=production bun src/index.ts",
     "build": "bun run build.ts"
