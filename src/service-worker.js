@@ -233,12 +233,4 @@ self.addEventListener('message', (event) => {
       })()
     )
   }
-
-  // Handle "PRECACHE_ASSETS" message for first visit
-  if (event.data && event.data.type === 'PRECACHE_ASSETS') {
-    // Respond to confirm receipt
-    if (event.ports && event.ports[0]) {
-      event.ports[0].postMessage({success: true})
-    }
-  }
 })

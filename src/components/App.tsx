@@ -126,7 +126,7 @@ export default function App(): JSX.Element {
   }, [])
 
   /**
-   * Load Master Password from database on mount
+   * Load Email from database on mount
    */
   React.useEffect(() => {
     async function loadEmail() {
