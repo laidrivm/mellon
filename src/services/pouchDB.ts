@@ -1,5 +1,5 @@
 import PouchDB from 'pouchdb-browser'
-import {v7 as uuidv7} from 'uuid'
+import {uuidv7} from 'uuidv7'
 
 import {DbName, ServiceResponse, UserCredentials} from '../types'
 

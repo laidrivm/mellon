@@ -1,4 +1,4 @@
-import {v7 as uuidv7} from 'uuid'
+import {uuidv7} from 'uuidv7'
 import {
   createCouchDbUser,
   createUserRelatedCouchDb
