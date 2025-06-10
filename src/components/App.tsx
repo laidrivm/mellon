@@ -21,8 +21,9 @@ import {
 } from '../services/users.ts'
 import {OnboardingStage, Secret} from '../types.ts'
 
-const INACTIVITY_TIMEOUT = 2 * 6 * 1000
+const INACTIVITY_TIMEOUT = 2 * 60 * 1000 // 2 minutes in milliseconds
 const LOCKED_STORAGE_KEY = 'app_locked'
+const SESSION_STORAGE_KEY = 'app_session_active'
 
 /**
  * Main application component
@@ -33,10 +34,9 @@ export default function App(): JSX.Element {
   const [onboarding, setOnboarding] = React.useState<OnboardingStage>('secret')
   const [showSecretForm, setShowSecretForm] = React.useState<boolean>(false)
   const [email, setEmail] = React.useState<string | null>(null)
-  const [locked, setLocked] = React.useState<boolean>(() => {
-    // Initialize locked state from localStorage
-    return localStorage.getItem(LOCKED_STORAGE_KEY) === 'true'
-  })
+  const [locked, setLocked] = React.useState<boolean>(false) // Initialize as unlocked
+  const [isAuthenticationSetup, setIsAuthenticationSetup] =
+    React.useState<boolean>(false)
 
   const lockTimerRef = React.useRef<number | null>(null)
 
@@ -51,20 +51,24 @@ export default function App(): JSX.Element {
   }, [])
 
   /**
-   * Start or restart the inactivity timer
+   * Start/restart the inactivity timer
    */
   const startLockTimer = React.useCallback(() => {
     clearLockTimer()
 
-    // Only set timer if user is authenticated and not locked
-    if ((onboarding === 'sign' || onboarding === 'finished') && !locked) {
+    // Only set timer if user has authentication setup and is in sign or finished stage
+    if (
+      isAuthenticationSetup &&
+      (onboarding === 'sign' || onboarding === 'finished') &&
+      !locked
+    ) {
       console.log('Starting inactivity timer')
       lockTimerRef.current = window.setTimeout(() => {
         console.log('Inactivity timeout - locking application')
         setLocked(true)
       }, INACTIVITY_TIMEOUT)
     }
-  }, [onboarding, locked, clearLockTimer])
+  }, [onboarding, locked, isAuthenticationSetup, clearLockTimer])
 
   /**
    * Handle user activity to reset lock timer
@@ -78,23 +82,32 @@ export default function App(): JSX.Element {
    */
   const handleUnlock = React.useCallback(() => {
     setLocked(false)
+    // Mark session as active when unlocking
+    sessionStorage.setItem(SESSION_STORAGE_KEY, 'true')
   }, [])
 
   /**
-   * Sync locked state with localStorage
+   * Sync locked state with localStorage and handle session tracking
    */
   React.useEffect(() => {
+    // Only manage lock state if authentication is setup
+    if (!isAuthenticationSetup) {
+      return
+    }
+
     if (locked) {
       localStorage.setItem(LOCKED_STORAGE_KEY, 'true')
       clearLockTimer() // Clear timer when locked
     } else {
       localStorage.removeItem(LOCKED_STORAGE_KEY)
+      // Mark session as active when unlocked
+      sessionStorage.setItem(SESSION_STORAGE_KEY, 'true')
       startLockTimer() // Start timer when unlocked
     }
-  }, [locked, clearLockTimer, startLockTimer])
+  }, [locked, isAuthenticationSetup, clearLockTimer, startLockTimer])
 
   /**
-   * Set up user activity listeners
+   * Set up user activity listeners and session management
    */
   React.useEffect(() => {
     const activityEvents = [
@@ -105,6 +118,11 @@ export default function App(): JSX.Element {
       'mousemove'
     ]
 
+    // Mark session as active on initial load if not locked
+    if (!locked) {
+      sessionStorage.setItem(SESSION_STORAGE_KEY, 'true')
+    }
+
     // Add event listeners
     activityEvents.forEach((event) => {
       document.addEventListener(event, handleUserActivity, {passive: true})
@@ -113,14 +131,22 @@ export default function App(): JSX.Element {
     // Start initial timer
     startLockTimer()
 
+    // Handle page unload - clear session storage to force lock on next load
+    const handleBeforeUnload = () => {
+      sessionStorage.removeItem(SESSION_STORAGE_KEY)
+    }
+
+    window.addEventListener('beforeunload', handleBeforeUnload)
+
     // Cleanup function
     return () => {
       activityEvents.forEach((event) => {
         document.removeEventListener(event, handleUserActivity)
       })
+      window.removeEventListener('beforeunload', handleBeforeUnload)
       clearLockTimer()
     }
-  }, [handleUserActivity, startLockTimer, clearLockTimer])
+  }, [handleUserActivity, startLockTimer, clearLockTimer, locked])
 
   /**
    * Update onboarding stage based on secrets count
@@ -146,14 +172,32 @@ export default function App(): JSX.Element {
         // Check if master password exists
         const masterPasswordResult = await hasMasterPassword()
         if (masterPasswordResult.success) {
-          setOnboarding('sign')
-        }
+          setIsAuthenticationSetup(true)
 
-        // Load email
-        const emailResult = await getEmail()
-        if (emailResult.success && emailResult.data.email) {
-          setOnboarding('finished')
-          setEmail(emailResult.data.email)
+          // Load email to determine correct onboarding stage
+          const emailResult = await getEmail()
+          if (emailResult.success && emailResult.data.email) {
+            setOnboarding('finished')
+            setEmail(emailResult.data.email)
+          } else {
+            setOnboarding('sign')
+          }
+
+          // Check if app should be locked on page load
+          const wasSessionActive =
+            sessionStorage.getItem(SESSION_STORAGE_KEY) === 'true'
+          const wasLocked = localStorage.getItem(LOCKED_STORAGE_KEY) === 'true'
+
+          // Lock if session wasn't active (page refresh/reopen) or was previously locked
+          if (!wasSessionActive || wasLocked) {
+            setLocked(true)
+          }
+        } else {
+          // No master password yet, load email anyway to check current state
+          const emailResult = await getEmail()
+          if (emailResult.success && emailResult.data.email) {
+            setEmail(emailResult.data.email)
+          }
         }
       } catch (error) {
         console.error('Error loading initial data:', error)
@@ -197,7 +241,16 @@ export default function App(): JSX.Element {
     async (masterPassword: string) => {
       try {
         await storeMasterPassword(masterPassword)
-        setOnboarding('sign')
+        setIsAuthenticationSetup(true)
+
+        // Check if email already exists to determine next stage
+        const emailResult = await getEmail()
+        if (emailResult.success && emailResult.data.email) {
+          setOnboarding('finished')
+          setEmail(emailResult.data.email)
+        } else {
+          setOnboarding('sign')
+        }
       } catch (error) {
         console.error('Error storing master password:', error)
         // TODO: Show error notification to user
