@@ -21,7 +21,8 @@ import {
 } from '../services/users.ts'
 import {OnboardingStage, Secret} from '../types.ts'
 
-const INACTIVITY_TIMEOUT = 2 * 60 * 1000
+const INACTIVITY_TIMEOUT = 2 * 6 * 1000
+const LOCKED_STORAGE_KEY = 'app_locked'
 
 /**
  * Main application component
@@ -32,150 +33,199 @@ export default function App(): JSX.Element {
   const [onboarding, setOnboarding] = React.useState<OnboardingStage>('secret')
   const [showSecretForm, setShowSecretForm] = React.useState<boolean>(false)
   const [email, setEmail] = React.useState<string | null>(null)
-  const [locked, setLocked] = React.useState<boolean>(false)
-  const [lockTimer, setLockTimer] = React.useState<number | null>(null)
+  const [locked, setLocked] = React.useState<boolean>(() => {
+    // Initialize locked state from localStorage
+    return localStorage.getItem(LOCKED_STORAGE_KEY) === 'true'
+  })
+
+  const lockTimerRef = React.useRef<number | null>(null)
 
   /**
-   * Reset inactivity timer
+   * Clear existing lock timer
    */
-  const resetLockTimer = () => {
-    // Clear existing timer
-    if (lockTimer) {
-      window.clearTimeout(lockTimer)
+  const clearLockTimer = React.useCallback(() => {
+    if (lockTimerRef.current) {
+      window.clearTimeout(lockTimerRef.current)
+      lockTimerRef.current = null
     }
+  }, [])
 
-    console.log(`resetLockTimer, onboarding: ${onboarding}, locked: ${locked}`)
+  /**
+   * Start or restart the inactivity timer
+   */
+  const startLockTimer = React.useCallback(() => {
+    clearLockTimer()
 
+    // Only set timer if user is authenticated and not locked
     if ((onboarding === 'sign' || onboarding === 'finished') && !locked) {
-      const timerId = window.setTimeout(() => {
+      console.log('Starting inactivity timer')
+      lockTimerRef.current = window.setTimeout(() => {
         console.log('Inactivity timeout - locking application')
         setLocked(true)
       }, INACTIVITY_TIMEOUT)
-
-      setLockTimer(timerId)
     }
-  }
+  }, [onboarding, locked, clearLockTimer])
 
   /**
    * Handle user activity to reset lock timer
    */
+  const handleUserActivity = React.useCallback(() => {
+    startLockTimer()
+  }, [startLockTimer])
+
+  /**
+   * Handle unlocking the application
+   */
+  const handleUnlock = React.useCallback(() => {
+    setLocked(false)
+  }, [])
+
+  /**
+   * Sync locked state with localStorage
+   */
   React.useEffect(() => {
-    // Reset timer on mount
-    resetLockTimer()
-
-    // Event listeners for user activity
-    const activityEvents = ['mousedown', 'keypress', 'scroll', 'touchstart']
-
-    const handleUserActivity = () => {
-      resetLockTimer()
+    if (locked) {
+      localStorage.setItem(LOCKED_STORAGE_KEY, 'true')
+      clearLockTimer() // Clear timer when locked
+    } else {
+      localStorage.removeItem(LOCKED_STORAGE_KEY)
+      startLockTimer() // Start timer when unlocked
     }
+  }, [locked, clearLockTimer, startLockTimer])
 
+  /**
+   * Set up user activity listeners
+   */
+  React.useEffect(() => {
+    const activityEvents = [
+      'mousedown',
+      'keypress',
+      'scroll',
+      'touchstart',
+      'mousemove'
+    ]
+
+    // Add event listeners
     activityEvents.forEach((event) => {
-      document.addEventListener(event, handleUserActivity)
+      document.addEventListener(event, handleUserActivity, {passive: true})
     })
 
-    // Clean up
-    return () => {
-      if (lockTimer) {
-        window.clearTimeout(lockTimer)
-      }
+    // Start initial timer
+    startLockTimer()
 
+    // Cleanup function
+    return () => {
       activityEvents.forEach((event) => {
         document.removeEventListener(event, handleUserActivity)
       })
+      clearLockTimer()
     }
-  }, [locked, onboarding]) // Only run when these values change
+  }, [handleUserActivity, startLockTimer, clearLockTimer])
 
   /**
-   * Update onboarding stage based on state changes
+   * Update onboarding stage based on secrets count
    */
   React.useEffect(() => {
     if (onboarding === 'secret' && secrets.length > 0) {
       setOnboarding('master')
     }
-  }, [secrets.length])
+  }, [secrets.length, onboarding])
 
   /**
-   * Load secrets from database on mount
+   * Load initial data on mount
    */
   React.useEffect(() => {
-    async function loadInitialSecrets() {
-      const result = await getAllSecrets()
+    async function loadInitialData() {
+      try {
+        // Load secrets
+        const secretsResult = await getAllSecrets()
+        if (secretsResult.success && secretsResult.data) {
+          setSecrets(secretsResult.data)
+        }
 
-      if (result.success && result.data) {
-        setSecrets(result.data)
+        // Check if master password exists
+        const masterPasswordResult = await hasMasterPassword()
+        if (masterPasswordResult.success) {
+          setOnboarding('sign')
+        }
+
+        // Load email
+        const emailResult = await getEmail()
+        if (emailResult.success && emailResult.data.email) {
+          setOnboarding('finished')
+          setEmail(emailResult.data.email)
+        }
+      } catch (error) {
+        console.error('Error loading initial data:', error)
       }
     }
 
-    loadInitialSecrets()
-  }, [])
-
-  /**
-   * Load Master Password from database on mount
-   */
-  React.useEffect(() => {
-    async function loadMasterPassword() {
-      const result = await hasMasterPassword()
-
-      if (result.success) {
-        setOnboarding('sign')
-      }
-    }
-
-    loadMasterPassword()
-  }, [])
-
-  /**
-   * Load Email from database on mount
-   */
-  React.useEffect(() => {
-    async function loadEmail() {
-      const result = await getEmail()
-
-      if (result.success && result.data.email) {
-        setOnboarding('finished')
-        setEmail(result.data.email)
-      }
-    }
-
-    loadEmail()
+    loadInitialData()
   }, [])
 
   /**
    * Handle adding a new secret
    * @param {Secret} secret - New secret to add
    */
-  async function handleAddSecret(secret: Secret): Promise<void> {
-    setSecrets((prevSecrets) => [secret, ...prevSecrets])
+  const handleAddSecret = React.useCallback(
+    async (secret: Secret): Promise<void> => {
+      // Optimistically update UI
+      setSecrets((prevSecrets) => [secret, ...prevSecrets])
 
-    const result = await createSecret(secret)
+      try {
+        const result = await createSecret(secret)
 
-    if (!result.success) {
-      console.error('Failed to save secret:', result.error)
+        if (!result.success) {
+          console.error('Failed to save secret:', result.error)
+          // Revert optimistic update
+          setSecrets((prevSecrets) => prevSecrets.filter((s) => s !== secret))
+          // TODO: Show error notification to user
+        }
+      } catch (error) {
+        console.error('Error creating secret:', error)
+        // Revert optimistic update
+        setSecrets((prevSecrets) => prevSecrets.filter((s) => s !== secret))
+      }
+    },
+    []
+  )
 
-      setSecrets((prevSecrets) => prevSecrets.filter((s) => s !== secret))
+  /**
+   * Handle setting master password
+   */
+  const handleMasterPassword = React.useCallback(
+    async (masterPassword: string) => {
+      try {
+        await storeMasterPassword(masterPassword)
+        setOnboarding('sign')
+      } catch (error) {
+        console.error('Error storing master password:', error)
+        // TODO: Show error notification to user
+      }
+    },
+    []
+  )
 
+  /**
+   * Handle email signup
+   */
+  const handleEmail = React.useCallback(async (email: string) => {
+    try {
+      await createUserAccount(email)
+      setOnboarding('finished')
+      setEmail(email)
+    } catch (error) {
+      console.error('Error creating user account:', error)
       // TODO: Show error notification to user
     }
-  }
-
-  async function handleMasterPassword(masterPassword: MasterPassword) {
-    await storeMasterPassword(masterPassword)
-    setOnboarding('sign')
-  }
-
-  async function handleEmail(email: string) {
-    await createUserAccount(email)
-    setOnboarding('finished')
-    setEmail(email)
-  }
+  }, [])
 
   return (
     <div className='flex flex-col items-center bg-white px-4 font-light text-black antialiased md:subpixel-antialiased'>
       {!locked && <Header email={email} />}
       <Layout>
         {locked ?
-          <UnlockForm setLocked={setLocked} />
+          <UnlockForm setLocked={handleUnlock} />
         : <>
             {onboarding === 'sign' && <SignUpForm addEmail={handleEmail} />}
             {onboarding === 'master' && (
