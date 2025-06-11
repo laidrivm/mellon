@@ -69,6 +69,7 @@ export default function App(): JSX.Element {
         console.log('Inactivity timeout - locking application')
         setLocked(true)
         clearEncryptionCache() // Clear encryption cache when locking due to inactivity
+        setSecrets([]) // Clear secrets from state when locked
       }, INACTIVITY_TIMEOUT)
     }
   }, [onboarding, locked, isAuthenticationSetup, clearLockTimer])
@@ -91,6 +92,11 @@ export default function App(): JSX.Element {
           setLocked(false)
           // Mark session as active when unlocking
           sessionStorage.setItem(SESSION_STORAGE_KEY, 'true')
+          // Reload secrets now that encryption is available
+          const secretsResult = await getAllSecrets()
+          if (secretsResult.success && secretsResult.data) {
+            setSecrets(secretsResult.data)
+          }
         }
       } catch (error) {
         console.error('Error during unlock:', error)
@@ -112,6 +118,7 @@ export default function App(): JSX.Element {
       localStorage.setItem(LOCKED_STORAGE_KEY, 'true')
       clearLockTimer() // Clear timer when locked
       clearEncryptionCache() // Clear encryption cache when locking
+      setSecrets([]) // Clear secrets from state when locked
     } else {
       localStorage.removeItem(LOCKED_STORAGE_KEY)
       // Mark session as active when unlocked
@@ -251,7 +258,7 @@ export default function App(): JSX.Element {
         await storeMasterPassword(masterPassword)
         setIsAuthenticationSetup(true)
         setOnboarding('sign')
-        // TODO After setting master password, reload secrets since encryption is now available
+        // TODO After setting master password, reload secrets since encryption is now available?
       } catch (error) {
         console.error('Error storing master password:', error)
         // TODO: Show error notification to user
