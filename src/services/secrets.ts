@@ -225,3 +225,10 @@ export async function deleteSecret(id: string): Promise<ServiceResponse> {
     }
   }
 }
+
+export async function recryptSecrets(oldEncryptionKey, newEncryptionKey) {
+  console.log(`${oldEncryptionKey}, ${newEncryptionKey}`)
+  return new Promise((resolveInner) => {
+    setTimeout(resolveInner, 100)
+  })
+}

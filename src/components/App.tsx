@@ -82,30 +82,6 @@ export default function App(): JSX.Element {
   }, [startLockTimer])
 
   /**
-   * Handle unlocking the application
-   */
-  const handleUnlock = React.useCallback(
-    async (masterPasswordCandidate: string) => {
-      try {
-        const result = await verifyMasterPassword(masterPasswordCandidate)
-        if (result) {
-          setLocked(false)
-          // Mark session as active when unlocking
-          sessionStorage.setItem(SESSION_STORAGE_KEY, 'true')
-          // Reload secrets now that encryption is available
-          const secretsResult = await getAllSecrets()
-          if (secretsResult.success && secretsResult.data) {
-            setSecrets(secretsResult.data)
-          }
-        }
-      } catch (error) {
-        console.error('Error during unlock:', error)
-      }
-    },
-    []
-  )
-
-  /**
    * Sync locked state with localStorage and handle session tracking
    */
   React.useEffect(() => {
@@ -280,6 +256,30 @@ export default function App(): JSX.Element {
       // TODO: Show error notification to user
     }
   }, [])
+
+  /**
+   * Handle unlocking the application
+   */
+  const handleUnlock = React.useCallback(
+    async (masterPasswordCandidate: string) => {
+      try {
+        const result = await verifyMasterPassword(masterPasswordCandidate)
+        if (result) {
+          setLocked(false)
+          // Mark session as active when unlocking
+          sessionStorage.setItem(SESSION_STORAGE_KEY, 'true')
+          // Reload secrets now that encryption is available
+          const secretsResult = await getAllSecrets()
+          if (secretsResult.success && secretsResult.data) {
+            setSecrets(secretsResult.data)
+          }
+        }
+      } catch (error) {
+        console.error('Error during unlock:', error)
+      }
+    },
+    []
+  )
 
   return (
     <div className='flex flex-col items-center bg-white px-4 font-light text-black antialiased md:subpixel-antialiased'>
