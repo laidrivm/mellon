@@ -17,7 +17,8 @@ import {
   storeMasterPassword,
   hasMasterPassword,
   getEmail,
-  createUserAccount
+  createUserAccount,
+  verifyMasterPassword
 } from '../services/users.ts'
 import {clearEncryptionCache} from '../services/encryption.ts'
 import {OnboardingStage, Secret} from '../types.ts'
@@ -82,11 +83,21 @@ export default function App(): JSX.Element {
   /**
    * Handle unlocking the application
    */
-  const handleUnlock = React.useCallback(() => {
-    setLocked(false)
-    // Mark session as active when unlocking
-    sessionStorage.setItem(SESSION_STORAGE_KEY, 'true')
-  }, [])
+  const handleUnlock = React.useCallback(
+    async (masterPasswordCandidate: string) => {
+      try {
+        const result = await verifyMasterPassword(masterPasswordCandidate)
+        if (result) {
+          setLocked(false)
+          // Mark session as active when unlocking
+          sessionStorage.setItem(SESSION_STORAGE_KEY, 'true')
+        }
+      } catch (error) {
+        console.error('Error during unlock:', error)
+      }
+    },
+    []
+  )
 
   /**
    * Sync locked state with localStorage and handle session tracking
@@ -281,7 +292,7 @@ export default function App(): JSX.Element {
       {!locked && <Header email={email} />}
       <Layout>
         {locked ?
-          <UnlockForm onUnlock={handleUnlock} />
+          <UnlockForm tryUnlock={handleUnlock} />
         : <>
             {onboarding === 'sign' && <SignUpForm addEmail={handleEmail} />}
             {onboarding === 'master' && (

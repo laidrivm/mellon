@@ -2,20 +2,18 @@ import React, {ReactNode} from 'react'
 
 import InputNewPassword from './InputNewPassword.tsx'
 import Button from './Button.tsx'
-import {verifyMasterPassword, getMasterPasswordHint} from '../services/users.ts'
+import {getMasterPasswordHint} from '../services/users.ts'
 
 export default function UnlockMellon({
-  onUnlock
+  tryUnlock
 }: {
-  onUnlock: () => void
+  tryUnlock: (masterPasswordCandidate: string) => void
 }): ReactNode {
   const [password, setPassword] = React.useState('')
 
   async function verifyPassword(event): void {
     event.preventDefault()
-    if (await verifyMasterPassword(password)) {
-      onUnlock()
-    }
+    await tryUnlock(password)
     setPassword('')
   }
 
