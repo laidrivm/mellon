@@ -177,25 +177,10 @@ export default function App(): JSX.Element {
   React.useEffect(() => {
     async function loadInitialData() {
       try {
-        // Load secrets
-        const secretsResult = await getAllSecrets()
-        if (secretsResult.success && secretsResult.data) {
-          setSecrets(secretsResult.data)
-        }
-
         // Check if master password exists
         const masterPasswordResult = await hasMasterPassword()
         if (masterPasswordResult.success) {
           setIsAuthenticationSetup(true)
-
-          // Load email to determine correct onboarding stage
-          const emailResult = await getEmail()
-          if (emailResult.success && emailResult.data.email) {
-            setOnboarding('finished')
-            setEmail(emailResult.data.email)
-          } else {
-            setOnboarding('sign')
-          }
 
           // Check if app should be locked on page load
           const wasSessionActive =
@@ -205,13 +190,22 @@ export default function App(): JSX.Element {
           // Lock if session wasn't active (page refresh/reopen) or was previously locked
           if (!wasSessionActive || wasLocked) {
             setLocked(true)
+            return
           }
-        } else {
-          // No master password yet, load email anyway to check current state
+
+          // Load email to determine correct onboarding stage
           const emailResult = await getEmail()
           if (emailResult.success && emailResult.data.email) {
+            setOnboarding('finished')
             setEmail(emailResult.data.email)
+          } else {
+            setOnboarding('sign')
           }
+        }
+
+        const secretsResult = await getAllSecrets()
+        if (secretsResult.success && secretsResult.data) {
+          setSecrets(secretsResult.data)
         }
       } catch (error) {
         console.error('Error loading initial data:', error)
@@ -256,15 +250,8 @@ export default function App(): JSX.Element {
       try {
         await storeMasterPassword(masterPassword)
         setIsAuthenticationSetup(true)
-
-        // Check if email already exists to determine next stage
-        const emailResult = await getEmail()
-        if (emailResult.success && emailResult.data.email) {
-          setOnboarding('finished')
-          setEmail(emailResult.data.email)
-        } else {
-          setOnboarding('sign')
-        }
+        setOnboarding('sign')
+        // TODO After setting master password, reload secrets since encryption is now available
       } catch (error) {
         console.error('Error storing master password:', error)
         // TODO: Show error notification to user
