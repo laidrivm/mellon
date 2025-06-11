@@ -1,6 +1,43 @@
 import {localUserDB} from './pouchDB.ts'
 import {DocType, EncryptionKeyDocument} from '../types.ts'
 
+// In-memory storage for decrypted keys (cleared on lock)
+let cachedEncryptionKey: CryptoKey | null = null
+let cachedMasterPassword: string | null = null
+
+/**
+ * Get encryption key from memory (must be unlocked first)
+ * @returns {Promise<CryptoKey>} Encryption key
+ * @throws {Error} If app is locked or key not available
+ */
+export async function getCachedEncryptionKey(): Promise<CryptoKey> {
+  if (!cachedEncryptionKey) {
+    throw new Error('Application is locked. Please unlock first.')
+  }
+  return cachedEncryptionKey
+}
+
+/**
+ * Get master password from memory (must be unlocked first)
+ * @returns {string} Master password
+ * @throws {Error} If app is locked or password not available
+ */
+export function getCachedMasterPassword(): string {
+  if (!cachedMasterPassword) {
+    throw new Error('Application is locked. Please unlock first.')
+  }
+  return cachedMasterPassword
+}
+
+/**
+ * Clear all cached encryption data from memory. Called on lock
+ */
+export function clearEncryptionCache(): void {
+  cachedEncryptionKey = null
+  cachedMasterPassword = null
+  console.log('Encryption cache cleared')
+}
+
 /**
  * Retrieve encryption key from database
  * @returns {Promise<CryptoKey | null>} Encryption key or null if not found

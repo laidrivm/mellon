@@ -5,16 +5,16 @@ import Button from './Button.tsx'
 import {verifyMasterPassword, getMasterPasswordHint} from '../services/users.ts'
 
 export default function UnlockMellon({
-  setLocked
+  onUnlock
 }: {
-  setLocked: (locked: boolean) => void
+  onUnlock: () => void
 }): ReactNode {
   const [password, setPassword] = React.useState('')
 
   async function verifyPassword(event): void {
     event.preventDefault()
     if (await verifyMasterPassword(password)) {
-      setLocked(false)
+      onUnlock()
     }
     setPassword('')
   }

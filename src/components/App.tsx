@@ -19,9 +19,10 @@ import {
   getEmail,
   createUserAccount
 } from '../services/users.ts'
+import {clearEncryptionCache} from '../services/encryption.ts'
 import {OnboardingStage, Secret} from '../types.ts'
 
-const INACTIVITY_TIMEOUT = 2 * 60 * 1000 // 2 minutes in milliseconds
+const INACTIVITY_TIMEOUT = 2 * 2 * 1000 // 2 minutes in milliseconds
 const LOCKED_STORAGE_KEY = 'app_locked'
 const SESSION_STORAGE_KEY = 'app_session_active'
 
@@ -66,6 +67,7 @@ export default function App(): JSX.Element {
       lockTimerRef.current = window.setTimeout(() => {
         console.log('Inactivity timeout - locking application')
         setLocked(true)
+        clearEncryptionCache() // Clear encryption cache when locking due to inactivity
       }, INACTIVITY_TIMEOUT)
     }
   }, [onboarding, locked, isAuthenticationSetup, clearLockTimer])
@@ -98,6 +100,7 @@ export default function App(): JSX.Element {
     if (locked) {
       localStorage.setItem(LOCKED_STORAGE_KEY, 'true')
       clearLockTimer() // Clear timer when locked
+      clearEncryptionCache() // Clear encryption cache when locking
     } else {
       localStorage.removeItem(LOCKED_STORAGE_KEY)
       // Mark session as active when unlocked
@@ -278,7 +281,7 @@ export default function App(): JSX.Element {
       {!locked && <Header email={email} />}
       <Layout>
         {locked ?
-          <UnlockForm setLocked={handleUnlock} />
+          <UnlockForm onUnlock={handleUnlock} />
         : <>
             {onboarding === 'sign' && <SignUpForm addEmail={handleEmail} />}
             {onboarding === 'master' && (
