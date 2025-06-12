@@ -17,7 +17,6 @@ function validateSecret(secret: Secret): boolean {
     typeof secret.name === 'string' &&
     secret.name.trim().length > 0 &&
     typeof secret.username === 'string' &&
-    secret.username.trim().length > 0 &&
     typeof secret.password === 'string' &&
     secret.password.length > 0
   )
@@ -126,7 +125,7 @@ export async function getSecret(id: string): Promise<ServiceResponse<Secret>> {
     }
 
     const encryptionKey = await getEncryptionKey()
-    const secret = (await localSecretsDB.get(id))
+    const secret = await localSecretsDB.get(id)
 
     const decryptedSecret = {
       ...secret,
@@ -164,7 +163,7 @@ export async function updateSecret(
       }
     }
 
-    const current = (await localSecretsDB.get(id))
+    const current = await localSecretsDB.get(id)
 
     const updatedSecret = {
       ...current,

@@ -1,9 +1,11 @@
 import React from 'react'
 
-import 'normalize.css'
 import './App.css'
 
 import Layout from './Layout.tsx'
+
+// Refactoring line
+
 import AddSecretForm from './AddSecretForm.tsx'
 import StoredSecrets from './StoredSecrets.tsx'
 import MasterPasswordForm from './MasterPasswordForm.tsx'
@@ -23,20 +25,96 @@ import {
 import {clearEncryptionCache} from '../services/encryption.ts'
 import {OnboardingStage, Secret} from '../types.ts'
 
-const INACTIVITY_TIMEOUT = 2 * 2 * 1000 // 2 minutes in milliseconds
-const LOCKED_STORAGE_KEY = 'app_locked'
-const SESSION_STORAGE_KEY = 'app_session_active'
-
 /**
  * Main application component
  * @returns {JSX.Element} App component
  */
 export default function App(): JSX.Element {
-  const [secrets, setSecrets] = React.useState<Secret[]>([])
   const [onboarding, setOnboarding] = React.useState<OnboardingStage>('secret')
+  const [secrets, setSecrets] = React.useState<Secret[]>([])
   const [showSecretForm, setShowSecretForm] = React.useState<boolean>(false)
+
+  if (showSecretForm) setOnboarding('secret')
+
+  /**
+   * Handle adding a new secret
+   * @param {Secret} secret - New secret to add
+   */
+  const handleAddSecret = React.useCallback(
+    async (secret: Secret): Promise<void> => {
+      setSecrets((prevSecrets) => [secret, ...prevSecrets])
+      /*
+      if (onboarding === 'secret') {
+        setOnboarding('master')
+      }
+*/
+      try {
+        const result = await createSecret(secret)
+
+        if (!result.success) {
+          console.error('Failed to save secret:', result.error)
+          // Revert optimistic update
+          setSecrets((prevSecrets) => prevSecrets.filter((s) => s !== secret))
+          // TODO: Show error notification to user
+        }
+      } catch (error) {
+        console.error('Error creating secret:', error)
+        // Revert optimistic update
+        setSecrets((prevSecrets) => prevSecrets.filter((s) => s !== secret))
+      }
+    },
+    []
+  )
+
+  /**
+   * Verifies if password is valid
+   */
+  const handleUnlock = React.useCallback(
+    async (masterPasswordCandidate: string) => {
+      try {
+        const result = await verifyMasterPassword(masterPasswordCandidate)
+        if (result) {
+          setLocked(false)
+          // Mark session as active when unlocking
+          sessionStorage.setItem(SESSION_STORAGE_KEY, 'true')
+          // Reload secrets now that encryption is available
+          const secretsResult = await getAllSecrets()
+          if (secretsResult.success && secretsResult.data) {
+            setSecrets(secretsResult.data)
+          }
+        }
+      } catch (error) {
+        console.error('Error during unlock:', error)
+      }
+    },
+    []
+  )
+
+  return (
+    <div className='flex flex-col items-center bg-white px-4 font-light text-black antialiased md:subpixel-antialiased'>
+      <Layout>
+        {onboarding === 'secret' ?
+          <AddSecretForm
+            secretsNumber={secrets.length}
+            addSecret={handleAddSecret}
+            setShowSecretForm={setShowSecretForm}
+          />
+        : <UnlockForm tryUnlock={handleUnlock} />}
+      </Layout>
+      <Footer />
+    </div>
+  )
+}
+
+// Refactoring line
+
+const INACTIVITY_TIMEOUT = 2 * 2 * 1000 // 2 minutes in milliseconds
+const LOCKED_STORAGE_KEY = 'app_locked'
+const SESSION_STORAGE_KEY = 'app_session_active'
+
+export function OldApp(): JSX.Element {
   const [email, setEmail] = React.useState<string | null>(null)
-  const [locked, setLocked] = React.useState<boolean>(false) // Initialize as unlocked
+  const [locked, setLocked] = React.useState<boolean>(false)
   const [isAuthenticationSetup, setIsAuthenticationSetup] =
     React.useState<boolean>(false)
 
@@ -199,33 +277,6 @@ export default function App(): JSX.Element {
   }, [])
 
   /**
-   * Handle adding a new secret
-   * @param {Secret} secret - New secret to add
-   */
-  const handleAddSecret = React.useCallback(
-    async (secret: Secret): Promise<void> => {
-      // Optimistically update UI
-      setSecrets((prevSecrets) => [secret, ...prevSecrets])
-
-      try {
-        const result = await createSecret(secret)
-
-        if (!result.success) {
-          console.error('Failed to save secret:', result.error)
-          // Revert optimistic update
-          setSecrets((prevSecrets) => prevSecrets.filter((s) => s !== secret))
-          // TODO: Show error notification to user
-        }
-      } catch (error) {
-        console.error('Error creating secret:', error)
-        // Revert optimistic update
-        setSecrets((prevSecrets) => prevSecrets.filter((s) => s !== secret))
-      }
-    },
-    []
-  )
-
-  /**
    * Handle setting master password
    */
   const handleMasterPassword = React.useCallback(
@@ -257,48 +308,18 @@ export default function App(): JSX.Element {
     }
   }, [])
 
-  /**
-   * Handle unlocking the application
-   */
-  const handleUnlock = React.useCallback(
-    async (masterPasswordCandidate: string) => {
-      try {
-        const result = await verifyMasterPassword(masterPasswordCandidate)
-        if (result) {
-          setLocked(false)
-          // Mark session as active when unlocking
-          sessionStorage.setItem(SESSION_STORAGE_KEY, 'true')
-          // Reload secrets now that encryption is available
-          const secretsResult = await getAllSecrets()
-          if (secretsResult.success && secretsResult.data) {
-            setSecrets(secretsResult.data)
-          }
-        }
-      } catch (error) {
-        console.error('Error during unlock:', error)
-      }
-    },
-    []
-  )
-
   return (
     <div className='flex flex-col items-center bg-white px-4 font-light text-black antialiased md:subpixel-antialiased'>
       {!locked && <Header email={email} />}
       <Layout>
         {locked ?
-          <UnlockForm tryUnlock={handleUnlock} />
+          <></>
         : <>
             {onboarding === 'sign' && <SignUpForm addEmail={handleEmail} />}
             {onboarding === 'master' && (
               <MasterPasswordForm addMasterPassword={handleMasterPassword} />
             )}
-            {(onboarding === 'secret' || showSecretForm) && (
-              <AddSecretForm
-                secretsNumber={secrets.length}
-                addSecret={handleAddSecret}
-                setShowSecretForm={setShowSecretForm}
-              />
-            )}
+            {(onboarding === 'secret' || showSecretForm) && <></>}
             <StoredSecrets
               secrets={secrets}
               showSecretForm={showSecretForm}
@@ -307,7 +328,6 @@ export default function App(): JSX.Element {
           </>
         }
       </Layout>
-      <Footer />
     </div>
   )
 }
