@@ -3,9 +3,6 @@ import React from 'react'
 import './App.css'
 
 import Layout from './Layout.tsx'
-
-// Refactoring line
-
 import AddSecretForm from './AddSecretForm.tsx'
 import StoredSecrets from './StoredSecrets.tsx'
 import MasterPasswordForm from './MasterPasswordForm.tsx'
@@ -34,37 +31,34 @@ export default function App(): JSX.Element {
   const [secrets, setSecrets] = React.useState<Secret[]>([])
   const [showSecretForm, setShowSecretForm] = React.useState<boolean>(false)
 
-  if (showSecretForm) setOnboarding('secret')
+  if (showSecretForm && secrets > 0) setOnboarding('secret')
 
   /**
    * Handle adding a new secret
    * @param {Secret} secret - New secret to add
    */
-  const handleAddSecret = React.useCallback(
-    async (secret: Secret): Promise<void> => {
-      setSecrets((prevSecrets) => [secret, ...prevSecrets])
-      /*
+  const addSecret = React.useCallback(async (secret: Secret): Promise<void> => {
+    setSecrets((prevSecrets) => [secret, ...prevSecrets])
+    /*
       if (onboarding === 'secret') {
         setOnboarding('master')
       }
 */
-      try {
-        const result = await createSecret(secret)
+    try {
+      const result = await createSecret(secret)
 
-        if (!result.success) {
-          console.error('Failed to save secret:', result.error)
-          // Revert optimistic update
-          setSecrets((prevSecrets) => prevSecrets.filter((s) => s !== secret))
-          // TODO: Show error notification to user
-        }
-      } catch (error) {
-        console.error('Error creating secret:', error)
+      if (!result.success) {
+        console.error('Failed to save secret:', result.error)
         // Revert optimistic update
         setSecrets((prevSecrets) => prevSecrets.filter((s) => s !== secret))
+        // TODO: Show error notification to user
       }
-    },
-    []
-  )
+    } catch (error) {
+      console.error('Error creating secret:', error)
+      // Revert optimistic update
+      setSecrets((prevSecrets) => prevSecrets.filter((s) => s !== secret))
+    }
+  }, [])
 
   /**
    * Verifies if password is valid
@@ -95,8 +89,8 @@ export default function App(): JSX.Element {
       <Layout>
         {onboarding === 'secret' ?
           <AddSecretForm
-            secretsNumber={secrets.length}
-            addSecret={handleAddSecret}
+            onboarding={onboarding}
+            addSecret={addSecret}
             setShowSecretForm={setShowSecretForm}
           />
         : <UnlockForm tryUnlock={handleUnlock} />}
