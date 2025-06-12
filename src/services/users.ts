@@ -132,25 +132,19 @@ export async function verifyMasterPassword(password: string): Promise<boolean> {
     console.log(`Entering verifyMasterPassword with ${password} candidate`)
     // 1. Retrieve Master Password and the creation date from the DB
     const doc = await localUserDB.get(`${DocType.MASTER_PASSWORD}`)
-    console.log(`gor from DB: ${JSON.stringify(doc)}`)
+    console.log(`got from DB: ${JSON.stringify(doc)}`)
     const encryptedMP = doc.password
     console.log(`encryptedMP: ${encryptedMP}`)
     const createdAt = doc.createdAt
     console.log(`createdAt: ${createdAt}`)
     // 2. Apply this key to decrypt the encryption key
     const encryptionKey = await getAndDecryptKeyFromDB(password, createdAt)
-    console.log(`encryptionKey: ${encryptionKey}`)
+    console.log(`encryptionKey: ${(encryptionKey.type)}, ${(encryptionKey.algorithm)}, ${(encryptionKey.usages)}`)
     // 3. Use the result to decrypt the stored master-password
     const decryptedPassword = await decryptField(encryptedMP, encryptionKey)
     console.log(`decryptedPassword: ${decryptedPassword}`)
 
-    const result = decryptedPassword === password
-
-    if (result) {
-      unlockEncryption(password, createdAt)
-    }
-
-    return result
+    return decryptedPassword === password
   } catch (error) {
     console.error('Error verifying master password:', error)
     return false
