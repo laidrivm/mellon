@@ -5,8 +5,7 @@ import {
   decryptField,
   updateEncryptionWithMP,
   getCachedEncryptionKey,
-  getAndDecryptKeyFromDB,
-  unlockEncryption
+  getAndDecryptKeyFromDB
 } from './encryption.ts'
 import {MasterPassword} from '../types.ts'
 
@@ -139,7 +138,9 @@ export async function verifyMasterPassword(password: string): Promise<boolean> {
     console.log(`createdAt: ${createdAt}`)
     // 2. Apply this key to decrypt the encryption key
     const encryptionKey = await getAndDecryptKeyFromDB(password, createdAt)
-    console.log(`encryptionKey: ${(encryptionKey.type)}, ${(encryptionKey.algorithm)}, ${(encryptionKey.usages)}`)
+    console.log(
+      `encryptionKey: ${encryptionKey.type}, ${encryptionKey.algorithm}, ${encryptionKey.usages}`
+    )
     // 3. Use the result to decrypt the stored master-password
     const decryptedPassword = await decryptField(encryptedMP, encryptionKey)
     console.log(`decryptedPassword: ${decryptedPassword}`)

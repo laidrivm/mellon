@@ -494,7 +494,9 @@ export async function unlockEncryption(
     cachedEncryptionKey = decryptedKey
     cachedMasterPassword = masterPassword
 
-    console.log(`Encryption system unlocked successfully, cachedEncryptionKey: ${JSON.stringify(cachedEncryptionKey)}, cachedMasterPassword: ${cachedMasterPassword}`)
+    console.log(
+      `Encryption system unlocked successfully, cachedEncryptionKey: ${JSON.stringify(cachedEncryptionKey)}, cachedMasterPassword: ${cachedMasterPassword}`
+    )
     return true
   } catch (error) {
     console.error('Error unlocking encryption:', error)
@@ -515,7 +517,6 @@ export function isEncryptionInitialized(): boolean {
  * @returns {Promise<CryptoKey>} Encryption key
  */
 export async function getEncryptionKey(): Promise<CryptoKey> {
-  console.log(`in getEncryptionKey, cachedEncryptionKey: ${(cachedEncryptionKey.type)}, ${(cachedEncryptionKey.algorithm)}, ${(cachedEncryptionKey.usages)}, cachedMasterPassword: ${cachedMasterPassword}`)
   // If we have cached key, return it
   if (cachedEncryptionKey) {
     return cachedEncryptionKey
