@@ -64,16 +64,21 @@ export default function AddSecretForm({
     setShowSecretForm(false)
   }
 
+  function hideTheForm(event): void {
+    event.preventDefault()
+    setShowSecretForm(false)
+  }
+
   return (
     <div className='space-y-4'>
       <h1 className='text-center text-xl'>Add a New Secret</h1>
-      {onboarding !== 'finished' && 
+      {onboarding !== 'finished' && (
         <p className='text-md leading-6'>
           Secrets are encrypted and stored on your device. Might be restored
           from an encrypted server backup.
         </p>
-      }
-      <form className='space-y-4' onSubmit={handleAdd}>
+      )}
+      <form className='space-y-4 space-x-4' onSubmit={handleAdd}>
         <Input name='Secret Name' value={name} setValue={setName} />
         <Input name='Username' value={username} setValue={setUsername} />
         <InputNewPassword
@@ -84,6 +89,9 @@ export default function AddSecretForm({
         />
         <InputTextArea name='Notes' value={notes} setValue={setNotes} />
         <Button>Add a Secret</Button>
+        <Button style='secondary' onClick={hideTheForm}>
+          Clear and hide
+        </Button>
       </form>
     </div>
   )

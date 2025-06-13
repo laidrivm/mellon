@@ -39,11 +39,11 @@ export default function App(): JSX.Element {
    */
   const addSecret = React.useCallback(async (secret: Secret): Promise<void> => {
     setSecrets((prevSecrets) => [secret, ...prevSecrets])
-    /*
-      if (onboarding === 'secret') {
-        setOnboarding('master')
-      }
-*/
+
+    if (onboarding === 'secret') {
+      setOnboarding('master')
+    }
+
     try {
       const result = await createSecret(secret)
 
@@ -87,13 +87,18 @@ export default function App(): JSX.Element {
   return (
     <div className='flex flex-col items-center bg-white px-4 font-light text-black antialiased md:subpixel-antialiased'>
       <Layout>
-        {onboarding === 'secret' ?
+        {onboarding === 'secret' || showSecretForm ?
           <AddSecretForm
             onboarding={onboarding}
             addSecret={addSecret}
             setShowSecretForm={setShowSecretForm}
           />
         : <UnlockForm tryUnlock={handleUnlock} />}
+        <StoredSecrets
+          secrets={secrets}
+          showSecretForm={showSecretForm}
+          setShowSecretForm={setShowSecretForm}
+        />
       </Layout>
       <Footer />
     </div>
@@ -313,12 +318,6 @@ export function OldApp(): JSX.Element {
             {onboarding === 'master' && (
               <MasterPasswordForm addMasterPassword={handleMasterPassword} />
             )}
-            {(onboarding === 'secret' || showSecretForm) && <></>}
-            <StoredSecrets
-              secrets={secrets}
-              showSecretForm={showSecretForm}
-              setShowSecretForm={setShowSecretForm}
-            />
           </>
         }
       </Layout>
