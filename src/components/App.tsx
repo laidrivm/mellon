@@ -11,7 +11,7 @@ import SignUpForm from './SignUpForm.tsx'
 import Header from './Header.tsx'
 import Footer from './Footer.tsx'
 
-import {createSecret, getAllSecrets} from '../services/secrets.ts'
+import {createSecret, getAllSecrets, deleteSecret} from '../services/secrets.ts'
 import {
   existsLocalUser,
   createLocalUser,
@@ -75,6 +75,13 @@ export default function App(): JSX.Element {
     },
     [onboarding, setShowSecretForm]
   )
+
+  const removeSecret = React.useCallback((secretId: string) => {
+    deleteSecret(secretId)
+    setSecrets((prevSecrets) =>
+      prevSecrets.filter((secret) => secret._id !== secretId)
+    )
+  }, [])
 
   // Clear error when form is closed
   const handleSetShowSecretForm = React.useCallback((show: boolean) => {
@@ -150,6 +157,7 @@ export default function App(): JSX.Element {
           secrets={secrets}
           showSecretForm={showSecretForm}
           handleSetShowSecretForm={handleSetShowSecretForm}
+          removeSecret={removeSecret}
         />
       </Layout>
       <Footer />

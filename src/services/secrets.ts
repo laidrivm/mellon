@@ -103,6 +103,30 @@ export async function getAllSecrets(): Promise<ServiceResponse<Secret[]>> {
   }
 }
 
+/**
+ * Delete a secret
+ * @param {string} id - Secret document ID
+ * @returns {Promise<ServiceResponse>} Operation result
+ */
+export async function deleteSecret(id: string): Promise<ServiceResponse> {
+  try {
+    const secret = await localSecretsDB.get(id)
+
+    const result = await localSecretsDB.remove(secret)
+
+    return {
+      success: true,
+      data: result
+    }
+  } catch (error) {
+    console.error('Error deleting secret:', error)
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : String(error)
+    }
+  }
+}
+
 // ---------------------------------------------------------------------------------------------------
 // refactoring line ----------------------------------------------------------------------------------
 // ---------------------------------------------------------------------------------------------------
@@ -188,37 +212,6 @@ export async function updateSecret(
     }
   } catch (error) {
     console.error('Error updating secret:', error)
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : String(error)
-    }
-  }
-}
-
-/**
- * Delete a secret
- * @param {string} id - Secret document ID
- * @returns {Promise<ServiceResponse>} Operation result
- */
-export async function deleteSecret(id: string): Promise<ServiceResponse> {
-  try {
-    if (!validateId(id)) {
-      return {
-        success: false,
-        message: 'Invalid secret ID'
-      }
-    }
-
-    const secret = await localSecretsDB.get(id)
-
-    const result = await localSecretsDB.remove(secret)
-
-    return {
-      success: true,
-      data: result
-    }
-  } catch (error) {
-    console.error('Error deleting secret:', error)
     return {
       success: false,
       error: error instanceof Error ? error.message : String(error)

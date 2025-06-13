@@ -8,7 +8,8 @@ import type {StoredSecretsProps} from '../types.ts'
 export default function StoredSecrets({
   secrets,
   showSecretForm,
-  handleSetShowSecretForm
+  handleSetShowSecretForm,
+  removeSecret
 }: StoredSecretsProps): JSX.Element {
   function onClick(): void {
     handleSetShowSecretForm(true)
@@ -30,7 +31,11 @@ export default function StoredSecrets({
         <p className='text-md mt-2'>No stored secrets yet</p>
       : <ul className='mt-4 space-y-4'>
           {secrets.map((secret, index) => (
-            <SecretItem secret={secret} key={index} />
+            <SecretItem
+              secret={secret}
+              key={index}
+              removeSecret={removeSecret}
+            />
           ))}
         </ul>
       }

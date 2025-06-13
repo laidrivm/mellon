@@ -131,4 +131,5 @@ export interface StoredSecretsProps {
   secrets: Secret[]
   showSecretForm: boolean
   handleSetShowSecretForm: (show: boolean) => void
+  removeSecret: (secretId: string) => void
 }

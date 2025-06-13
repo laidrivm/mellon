@@ -1,12 +1,25 @@
 import React from 'react'
+import Button from './Button.tsx'
 import ButtonShowPassword from './ButtonShowPassword.tsx'
 import ButtonCopyPassword from './ButtonCopyPassword.tsx'
+import ButtonCopyAll from './ButtonCopyAll.tsx'
+import ButtonDeleteSecret from './ButtonDeleteSecret.tsx'
 import type {Secret} from '../types.ts'
 
-export default function SecretItem({secret}: {secret: Secret}): JSX.Element {
+export default function SecretItem({
+  secret,
+  removeSecret
+}: {
+  secret: Secret
+  removeSecret: (secretId: string) => void
+}): JSX.Element {
   const [open, setOpen] = React.useState(false)
   const [showPassword, setShowPassword] = React.useState(false)
   const hiddenPassword = '*'.repeat(secret.password.length)
+
+  function handleRemove() {
+    removeSecret(secret._id)
+  }
 
   return (
     <li>
@@ -51,6 +64,15 @@ export default function SecretItem({secret}: {secret: Secret}): JSX.Element {
               <p>{secret.notes}</p>
             </>
           )}
+          <div className='flex items-center justify-between pt-4'>
+            <div className='flex items-center space-x-4'>
+              <Button>Update</Button>
+              <ButtonCopyAll secret={secret} />
+            </div>
+            <div className='flex items-center'>
+              <ButtonDeleteSecret onDelete={handleRemove} />
+            </div>
+          </div>
         </div>
       )}
     </li>

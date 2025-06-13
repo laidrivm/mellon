@@ -1,17 +1,24 @@
 import React from 'react'
+import type {Secret} from '../types.ts'
 
-export default function ButtonCopyPassword({
-  password
-}: {
-  password: string
-}): JSX.Element {
+export default function ButtonCopyAll({secret}: {secret: Secret}): JSX.Element {
   const [copied, setCopied] = React.useState(false)
 
-  const handleCopy = async () => {
+  const handleCopyAll = async () => {
     if (copied) return
 
+    // Build the text to copy with non-empty values
+    const textParts: string[] = []
+
+    if (secret.name?.trim()) textParts.push(`Name: ${secret.name}`)
+    if (secret.username?.trim()) textParts.push(`Username: ${secret.username}`)
+    if (secret.password?.trim()) textParts.push(`Password: ${secret.password}`)
+    if (secret.notes?.trim()) textParts.push(`Notes: ${secret.notes}`)
+
+    const textToCopy = textParts.join('\n')
+
     try {
-      await navigator.clipboard.writeText(password)
+      await navigator.clipboard.writeText(textToCopy)
       setCopied(true)
 
       // Reset after 1 second
@@ -19,10 +26,10 @@ export default function ButtonCopyPassword({
         setCopied(false)
       }, 1000)
     } catch (error) {
-      console.error('Failed to copy password:', error)
+      console.error('Failed to copy all data:', error)
       // Fallback for older browsers
       const textArea = document.createElement('textarea')
-      textArea.value = password
+      textArea.value = textToCopy
       document.body.appendChild(textArea)
       textArea.select()
       document.execCommand('copy')
@@ -37,7 +44,7 @@ export default function ButtonCopyPassword({
 
   return (
     <button
-      onClick={handleCopy}
+      onClick={handleCopyAll}
       disabled={copied}
       className={`transition-all duration-300 ${
         copied ?
@@ -48,7 +55,7 @@ export default function ButtonCopyPassword({
       <span
         className={`transition-opacity duration-300 ${copied ? 'opacity-100' : 'opacity-100'}`}
       >
-        {copied ? 'Done' : 'Copy'}
+        {copied ? 'Done' : 'Copy All'}
       </span>
     </button>
   )
