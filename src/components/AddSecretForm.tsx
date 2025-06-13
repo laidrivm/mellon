@@ -1,23 +1,21 @@
-import React, {ReactNode} from 'react'
+import React from 'react'
 import Input from './Input.tsx'
 import InputNewPassword from './InputNewPassword.tsx'
 import InputTextArea from './InputTextArea.tsx'
 import Button from './Button.tsx'
-import type {Secret, OnboardingStage} from '../types.ts'
+import type {Secret, OnboardingStage, AddSecretFormProps} from '../types.ts'
 
-export default function AddSecretForm({
-  onboarding,
-  addSecret,
-  setShowSecretForm
-}: {
-  onboarding: OnboardingStage
-  addSecret: (secret: Secret) => void
-  setShowSecretForm: (showSecretForm: boolean) => void
-}): ReactNode {
-  const [name, setName] = React.useState('')
-  const [username, setUsername] = React.useState('')
-  const [password, setPassword] = React.useState('')
-  const [notes, setNotes] = React.useState('')
+export default function AddSecretForm({ 
+  onboarding, 
+  addSecret, 
+  handleSetShowSecretForm, 
+  formError,
+  initialData 
+}: AddSecretFormProps): JSX.Element {
+  const [name, setName] = React.useState(initialData?.name || '')
+  const [username, setUsername] = React.useState(initialData?.username || '')
+  const [password, setPassword] = React.useState(initialData?.password || '')
+  const [notes, setNotes] = React.useState(initialData?.notes || '')
   const [passwordError, setPasswordError] = React.useState(false)
 
   function generateSecretName(): string {
@@ -32,7 +30,7 @@ export default function AddSecretForm({
     return `Secret-${day}-${month}-${year}-${hours}-${minutes}-${seconds}`
   }
 
-  function handleAdd(event): void {
+  function handleAdd(event: React.FormEvent): void {
     event.preventDefault()
 
     // Reset error state
@@ -61,12 +59,12 @@ export default function AddSecretForm({
     setPassword('')
     setNotes('')
     setPasswordError(false)
-    setShowSecretForm(false)
+    handleSetShowSecretForm(false)
   }
 
   function hideTheForm(event): void {
     event.preventDefault()
-    setShowSecretForm(false)
+    handleSetShowSecretForm(false)
   }
 
   return (
@@ -95,6 +93,11 @@ export default function AddSecretForm({
           </Button>
         )}
       </form>
+      {formError && (
+        <div className="text-red text-md">
+          {formError}
+        </div>
+      )}
     </div>
   )
 }

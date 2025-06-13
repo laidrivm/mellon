@@ -8,7 +8,6 @@ export interface Secret {
   username: string
   password: string
   notes?: string
-  url?: string
   createdAt?: string
   updatedAt?: string
 }
@@ -117,4 +116,18 @@ export enum DocType {
   USER_CREDENTIALS = 'user_credentials',
   ENCRYPTION_KEY = 'encryption_key',
   MASTER_PASSWORD = 'master_password'
+}
+
+interface AddSecretFormProps {
+  onboarding: OnboardingStage
+  addSecret: (secret: Secret) => Promise<void>
+  handleSetShowSecretForm: (show: boolean) => void
+  formError?: string | null
+  initialData?: Secret | null
+}
+
+interface StoredSecretsProps {
+  secrets: Secret[]
+  showSecretForm: boolean
+  handleSetShowSecretForm: (show: boolean) => void
 }

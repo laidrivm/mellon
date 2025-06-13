@@ -1,21 +1,17 @@
-import React, {ReactNode} from 'react'
+import React from 'react'
 
 import Button from './Button.tsx'
 import SecretItem from './SecretItem.tsx'
 
-import type {Secret} from '../types.ts'
+import type {Secret, StoredSecretsProps} from '../types.ts'
 
 export default function StoredSecrets({
   secrets,
   showSecretForm,
-  setShowSecretForm
-}: {
-  secrets: [Secret]
-  showSecretForm: boolean
-  setShowSecretForm: (showSecretForm: boolean) => void
-}): ReactNode {
+  handleSetShowSecretForm
+}: StoredSecretsProps): JSX.Element {
   function onClick(): void {
-    setShowSecretForm(true)
+    handleSetShowSecretForm(true)
   }
 
   return (

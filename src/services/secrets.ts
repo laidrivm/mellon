@@ -36,14 +36,13 @@ export async function createSecret(secret: Secret): Promise<ServiceResponse> {
     if (!validateSecret(secret)) {
       return {
         success: false,
-        message:
+        error:
           'Invalid secret data. Name, username and password are required.'
       }
     }
 
     const encryptionKey = await getEncryptionKey()
 
-    // Prepare document
     const newSecret: Secret = {
       ...secret,
       _id: generateDocId(DocType.SECRET),

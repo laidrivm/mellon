@@ -27,21 +27,36 @@ import {OnboardingStage, Secret} from '../types.ts'
  * @returns {JSX.Element} App component
  */
 export default function App(): JSX.Element {
-  const [onboarding, setOnboarding] = React.useState<OnboardingStage>('secret')
+  const [onboarding, setOnboarding] = React.useState<OnboardingStage>('secret') //should be finished
   const [secrets, setSecrets] = React.useState<Secret[]>([])
   const [showSecretForm, setShowSecretForm] = React.useState<boolean>(false)
+  const [formError, setFormError] = React.useState<string | null>(null)
+  const [failedSecretData, setFailedSecretData] = React.useState<Secret | null>(null)
 
   if (showSecretForm && secrets > 0) setOnboarding('secret')
+
+  function saveOnboardingStage(stage: OnboardingStage): void {
+    setOnboarding(stage)
+    updateOnboardingStage(stage)
+  }
+
+  function showSecretsError(errorMessage: string, secret: Secret): void {
+    setFormError(errorMessage)
+    setFailedSecretData(secret)
+    setShowSecretForm(true)
+  }
 
   /**
    * Handle adding a new secret
    * @param {Secret} secret - New secret to add
    */
   const addSecret = React.useCallback(async (secret: Secret): Promise<void> => {
+    setFormError(null)
+    setFailedSecretData(null)
     setSecrets((prevSecrets) => [secret, ...prevSecrets])
 
     if (onboarding === 'secret') {
-      setOnboarding('master')
+      saveOnboardingStage('master')
     }
 
     try {
@@ -49,14 +64,26 @@ export default function App(): JSX.Element {
 
       if (!result.success) {
         console.error('Failed to save secret:', result.error)
-        // Revert optimistic update
+        // Revert optimistic update and show error
         setSecrets((prevSecrets) => prevSecrets.filter((s) => s !== secret))
-        // TODO: Show error notification to user
+        showSecretsError(result.error, secret)
       }
     } catch (error) {
       console.error('Error creating secret:', error)
-      // Revert optimistic update
+      // Revert optimistic update and show error
       setSecrets((prevSecrets) => prevSecrets.filter((s) => s !== secret))
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      showSecretsError(errorMessage, secret)
+    }
+  }, [])
+
+
+  // Clear error when form is closed
+  const handleSetShowSecretForm = React.useCallback((show: boolean) => {
+    setShowSecretForm(show)
+    if (!show) {
+      setFormError(null)
+      setFailedSecretData(null)
     }
   }, [])
 
@@ -84,6 +111,18 @@ export default function App(): JSX.Element {
     []
   )
 
+  /**
+   * Load initial data on mount
+   */
+  React.useEffect(() => {
+    async function loadInitialData() {
+      // set onboarding state from DB
+      // if unlocked
+    }
+
+    loadInitialData()
+  }, [])
+
   return (
     <div className='flex flex-col items-center bg-white px-4 font-light text-black antialiased md:subpixel-antialiased'>
       <Layout>
@@ -91,13 +130,15 @@ export default function App(): JSX.Element {
           <AddSecretForm
             onboarding={onboarding}
             addSecret={addSecret}
-            setShowSecretForm={setShowSecretForm}
+            handleSetShowSecretForm={handleSetShowSecretForm}
+            formError={formError}
+            initialData={failedSecretData}
           />
         : <UnlockForm tryUnlock={handleUnlock} />}
         <StoredSecrets
           secrets={secrets}
           showSecretForm={showSecretForm}
-          setShowSecretForm={setShowSecretForm}
+          handleSetShowSecretForm={handleSetShowSecretForm}
         />
       </Layout>
       <Footer />
