@@ -1,10 +1,10 @@
-import React, {ReactNode} from 'react'
+import React from 'react'
 
 import ButtonShowPassword from './ButtonShowPassword.tsx'
 
 import type {Secret} from '../types.ts'
 
-export default function SecretItem({secret}: {secret: Secret}): ReactNode {
+export default function SecretItem({secret}: {secret: Secret}): JSX.Element {
   const [open, setOpen] = React.useState(false)
   const [showPassword, setShowPassword] = React.useState(false)
 
@@ -13,7 +13,10 @@ export default function SecretItem({secret}: {secret: Secret}): ReactNode {
   return (
     <li>
       <button
-        onClick={() => setOpen(!open)}
+        onClick={() => {
+          setOpen(!open)
+          setShowPassword(false)
+        }}
         className={`group flex items-center space-x-2 text-lg`}
       >
         <span
