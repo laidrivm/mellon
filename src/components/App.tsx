@@ -73,7 +73,7 @@ export default function App(): JSX.Element {
         showSecretsError(result.error, secret)
       }
     },
-    [onboarding]
+    [onboarding, setShowSecretForm]
   )
 
   // Clear error when form is closed
@@ -93,7 +93,13 @@ export default function App(): JSX.Element {
       if (!(await existsLocalUser())) {
         await createLocalUser()
       }
-      setOnboarding(await getOnboardingStage())
+
+      const currentOnboardingStage = await getOnboardingStage()
+      setOnboarding(currentOnboardingStage)
+
+      if (currentOnboardingStage === 'secret') {
+        setShowSecretForm(true)
+      }
     }
 
     loadInitialData()

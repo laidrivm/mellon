@@ -19,7 +19,7 @@ export default function StoredSecrets({
       <div className='flex justify-between'>
         <h2 className='text-3xl'>Stored Secrets</h2>
 
-        {secrets.length !== 0 && !showSecretForm && (
+        {!showSecretForm && (
           <Button style='inline' onClick={onClick}>
             Add New
           </Button>
