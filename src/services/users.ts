@@ -16,8 +16,7 @@ import {
 
 export async function existsLocalUser(): Promise<boolean> {
   try {
-    const localUserDoc = await localUserDB.get(DocType.LOCAL_USER)
-    console.log(localUserDoc)
+    await localUserDB.get(DocType.LOCAL_USER)
     return true
   } catch (error) {
     if (error.name !== 'not_found')

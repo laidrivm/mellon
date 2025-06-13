@@ -59,7 +59,6 @@ export default function App(): JSX.Element {
     async (secret: Secret): Promise<void> => {
       setFormError(null)
       setFailedSecretData(null)
-      setSecrets((prevSecrets) => [secret, ...prevSecrets])
 
       if (onboarding === 'secret') {
         await saveOnboardingStage('master') // no failure check
@@ -67,8 +66,10 @@ export default function App(): JSX.Element {
 
       const result = await createSecret(secret)
 
-      // Revert optimistic update and show error if failed to save a secret
-      if (!result.success) {
+      if (result.success) {
+        secret._id = result.data.id
+        setSecrets((prevSecrets) => [secret, ...prevSecrets])
+      } else {
         setSecrets((prevSecrets) => prevSecrets.filter((s) => s !== secret))
         showSecretsError(result.error, secret)
       }

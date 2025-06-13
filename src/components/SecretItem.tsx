@@ -17,8 +17,11 @@ export default function SecretItem({
   const [showPassword, setShowPassword] = React.useState(false)
   const hiddenPassword = '*'.repeat(secret.password.length)
 
-  function handleRemove() {
-    removeSecret(secret._id)
+  async function handleRemove() {
+    setTimeout(() => {
+      console.log(secret._id)
+      removeSecret(secret._id)
+    }, 0)
   }
 
   return (
