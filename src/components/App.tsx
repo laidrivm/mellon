@@ -100,6 +100,11 @@ export default function App(): JSX.Element {
       if (currentOnboardingStage === 'secret') {
         setShowSecretForm(true)
       }
+
+      const secretsResult = await getAllSecrets()
+      if (secretsResult.success && secretsResult.data) {
+        setSecrets(secretsResult.data)
+      }
     }
 
     loadInitialData()
@@ -310,11 +315,6 @@ export function OldApp(): JSX.Element {
           } else {
             setOnboarding('sign')
           }
-        }
-
-        const secretsResult = await getAllSecrets()
-        if (secretsResult.success && secretsResult.data) {
-          setSecrets(secretsResult.data)
         }
       } catch (error) {
         console.error('Error loading initial data:', error)

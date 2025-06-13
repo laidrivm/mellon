@@ -105,8 +105,6 @@ export async function encryptField(
   data: string,
   key: CryptoKey
 ): Promise<string> {
-  console.log(`encryptField: data="${data}"`)
-
   // Create a random initialization vector
   const iv = window.crypto.getRandomValues(new Uint8Array(12))
 
@@ -132,6 +130,43 @@ export async function encryptField(
   // Convert to Base64 string for storage
   const result = btoa(String.fromCharCode.apply(null, Array.from(combined)))
   return result
+}
+
+/**
+ * Decrypt single field using AES-GCM
+ * @param {string} ciphertext - Encrypted data as base64 string
+ * @param {CryptoKey} key - Decryption key
+ * @returns {Promise<string>} Decrypted data
+ */
+export async function decryptField(
+  data: string,
+  key: CryptoKey
+): Promise<string> {
+  // Convert from Base64 string
+  const binary = atob(data)
+  const bytes = new Uint8Array(binary.length)
+  for (let i = 0; i < binary.length; i++) {
+    bytes[i] = binary.charCodeAt(i)
+  }
+
+  // Extract IV (first 12 bytes) and data
+  const iv = bytes.slice(0, 12)
+  const encryptedData = bytes.slice(12)
+
+  // Decrypt the data
+  const decryptedBuffer = await window.crypto.subtle.decrypt(
+    {
+      name: 'AES-GCM',
+      iv: iv
+    },
+    key,
+    encryptedData
+  )
+
+  // Convert ArrayBuffer to string
+  const decoder = new TextDecoder()
+  const decryptedString = decoder.decode(decryptedBuffer)
+  return decryptedString
 }
 
 // ---------------------------------------------------------------------------------------------------
@@ -262,55 +297,6 @@ export async function dateToSalt(
 
     console.log(`dateToSalt: extended result=${Array.from(extendedSalt)}`)
     return extendedSalt
-  }
-}
-
-/**
- * Decrypt single field using AES-GCM
- * @param {string} ciphertext - Encrypted data as base64 string
- * @param {CryptoKey} key - Decryption key
- * @returns {Promise<string>} Decrypted data
- */
-export async function decryptField(
-  ciphertext: string,
-  key: CryptoKey
-): Promise<string> {
-  try {
-    console.log(`decryptField: ciphertext length=${ciphertext.length}`)
-
-    // Convert from Base64 string
-    const binary = atob(ciphertext)
-    const bytes = new Uint8Array(binary.length)
-    for (let i = 0; i < binary.length; i++) {
-      bytes[i] = binary.charCodeAt(i)
-    }
-
-    // Extract IV (first 12 bytes) and ciphertext
-    const iv = bytes.slice(0, 12)
-    const encryptedData = bytes.slice(12)
-
-    console.log(
-      `decryptField: iv length=${iv.length}, data length=${encryptedData.length}`
-    )
-
-    // Decrypt the data
-    const decryptedBuffer = await window.crypto.subtle.decrypt(
-      {
-        name: 'AES-GCM',
-        iv: iv
-      },
-      key,
-      encryptedData
-    )
-
-    // Convert ArrayBuffer to string
-    const decoder = new TextDecoder()
-    const decryptedString = decoder.decode(decryptedBuffer)
-    console.log(`decryptField: decrypted="${decryptedString}"`)
-    return decryptedString
-  } catch (error) {
-    console.error('Decryption failed:', error)
-    throw new Error('Failed to decrypt data')
   }
 }
 

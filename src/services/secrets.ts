@@ -41,7 +41,7 @@ export async function createSecret(secret: Secret): Promise<ServiceResponse> {
 
     const newSecret: Secret = {
       ...secret,
-      _id: `${DocType.SECRET}:${uuidv7()}`, // Might be simplified to just uuidv7
+      _id: uuidv7(),
       createdAt: new Date().toISOString()
     }
 
@@ -62,14 +62,6 @@ export async function createSecret(secret: Secret): Promise<ServiceResponse> {
   }
 }
 
-// ---------------------------------------------------------------------------------------------------
-// refactoring line ----------------------------------------------------------------------------------
-// ---------------------------------------------------------------------------------------------------
-
-function validateId(id: string): boolean {
-  return !!id && typeof id === 'string' && id.trim().length > 0
-}
-
 /**
  * Retrieve all secrets
  * @returns {Promise<ServiceResponse<Secret[]>>} All secrets
@@ -80,9 +72,7 @@ export async function getAllSecrets(): Promise<ServiceResponse<Secret[]>> {
 
     const result = await localSecretsDB.allDocs({
       include_docs: true,
-      descending: true,
-      startkey: `${DocType.SECRET}:\uffff`,
-      endkey: `${DocType.SECRET}:`
+      descending: true
     })
 
     const secrets: Secret[] = []
@@ -95,8 +85,8 @@ export async function getAllSecrets(): Promise<ServiceResponse<Secret[]>> {
           encryptionKey
         )
         secrets.push(decryptedSecret)
-      } catch (decryptError) {
-        console.error('Error decrypting secret:', decryptError)
+      } catch (error) {
+        console.error('Error decrypting secret:', error)
       }
     }
 
@@ -111,6 +101,14 @@ export async function getAllSecrets(): Promise<ServiceResponse<Secret[]>> {
       error: error instanceof Error ? error.message : String(error)
     }
   }
+}
+
+// ---------------------------------------------------------------------------------------------------
+// refactoring line ----------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------
+
+function validateId(id: string): boolean {
+  return !!id && typeof id === 'string' && id.trim().length > 0
 }
 
 /**
