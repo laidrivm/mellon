@@ -13,6 +13,10 @@ import Footer from './Footer.tsx'
 
 import {createSecret, getAllSecrets} from '../services/secrets.ts'
 import {
+  existsLocalUser,
+  createLocalUser,
+  getOnboardingStage,
+  updateOnboardingStage,
   storeMasterPassword,
   hasMasterPassword,
   getEmail,
@@ -27,17 +31,18 @@ import {OnboardingStage, Secret} from '../types.ts'
  * @returns {JSX.Element} App component
  */
 export default function App(): JSX.Element {
-  const [onboarding, setOnboarding] = React.useState<OnboardingStage>('secret') //should be finished
+  const [onboarding, setOnboarding] =
+    React.useState<OnboardingStage>('finished')
   const [secrets, setSecrets] = React.useState<Secret[]>([])
   const [showSecretForm, setShowSecretForm] = React.useState<boolean>(false)
   const [formError, setFormError] = React.useState<string | null>(null)
-  const [failedSecretData, setFailedSecretData] = React.useState<Secret | null>(null)
+  const [failedSecretData, setFailedSecretData] = React.useState<Secret | null>(
+    null
+  )
 
-  if (showSecretForm && secrets > 0) setOnboarding('secret')
-
-  function saveOnboardingStage(stage: OnboardingStage): void {
+  async function saveOnboardingStage(stage: OnboardingStage): void {
     setOnboarding(stage)
-    updateOnboardingStage(stage)
+    await updateOnboardingStage(stage)
   }
 
   function showSecretsError(errorMessage: string, secret: Secret): void {
@@ -54,9 +59,10 @@ export default function App(): JSX.Element {
     setFormError(null)
     setFailedSecretData(null)
     setSecrets((prevSecrets) => [secret, ...prevSecrets])
+    console.log(onboarding)
 
     if (onboarding === 'secret') {
-      saveOnboardingStage('master')
+      await saveOnboardingStage('master')
     }
 
     try {
@@ -72,11 +78,11 @@ export default function App(): JSX.Element {
       console.error('Error creating secret:', error)
       // Revert optimistic update and show error
       setSecrets((prevSecrets) => prevSecrets.filter((s) => s !== secret))
-      const errorMessage = error instanceof Error ? error.message : String(error)
+      const errorMessage =
+        error instanceof Error ? error.message : String(error)
       showSecretsError(errorMessage, secret)
     }
-  }, [])
-
+  }, [onboarding])
 
   // Clear error when form is closed
   const handleSetShowSecretForm = React.useCallback((show: boolean) => {
@@ -116,6 +122,10 @@ export default function App(): JSX.Element {
    */
   React.useEffect(() => {
     async function loadInitialData() {
+      if (!(await existsLocalUser())) {
+        await createLocalUser()
+      }
+      setOnboarding(await getOnboardingStage())
       // set onboarding state from DB
       // if unlocked
     }

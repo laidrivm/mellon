@@ -68,7 +68,7 @@ export interface ServiceResponse<T = unknown> {
   success: boolean
   message?: string
   data?: T
-  error?: Error | string
+  error?: string
 }
 
 /**
@@ -112,13 +112,14 @@ export enum DbName {
  * @type DocType
  */
 export enum DocType {
+  LOCAL_USER = 'local_user',
   SECRET = 'secret',
   USER_CREDENTIALS = 'user_credentials',
   ENCRYPTION_KEY = 'encryption_key',
   MASTER_PASSWORD = 'master_password'
 }
 
-interface AddSecretFormProps {
+export interface AddSecretFormProps {
   onboarding: OnboardingStage
   addSecret: (secret: Secret) => Promise<void>
   handleSetShowSecretForm: (show: boolean) => void
@@ -126,7 +127,7 @@ interface AddSecretFormProps {
   initialData?: Secret | null
 }
 
-interface StoredSecretsProps {
+export interface StoredSecretsProps {
   secrets: Secret[]
   showSecretForm: boolean
   handleSetShowSecretForm: (show: boolean) => void

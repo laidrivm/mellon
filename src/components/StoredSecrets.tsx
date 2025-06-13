@@ -3,7 +3,7 @@ import React from 'react'
 import Button from './Button.tsx'
 import SecretItem from './SecretItem.tsx'
 
-import type {Secret, StoredSecretsProps} from '../types.ts'
+import type {StoredSecretsProps} from '../types.ts'
 
 export default function StoredSecrets({
   secrets,

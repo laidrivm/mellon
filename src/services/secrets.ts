@@ -36,8 +36,7 @@ export async function createSecret(secret: Secret): Promise<ServiceResponse> {
     if (!validateSecret(secret)) {
       return {
         success: false,
-        error:
-          'Invalid secret data. Name, username and password are required.'
+        error: 'Invalid secret data. Name, username and password are required.'
       }
     }
 

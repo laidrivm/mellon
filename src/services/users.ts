@@ -1,5 +1,4 @@
 import {localUserDB} from './pouchDB.ts'
-import {DocType, UserCredentials, ServiceResponse} from '../types.ts'
 import {
   encryptField,
   decryptField,
@@ -7,7 +6,85 @@ import {
   getCachedEncryptionKey,
   getAndDecryptKeyFromDB
 } from './encryption.ts'
-import {MasterPassword} from '../types.ts'
+import {
+  DocType,
+  OnboardingStage,
+  MasterPassword,
+  UserCredentials,
+  ServiceResponse
+} from '../types.ts'
+
+export async function existsLocalUser(): Promise<boolean> {
+  try {
+    const localUserDoc = await localUserDB.get(`${DocType.LOCAL_USER}`)
+    console.log(localUserDoc)
+    return true
+  } catch (error) {
+    if (!error.name === 'not_found')
+      console.error('Error getting the onboarding stage:', error)
+    return false
+  }
+}
+
+export async function createLocalUser(): Promise<ServiceResponse> {
+  try {
+    const result = await localUserDB.put({
+      _id: `${DocType.LOCAL_USER}`,
+      onboarding: 'secret',
+      createdAt: new Date().toISOString()
+    })
+
+    return {
+      success: true,
+      data: result
+    }
+  } catch (error) {
+    console.error('Error creating a local user:', error)
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : String(error)
+    }
+  }
+}
+
+export async function getOnboardingStage(): Promise<OnboardingStage | null> {
+  try {
+    const doc = await localUserDB.get(`${DocType.LOCAL_USER}`)
+    return doc.onboarding
+  } catch (error) {
+    console.error('Error getting the onboarding stage:', error)
+    return null
+  }
+}
+
+export async function updateOnboardingStage(
+  stage: OnboardingStage
+): Promise<ServiceResponse> {
+  try {
+    const localUserDoc = await localUserDB.get(`${DocType.LOCAL_USER}`)
+
+    const updatedUserDoc = {
+      ...localUserDoc,
+      onboarding: stage,
+      updatedAt: new Date().toISOString()
+    }
+
+    const result = await localUserDB.put(updatedUserDoc)
+
+    return {
+      success: true,
+      data: result
+    }
+  } catch (error) {
+    console.error('Error updating the onboarding stage:', error)
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : String(error)
+    }
+  }
+}
+
+// Refactoring line
 
 /**
  * Retrieve user credentials from local database

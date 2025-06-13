@@ -3,14 +3,14 @@ import Input from './Input.tsx'
 import InputNewPassword from './InputNewPassword.tsx'
 import InputTextArea from './InputTextArea.tsx'
 import Button from './Button.tsx'
-import type {Secret, OnboardingStage, AddSecretFormProps} from '../types.ts'
+import type {AddSecretFormProps} from '../types.ts'
 
-export default function AddSecretForm({ 
-  onboarding, 
-  addSecret, 
-  handleSetShowSecretForm, 
+export default function AddSecretForm({
+  onboarding,
+  addSecret,
+  handleSetShowSecretForm,
   formError,
-  initialData 
+  initialData
 }: AddSecretFormProps): JSX.Element {
   const [name, setName] = React.useState(initialData?.name || '')
   const [username, setUsername] = React.useState(initialData?.username || '')
@@ -93,11 +93,7 @@ export default function AddSecretForm({
           </Button>
         )}
       </form>
-      {formError && (
-        <div className="text-red text-md">
-          {formError}
-        </div>
-      )}
+      {formError && <div className='text-red text-md'>{formError}</div>}
     </div>
   )
 }
