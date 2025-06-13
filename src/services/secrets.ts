@@ -1,10 +1,11 @@
-import {localSecretsDB, generateDocId} from '../services/pouchDB.ts'
+import {uuidv7} from 'uuidv7'
+import {localSecretsDB} from '../services/pouchDB.ts'
 import {
+  getEncryptionKey,
   encryptField,
-  decryptField,
-  getEncryptionKey
+  decryptField
 } from '../services/encryption.ts'
-import {DocType, Secret, ServiceResponse} from '../types.ts'
+import {Secret, ServiceResponse, DocType} from '../types.ts'
 
 /**
  * Validate secret data
@@ -20,10 +21,6 @@ function validateSecret(secret: Secret): boolean {
     typeof secret.password === 'string' &&
     secret.password.length > 0
   )
-}
-
-function validateId(id: string): boolean {
-  return !!id && typeof id === 'string' && id.trim().length > 0
 }
 
 /**
@@ -44,7 +41,7 @@ export async function createSecret(secret: Secret): Promise<ServiceResponse> {
 
     const newSecret: Secret = {
       ...secret,
-      _id: generateDocId(DocType.SECRET),
+      _id: `${DocType.SECRET}:${uuidv7()}`, // Might be simplified to just uuidv7
       createdAt: new Date().toISOString()
     }
 
@@ -63,6 +60,14 @@ export async function createSecret(secret: Secret): Promise<ServiceResponse> {
       error: error instanceof Error ? error.message : String(error)
     }
   }
+}
+
+// ---------------------------------------------------------------------------------------------------
+// refactoring line ----------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------
+
+function validateId(id: string): boolean {
+  return !!id && typeof id === 'string' && id.trim().length > 0
 }
 
 /**

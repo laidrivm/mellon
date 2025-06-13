@@ -16,11 +16,11 @@ import {
 
 export async function existsLocalUser(): Promise<boolean> {
   try {
-    const localUserDoc = await localUserDB.get(`${DocType.LOCAL_USER}`)
+    const localUserDoc = await localUserDB.get(DocType.LOCAL_USER)
     console.log(localUserDoc)
     return true
   } catch (error) {
-    if (!error.name === 'not_found')
+    if (error.name !== 'not_found')
       console.error('Error getting the onboarding stage:', error)
     return false
   }
@@ -29,7 +29,7 @@ export async function existsLocalUser(): Promise<boolean> {
 export async function createLocalUser(): Promise<ServiceResponse> {
   try {
     const result = await localUserDB.put({
-      _id: `${DocType.LOCAL_USER}`,
+      _id: DocType.LOCAL_USER,
       onboarding: 'secret',
       createdAt: new Date().toISOString()
     })
@@ -49,7 +49,7 @@ export async function createLocalUser(): Promise<ServiceResponse> {
 
 export async function getOnboardingStage(): Promise<OnboardingStage | null> {
   try {
-    const doc = await localUserDB.get(`${DocType.LOCAL_USER}`)
+    const doc = await localUserDB.get(DocType.LOCAL_USER)
     return doc.onboarding
   } catch (error) {
     console.error('Error getting the onboarding stage:', error)
@@ -61,7 +61,7 @@ export async function updateOnboardingStage(
   stage: OnboardingStage
 ): Promise<ServiceResponse> {
   try {
-    const localUserDoc = await localUserDB.get(`${DocType.LOCAL_USER}`)
+    const localUserDoc = await localUserDB.get(DocType.LOCAL_USER)
 
     const updatedUserDoc = {
       ...localUserDoc,
@@ -84,7 +84,9 @@ export async function updateOnboardingStage(
   }
 }
 
-// Refactoring line
+// ---------------------------------------------------------------------------------------------------
+// refactoring line ----------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------
 
 /**
  * Retrieve user credentials from local database

@@ -55,34 +55,26 @@ export default function App(): JSX.Element {
    * Handle adding a new secret
    * @param {Secret} secret - New secret to add
    */
-  const addSecret = React.useCallback(async (secret: Secret): Promise<void> => {
-    setFormError(null)
-    setFailedSecretData(null)
-    setSecrets((prevSecrets) => [secret, ...prevSecrets])
-    console.log(onboarding)
+  const addSecret = React.useCallback(
+    async (secret: Secret): Promise<void> => {
+      setFormError(null)
+      setFailedSecretData(null)
+      setSecrets((prevSecrets) => [secret, ...prevSecrets])
 
-    if (onboarding === 'secret') {
-      await saveOnboardingStage('master')
-    }
+      if (onboarding === 'secret') {
+        await saveOnboardingStage('master') // no failure check
+      }
 
-    try {
       const result = await createSecret(secret)
 
+      // Revert optimistic update and show error if failed to save a secret
       if (!result.success) {
-        console.error('Failed to save secret:', result.error)
-        // Revert optimistic update and show error
         setSecrets((prevSecrets) => prevSecrets.filter((s) => s !== secret))
         showSecretsError(result.error, secret)
       }
-    } catch (error) {
-      console.error('Error creating secret:', error)
-      // Revert optimistic update and show error
-      setSecrets((prevSecrets) => prevSecrets.filter((s) => s !== secret))
-      const errorMessage =
-        error instanceof Error ? error.message : String(error)
-      showSecretsError(errorMessage, secret)
-    }
-  }, [onboarding])
+    },
+    [onboarding]
+  )
 
   // Clear error when form is closed
   const handleSetShowSecretForm = React.useCallback((show: boolean) => {
@@ -94,7 +86,21 @@ export default function App(): JSX.Element {
   }, [])
 
   /**
-   * Verifies if password is valid
+   * Load initial data on mount
+   */
+  React.useEffect(() => {
+    async function loadInitialData() {
+      if (!(await existsLocalUser())) {
+        await createLocalUser()
+      }
+      setOnboarding(await getOnboardingStage())
+    }
+
+    loadInitialData()
+  }, [])
+
+  /**
+   * TODO: Verify if password is valid
    */
   const handleUnlock = React.useCallback(
     async (masterPasswordCandidate: string) => {
@@ -116,22 +122,6 @@ export default function App(): JSX.Element {
     },
     []
   )
-
-  /**
-   * Load initial data on mount
-   */
-  React.useEffect(() => {
-    async function loadInitialData() {
-      if (!(await existsLocalUser())) {
-        await createLocalUser()
-      }
-      setOnboarding(await getOnboardingStage())
-      // set onboarding state from DB
-      // if unlocked
-    }
-
-    loadInitialData()
-  }, [])
 
   return (
     <div className='flex flex-col items-center bg-white px-4 font-light text-black antialiased md:subpixel-antialiased'>
@@ -156,7 +146,9 @@ export default function App(): JSX.Element {
   )
 }
 
-// Refactoring line
+// ---------------------------------------------------------------------------------------------------
+// refactoring line ----------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------
 
 const INACTIVITY_TIMEOUT = 2 * 2 * 1000 // 2 minutes in milliseconds
 const LOCKED_STORAGE_KEY = 'app_locked'

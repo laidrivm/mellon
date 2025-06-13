@@ -7,6 +7,138 @@ let cachedEncryptionKey: CryptoKey | null = null
 let cachedMasterPassword: string | null = null
 
 /**
+ * Retrieve an initially unencrypted key from database
+ * @returns {Promise<CryptoKey | null>} Encryption key or null if not found
+ */
+async function getKeyFromDB(): Promise<CryptoKey | null> {
+  try {
+    const keyDoc = (await localUserDB.get(
+      `${DocType.ENCRYPTION_KEY}`
+    )) as EncryptionKeyDocument
+
+    if (keyDoc && keyDoc.key) {
+      return await window.crypto.subtle.importKey(
+        'jwk',
+        keyDoc.key,
+        {name: 'AES-GCM', length: 256},
+        false, // not extractable
+        ['encrypt', 'decrypt']
+      )
+    }
+    return null
+  } catch (error) {
+    if (error.name !== 'not_found') {
+      console.error('Error retrieving encryption key:', error)
+    }
+    return null
+  }
+}
+
+/**
+ * Generate a new encryption key
+ * @returns {Promise<CryptoKey>} Generated encryption key
+ */
+async function generateNewKey(): Promise<CryptoKey> {
+  return await window.crypto.subtle.generateKey(
+    {
+      name: 'AES-GCM',
+      length: 256
+    },
+    true, // extractable
+    ['encrypt', 'decrypt']
+  )
+}
+
+/**
+ * Store raw encryption key in database
+ * @param {CryptoKey} key - Encryption key to store
+ * @returns {Promise<PouchDB.Core.Response>} Storage operation result
+ */
+async function storeKeyInDB(key: CryptoKey): Promise<PouchDB.Core.Response> {
+  const keyData = await window.crypto.subtle.exportKey('jwk', key)
+
+  const keyDoc: EncryptionKeyDocument = {
+    _id: DocType.ENCRYPTION_KEY,
+    key: keyData,
+    createdAt: new Date().toISOString(),
+    type: 'encryptionKey'
+  }
+
+  return await localUserDB.put(keyDoc)
+}
+
+/**
+ * Get or create encryption key
+ * @returns {Promise<CryptoKey>} Encryption key
+ */
+export async function getEncryptionKey(): Promise<CryptoKey | null> {
+  // If we have cached key, return it
+  if (cachedEncryptionKey) {
+    return cachedEncryptionKey
+  }
+
+  // Otherwise try to get from DB
+  const key = await getKeyFromDB()
+  if (key) return key
+
+  // If no key exists, generate new one
+  const newKey = await generateNewKey()
+
+  try {
+    await storeKeyInDB(newKey)
+    cachedEncryptionKey = newKey
+  } catch (error) {
+    console.error('Failed to store encryption key:', error)
+    return null
+  }
+
+  return newKey
+}
+
+/**
+ * Encrypt single field using AES-GCM
+ * @param {string} data - Data to encrypt
+ * @param {CryptoKey} key - Encryption key
+ * @returns {Promise<string>} Encrypted data as base64 string
+ */
+export async function encryptField(
+  data: string,
+  key: CryptoKey
+): Promise<string> {
+  console.log(`encryptField: data="${data}"`)
+
+  // Create a random initialization vector
+  const iv = window.crypto.getRandomValues(new Uint8Array(12))
+
+  // Convert data to ArrayBuffer
+  const encoder = new TextEncoder()
+  const dataBuffer = encoder.encode(data)
+
+  // Encrypt the data
+  const encryptedBuffer = await window.crypto.subtle.encrypt(
+    {
+      name: 'AES-GCM',
+      iv: iv
+    },
+    key,
+    dataBuffer
+  )
+
+  // Combine the IV and encrypted data
+  const combined = new Uint8Array(iv.length + encryptedBuffer.byteLength)
+  combined.set(iv)
+  combined.set(new Uint8Array(encryptedBuffer), iv.length)
+
+  // Convert to Base64 string for storage
+  const result = btoa(String.fromCharCode.apply(null, Array.from(combined)))
+  return result
+}
+
+// ---------------------------------------------------------------------------------------------------
+// refactoring line ----------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------
+
+/**
  * Get encryption key from memory (must be unlocked first)
  * @returns {Promise<CryptoKey>} Encryption key
  * @throws {Error} If app is locked or key not available
@@ -134,45 +266,6 @@ export async function dateToSalt(
 }
 
 /**
- * Encrypt single field using AES-GCM
- * @param {string} data - Data to encrypt
- * @param {CryptoKey} key - Encryption key
- * @returns {Promise<string>} Encrypted data as base64 string
- */
-export async function encryptField(
-  data: string,
-  key: CryptoKey
-): Promise<string> {
-  // Create a random initialization vector
-  const iv = window.crypto.getRandomValues(new Uint8Array(12))
-
-  // Convert data to ArrayBuffer
-  const encoder = new TextEncoder()
-  console.log(`encryptField: data="${data}"`)
-  const dataBuffer = encoder.encode(data) // Don't JSON.stringify here, data should already be prepared
-
-  // Encrypt the data
-  const encryptedBuffer = await window.crypto.subtle.encrypt(
-    {
-      name: 'AES-GCM',
-      iv: iv
-    },
-    key,
-    dataBuffer
-  )
-
-  // Combine the IV and encrypted data
-  const combined = new Uint8Array(iv.length + encryptedBuffer.byteLength)
-  combined.set(iv)
-  combined.set(new Uint8Array(encryptedBuffer), iv.length)
-
-  // Convert to Base64 string for storage
-  const result = btoa(String.fromCharCode.apply(null, Array.from(combined)))
-  console.log(`encryptField: encrypted length=${result.length}`)
-  return result
-}
-
-/**
  * Decrypt single field using AES-GCM
  * @param {string} ciphertext - Encrypted data as base64 string
  * @param {CryptoKey} key - Decryption key
@@ -282,50 +375,6 @@ export async function getAndDecryptKeyFromDB(
 }
 
 /**
- * Retrieve an initially unencrypted key from database
- * @returns {Promise<CryptoKey | null>} Encryption key or null if not found
- */
-async function getKeyFromDB(): Promise<CryptoKey | null> {
-  try {
-    const keyDoc = (await localUserDB.get(
-      `${DocType.ENCRYPTION_KEY}`
-    )) as EncryptionKeyDocument
-
-    if (keyDoc && keyDoc.key) {
-      return await window.crypto.subtle.importKey(
-        'jwk',
-        keyDoc.key,
-        {name: 'AES-GCM', length: 256},
-        false,
-        ['encrypt', 'decrypt']
-      )
-    }
-    return null
-  } catch (error) {
-    if (error.name === 'not_found') {
-      return null
-    }
-    console.error('Error retrieving encryption key:', error)
-    throw error
-  }
-}
-
-/**
- * Generate a new encryption key
- * @returns {Promise<CryptoKey>} Generated encryption key
- */
-async function generateNewKey(): Promise<CryptoKey> {
-  return await window.crypto.subtle.generateKey(
-    {
-      name: 'AES-GCM',
-      length: 256
-    },
-    true, // extractable
-    ['encrypt', 'decrypt']
-  )
-}
-
-/**
  * Store encrypted encryption key in database
  * @param {CryptoKey} key - Encryption key to encrypt and store
  * @param {CryptoKey} masterPasswordKey - Key to encrypt the main key with
@@ -380,29 +429,6 @@ async function storeEncryptedKeyInDB(
     return await localUserDB.put(keyDoc)
   } catch (error) {
     console.error('Failed to store encrypted encryption key:', error)
-    throw error
-  }
-}
-
-/**
- * Store raw encryption key in database
- * @param {CryptoKey} key - Encryption key to store
- * @returns {Promise<PouchDB.Core.Response>} Storage operation result
- */
-async function storeKeyInDB(key: CryptoKey): Promise<PouchDB.Core.Response> {
-  try {
-    const keyData = await window.crypto.subtle.exportKey('jwk', key)
-
-    const keyDoc: EncryptionKeyDocument = {
-      _id: DocType.ENCRYPTION_KEY,
-      key: keyData,
-      createdAt: new Date().toISOString(),
-      type: 'encryptionKey'
-    }
-
-    return await localUserDB.put(keyDoc)
-  } catch (error) {
-    console.error('Failed to store encryption key:', error)
     throw error
   }
 }
@@ -510,24 +536,4 @@ export async function unlockEncryption(
  */
 export function isEncryptionInitialized(): boolean {
   return cachedEncryptionKey !== null && cachedMasterPassword !== null
-}
-
-/**
- * Get or create encryption key
- * @returns {Promise<CryptoKey>} Encryption key
- */
-export async function getEncryptionKey(): Promise<CryptoKey> {
-  // If we have cached key, return it
-  if (cachedEncryptionKey) {
-    return cachedEncryptionKey
-  }
-
-  // Otherwise try to get from DB (legacy unencrypted)
-  const key = await getKeyFromDB()
-  if (key) return key
-
-  // If no key exists, generate new one (legacy behavior)
-  const newKey = await generateNewKey()
-  await storeKeyInDB(newKey)
-  return newKey
 }
