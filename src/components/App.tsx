@@ -24,7 +24,7 @@ import {
   verifyMasterPassword
 } from '../services/users.ts'
 import {clearEncryptionCache} from '../services/encryption.ts'
-import {OnboardingStage, Secret} from '../types.ts'
+import {OnboardingStage, Secret, FormState} from '../types.ts'
 
 /**
  * Main application component
@@ -34,21 +34,47 @@ export default function App(): JSX.Element {
   const [onboarding, setOnboarding] =
     React.useState<OnboardingStage>('finished')
   const [secrets, setSecrets] = React.useState<Secret[]>([])
-  const [showSecretForm, setShowSecretForm] = React.useState<boolean>(false)
+  const [showForm, setShowForm] = React.useState<FormState | null>(null)
+  const [isAuthenticated, setIsAuthenticated] = React.useState<boolean>(false)
   const [formError, setFormError] = React.useState<string | null>(null)
+  //TODO: rewrite into unified failedData state and showError function
   const [failedSecretData, setFailedSecretData] = React.useState<Secret | null>(
     null
   )
+  const [failedMasterPasswordData, setFailedMasterPasswordData] =
+    React.useState<MasterPassword | null>(null)
 
   async function saveOnboardingStage(stage: OnboardingStage): void {
     setOnboarding(stage)
     await updateOnboardingStage(stage)
+    // TODO: move to onboarding state machine
+    switch (stage) {
+      case 'secret':
+        setShowForm('secret')
+        break
+      case 'master':
+        setShowForm('masterPassword')
+        break
+      case 'sign':
+        console.log('ok')
+        break
+      default:
+        console.error('Error: unknown onboarding stage')
+    }
   }
 
   function showSecretsError(errorMessage: string, secret: Secret): void {
     setFormError(errorMessage)
     setFailedSecretData(secret)
-    setShowSecretForm(true)
+    setShowForm('secret')
+  }
+
+  function showMasterPasswordError(
+    errorMessage: string,
+    masterPassword: MasterPassword
+  ): void {
+    setFormError(errorMessage)
+    setFailedMasterPasswordData(masterPassword)
   }
 
   /**
@@ -60,21 +86,20 @@ export default function App(): JSX.Element {
       setFormError(null)
       setFailedSecretData(null)
 
-      if (onboarding === 'secret') {
-        await saveOnboardingStage('master') // no failure check
-      }
-
       const result = await createSecret(secret)
 
       if (result.success) {
         secret._id = result.data.id
         setSecrets((prevSecrets) => [secret, ...prevSecrets])
+        if (onboarding === 'secret') {
+          await saveOnboardingStage('master') // no failure check
+        }
       } else {
         setSecrets((prevSecrets) => prevSecrets.filter((s) => s !== secret))
         showSecretsError(result.error, secret)
       }
     },
-    [onboarding, setShowSecretForm]
+    [onboarding, setShowForm]
   )
 
   const removeSecret = React.useCallback((secretId: string) => {
@@ -84,39 +109,57 @@ export default function App(): JSX.Element {
     )
   }, [])
 
-  // Clear error when form is closed
-  const handleSetShowSecretForm = React.useCallback((show: boolean) => {
-    setShowSecretForm(show)
-    if (!show) {
-      setFormError(null)
-      setFailedSecretData(null)
-    }
-  }, [])
+  // Clear the error when the form is closed
+  const handleSetShowForm = React.useCallback(
+    (form: FormState) => {
+      setShowForm(form)
+      if (!form) {
+        setFormError(null)
+        setFailedSecretData(null)
+        setFailedMasterPasswordData(null)
+
+        console.log(onboarding)
+
+        // TODO: move to onboarding state machine
+        switch (onboarding) {
+          case 'secret':
+            setShowForm('secret')
+            break
+          case 'master':
+            setShowForm('masterPassword')
+            break
+          case 'sign':
+            console.log('wok')
+            break
+          default:
+            console.error('Error: unknown onboarding stage')
+        }
+      }
+    },
+    [onboarding]
+  )
 
   /**
-   * Load initial data on mount
+   * Handle setting a master password
    */
-  React.useEffect(() => {
-    async function loadInitialData() {
-      if (!(await existsLocalUser())) {
-        await createLocalUser()
+  const addMasterPassword = React.useCallback(
+    async (masterPassword: MasterPassword) => {
+      setFormError(null)
+      setFailedMasterPasswordData(null)
+      const result = await storeMasterPassword(masterPassword)
+      console.log(JSON.stringify(result))
+
+      if (result.success) {
+        if (onboarding === 'master') {
+          await saveOnboardingStage('sign') // no failure check
+          setIsAuthenticated(true)
+        }
+      } else {
+        showMasterPasswordError(result.error, masterPassword)
       }
-
-      const currentOnboardingStage = await getOnboardingStage()
-      setOnboarding(currentOnboardingStage)
-
-      if (currentOnboardingStage === 'secret') {
-        setShowSecretForm(true)
-      }
-
-      const secretsResult = await getAllSecrets()
-      if (secretsResult.success && secretsResult.data) {
-        setSecrets(secretsResult.data)
-      }
-    }
-
-    loadInitialData()
-  }, [])
+    },
+    [onboarding]
+  )
 
   /**
    * TODO: Verify if password is valid
@@ -142,24 +185,73 @@ export default function App(): JSX.Element {
     []
   )
 
+  /**
+   * Load initial data on mount
+   */
+  React.useEffect(() => {
+    async function loadInitialData() {
+      if (!(await existsLocalUser())) {
+        await createLocalUser()
+        console.log(`creating local user`)
+      }
+
+      const currentOnboardingStage = await getOnboardingStage()
+      setOnboarding(currentOnboardingStage)
+
+      // TODO: move to onboarding state machine
+      switch (currentOnboardingStage) {
+        case 'secret':
+          setShowForm('secret')
+          break
+        case 'master':
+          setShowForm('masterPassword')
+          break
+        case 'sign':
+          console.log('poke')
+          break
+        default:
+          console.error('Error: unknown onboarding stage')
+      }
+
+      if (!isAuthenticated) return
+
+      const secretsResult = await getAllSecrets()
+      if (secretsResult.success && secretsResult.data) {
+        setSecrets(secretsResult.data)
+      }
+    }
+
+    loadInitialData()
+  }, [])
+
   return (
     <div className='flex flex-col items-center bg-white px-4 font-light text-black antialiased md:subpixel-antialiased'>
       <Layout>
-        {onboarding === 'secret' || showSecretForm ?
+        {showForm === 'secret' && (
           <AddSecretForm
             onboarding={onboarding}
             addSecret={addSecret}
-            handleSetShowSecretForm={handleSetShowSecretForm}
+            handleSetShowForm={handleSetShowForm}
             formError={formError}
             initialData={failedSecretData}
           />
+        )}
+        {showForm === 'masterPassword' && (
+          <MasterPasswordForm
+            addMasterPassword={addMasterPassword}
+            handleSetShowForm={handleSetShowForm}
+            formError={formError}
+            initialData={failedMasterPasswordData}
+          />
+        )}
+        {onboarding === 'secret' || onboarding === 'master' || isAuthenticated ?
+          <StoredSecrets
+            secrets={secrets}
+            showForm={showForm}
+            handleSetShowForm={handleSetShowForm}
+            removeSecret={removeSecret}
+          />
         : <UnlockForm tryUnlock={handleUnlock} />}
-        <StoredSecrets
-          secrets={secrets}
-          showSecretForm={showSecretForm}
-          handleSetShowSecretForm={handleSetShowSecretForm}
-          removeSecret={removeSecret}
-        />
       </Layout>
       <Footer />
     </div>
@@ -177,8 +269,6 @@ const SESSION_STORAGE_KEY = 'app_session_active'
 export function OldApp(): JSX.Element {
   const [email, setEmail] = React.useState<string | null>(null)
   const [locked, setLocked] = React.useState<boolean>(false)
-  const [isAuthenticationSetup, setIsAuthenticationSetup] =
-    React.useState<boolean>(false)
 
   const lockTimerRef = React.useRef<number | null>(null)
 
@@ -334,24 +424,6 @@ export function OldApp(): JSX.Element {
   }, [])
 
   /**
-   * Handle setting master password
-   */
-  const handleMasterPassword = React.useCallback(
-    async (masterPassword: string) => {
-      try {
-        await storeMasterPassword(masterPassword)
-        setIsAuthenticationSetup(true)
-        setOnboarding('sign')
-        // TODO After setting master password, reload secrets since encryption is now available?
-      } catch (error) {
-        console.error('Error storing master password:', error)
-        // TODO: Show error notification to user
-      }
-    },
-    []
-  )
-
-  /**
    * Handle email signup
    */
   const handleEmail = React.useCallback(async (email: string) => {
@@ -371,13 +443,7 @@ export function OldApp(): JSX.Element {
       <Layout>
         {locked ?
           <></>
-        : <>
-            {onboarding === 'sign' && <SignUpForm addEmail={handleEmail} />}
-            {onboarding === 'master' && (
-              <MasterPasswordForm addMasterPassword={handleMasterPassword} />
-            )}
-          </>
-        }
+        : <>{onboarding === 'sign' && <SignUpForm addEmail={handleEmail} />}</>}
       </Layout>
     </div>
   )

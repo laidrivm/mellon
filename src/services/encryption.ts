@@ -1,5 +1,5 @@
 import {localUserDB} from './pouchDB.ts'
-import {DocType, EncryptionKeyDocument} from '../types.ts'
+import {DocType} from '../types.ts'
 import {recryptSecrets} from './secrets.ts'
 
 // In-memory storage for decrypted keys (cleared on lock)
@@ -12,11 +12,9 @@ let cachedMasterPassword: string | null = null
  */
 async function getKeyFromDB(): Promise<CryptoKey | null> {
   try {
-    const keyDoc = (await localUserDB.get(
-      `${DocType.ENCRYPTION_KEY}`
-    )) as EncryptionKeyDocument
+    const keyDoc = await localUserDB.get(DocType.LOCAL_USER)
 
-    if (keyDoc && keyDoc.key) {
+    if (keyDoc?.key) {
       return await window.crypto.subtle.importKey(
         'jwk',
         keyDoc.key,
@@ -25,10 +23,27 @@ async function getKeyFromDB(): Promise<CryptoKey | null> {
         ['encrypt', 'decrypt']
       )
     }
+
+    if (keyDoc?.encryptedKey) {
+      return keyDoc.encryptedKey
+    }
+
     return null
   } catch (error) {
     if (error.name !== 'not_found') {
       console.error('Error retrieving encryption key:', error)
+    }
+    return null
+  }
+}
+
+async function getLocalUserCreatedTime(): Promise<string | null> {
+  try {
+    const doc = await localUserDB.get(DocType.LOCAL_USER)
+    return doc.createdAt
+  } catch (error) {
+    if (error.name !== 'not_found') {
+      console.error('Error retrieving user creation time:', error)
     }
     return null
   }
@@ -57,11 +72,12 @@ async function generateNewKey(): Promise<CryptoKey> {
 async function storeKeyInDB(key: CryptoKey): Promise<PouchDB.Core.Response> {
   const keyData = await window.crypto.subtle.exportKey('jwk', key)
 
-  const keyDoc: EncryptionKeyDocument = {
-    _id: DocType.ENCRYPTION_KEY,
+  const doc = await localUserDB.get(DocType.LOCAL_USER)
+
+  const keyDoc = {
+    ...doc,
     key: keyData,
-    createdAt: new Date().toISOString(),
-    type: 'encryptionKey'
+    updatedAt: new Date().toISOString()
   }
 
   return await localUserDB.put(keyDoc)
@@ -74,12 +90,17 @@ async function storeKeyInDB(key: CryptoKey): Promise<PouchDB.Core.Response> {
 export async function getEncryptionKey(): Promise<CryptoKey | null> {
   // If we have cached key, return it
   if (cachedEncryptionKey) {
+    console.log(`returning cachedEncryptionKey`)
     return cachedEncryptionKey
   }
 
   // Otherwise try to get from DB
   const key = await getKeyFromDB()
-  if (key) return key
+  if (key) {
+    cachedEncryptionKey = key
+    console.log(`returning key from DB`)
+    return key
+  }
 
   // If no key exists, generate new one
   const newKey = await generateNewKey()
@@ -87,6 +108,7 @@ export async function getEncryptionKey(): Promise<CryptoKey | null> {
   try {
     await storeKeyInDB(newKey)
     cachedEncryptionKey = newKey
+    console.log(`returing new key`)
   } catch (error) {
     console.error('Failed to store encryption key:', error)
     return null
@@ -169,6 +191,168 @@ export async function decryptField(
   return decryptedString
 }
 
+/**
+ * Convert ISO date string to Uint8Array salt for cryptographic use
+ * @param {string} isoDateString - ISO date string (e.g., "2024-12-11T10:30:45.123Z")
+ * @param {number} saltLength - Desired salt length in bytes (default: 16)
+ * @returns {Promise<Uint8Array>} Cryptographic salt derived from date
+ */
+export async function dateToSalt(
+  isoDateString: string,
+  saltLength = 16
+): Promise<Uint8Array> {
+  // Convert ISO string to UTF-8 bytes
+  const encoder = new TextEncoder()
+  const dateBytes = encoder.encode(isoDateString)
+
+  // Use SHA-256 to hash the date string for better distribution
+  const hashBuffer = await crypto.subtle.digest('SHA-256', dateBytes)
+  const hashArray = new Uint8Array(hashBuffer)
+
+  // If requested salt length is longer than hash, repeat the hash
+  if (saltLength <= hashArray.length) {
+    const result = hashArray.slice(0, saltLength)
+    return result
+  } else {
+    // For longer salts, concatenate multiple hashes
+    const extendedSalt = new Uint8Array(saltLength)
+    let offset = 0
+
+    while (offset < saltLength) {
+      const remainingBytes = saltLength - offset
+      const bytesToCopy = Math.min(hashArray.length, remainingBytes)
+      extendedSalt.set(hashArray.slice(0, bytesToCopy), offset)
+      offset += bytesToCopy
+    }
+
+    return extendedSalt
+  }
+}
+
+/**
+ * Derive encryption key from master password using PBKDF2
+ * @param {string} masterPassword - Master password
+ * @param {Uint8Array} salt - Salt for key derivation
+ * @returns {Promise<CryptoKey>} Derived encryption key
+ */
+export async function deriveKeyFromPassword(
+  masterPassword: string,
+  salt: Uint8Array
+): Promise<CryptoKey> {
+  const encoder = new TextEncoder()
+  const passwordBuffer = encoder.encode(masterPassword)
+
+  // Import password as key material
+  const keyMaterial = await window.crypto.subtle.importKey(
+    'raw',
+    passwordBuffer,
+    'PBKDF2',
+    false,
+    ['deriveKey']
+  )
+
+  // Derive AES key from password
+  const derivedKey = await window.crypto.subtle.deriveKey(
+    {
+      name: 'PBKDF2',
+      salt: salt,
+      iterations: 100000,
+      hash: 'SHA-256'
+    },
+    keyMaterial,
+    {
+      name: 'AES-GCM',
+      length: 256
+    },
+    false,
+    ['encrypt', 'decrypt']
+  )
+
+  return derivedKey
+}
+
+/**
+ * Store encrypted encryption key in database
+ * @param {CryptoKey} key - Encryption key to encrypt and store
+ * @param {CryptoKey} masterPasswordKey - Key to encrypt the main key with
+ * @param {string} createdAt - Creation date for salt generation
+ * @returns {Promise<PouchDB.Core.Response>} Storage operation result
+ */
+async function storeEncryptedKeyInDB(
+  key: CryptoKey,
+  masterPasswordKey: CryptoKey
+): Promise<PouchDB.Core.Response> {
+  try {
+    // Export the key to encrypt it
+    const keyData = await window.crypto.subtle.exportKey('jwk', key)
+
+    // Encrypt the entire JWK as a string
+    const encryptedKey = await encryptField(
+      JSON.stringify(keyData),
+      masterPasswordKey
+    )
+
+    // Update existing document
+    const existingDoc = await localUserDB.get(DocType.LOCAL_USER)
+    const updatedDoc = {
+      ...existingDoc,
+      encryptedKey: encryptedKey,
+      updatedAt: new Date().toISOString()
+    }
+
+    delete updatedDoc.key
+
+    return await await localUserDB.put(updatedDoc)
+  } catch (error) {
+    console.error('Failed to store encrypted encryption key:', error)
+    throw error
+  }
+}
+
+/**
+ * Initialize encryption system with master password
+ * @param {string} masterPassword - Master password
+ * @param {string} createdAt - Creation date string for salt generation
+ * @returns {Promise<boolean>} Success status
+ */
+export async function updateEncryptionWithMP(
+  masterPassword: string
+): Promise<boolean> {
+  try {
+    // Create a new encryption key
+    const newEncryptionKey = await generateNewKey()
+
+    // Recrypt all the existing secrets with the new key
+    await recryptSecrets(newEncryptionKey)
+
+    // Generate salt from the SAME date that will be used for unlocking
+    const createdAt = await getLocalUserCreatedTime()
+    console.log(`createdAt: ${createdAt}`)
+    const salt = await dateToSalt(createdAt, createdAt.length)
+    console.log(`salt: ${salt}`)
+
+    // Create encryption key using the salt and the master password
+    const keyFromMP = await deriveKeyFromPassword(masterPassword, salt)
+
+    // Store the new encryption key encrypted with the master password-derived key
+    await storeEncryptedKeyInDB(newEncryptionKey, keyFromMP)
+
+    // Renew cached values
+    cachedEncryptionKey = newEncryptionKey
+    cachedMasterPassword = masterPassword
+
+    console.log(cachedMasterPassword)
+    console.log(
+      `cachedEncryptionKey: ${cachedEncryptionKey.type}, ${cachedEncryptionKey.extractable}, ${JSON.stringify(cachedEncryptionKey.algorithm)}, ${cachedEncryptionKey.usages}`
+    )
+
+    return true
+  } catch (error) {
+    console.error('Error in updateEncryptionWithMP:', error)
+    return false
+  }
+}
+
 // ---------------------------------------------------------------------------------------------------
 // refactoring line ----------------------------------------------------------------------------------
 // ---------------------------------------------------------------------------------------------------
@@ -207,100 +391,6 @@ export function clearEncryptionCache(): void {
 }
 
 /**
- * Derive encryption key from master password using PBKDF2
- * @param {string} masterPassword - Master password
- * @param {Uint8Array} salt - Salt for key derivation
- * @returns {Promise<CryptoKey>} Derived encryption key
- */
-export async function deriveKeyFromPassword(
-  masterPassword: string,
-  salt: Uint8Array
-): Promise<CryptoKey> {
-  console.log(
-    `started deriveKeyFromPassword with masterPassword: ${masterPassword} and salt: ${Array.from(salt)}`
-  )
-  const encoder = new TextEncoder()
-  const passwordBuffer = encoder.encode(masterPassword)
-
-  console.log(
-    `encoder: ${JSON.stringify(encoder)}, passwordBuffer: ${Array.from(passwordBuffer)}`
-  )
-
-  // Import password as key material
-  const keyMaterial = await window.crypto.subtle.importKey(
-    'raw',
-    passwordBuffer,
-    'PBKDF2',
-    false,
-    ['deriveKey']
-  )
-
-  console.log(`keyMaterial imported successfully`)
-
-  // Derive AES key from password
-  const derivedKey = await window.crypto.subtle.deriveKey(
-    {
-      name: 'PBKDF2',
-      salt: salt,
-      iterations: 100000,
-      hash: 'SHA-256'
-    },
-    keyMaterial,
-    {
-      name: 'AES-GCM',
-      length: 256
-    },
-    false,
-    ['encrypt', 'decrypt']
-  )
-
-  console.log(`Key derived successfully`)
-  return derivedKey
-}
-
-/**
- * Convert ISO date string to Uint8Array salt for cryptographic use
- * @param {string} isoDateString - ISO date string (e.g., "2024-12-11T10:30:45.123Z")
- * @param {number} saltLength - Desired salt length in bytes (default: 16)
- * @returns {Promise<Uint8Array>} Cryptographic salt derived from date
- */
-export async function dateToSalt(
-  isoDateString: string,
-  saltLength = 16
-): Promise<Uint8Array> {
-  console.log(`dateToSalt: input="${isoDateString}", length=${saltLength}`)
-
-  // Convert ISO string to UTF-8 bytes
-  const encoder = new TextEncoder()
-  const dateBytes = encoder.encode(isoDateString)
-
-  // Use SHA-256 to hash the date string for better distribution
-  const hashBuffer = await crypto.subtle.digest('SHA-256', dateBytes)
-  const hashArray = new Uint8Array(hashBuffer)
-
-  // If requested salt length is longer than hash, repeat the hash
-  if (saltLength <= hashArray.length) {
-    const result = hashArray.slice(0, saltLength)
-    console.log(`dateToSalt: result=${Array.from(result)}`)
-    return result
-  } else {
-    // For longer salts, concatenate multiple hashes
-    const extendedSalt = new Uint8Array(saltLength)
-    let offset = 0
-
-    while (offset < saltLength) {
-      const remainingBytes = saltLength - offset
-      const bytesToCopy = Math.min(hashArray.length, remainingBytes)
-      extendedSalt.set(hashArray.slice(0, bytesToCopy), offset)
-      offset += bytesToCopy
-    }
-
-    console.log(`dateToSalt: extended result=${Array.from(extendedSalt)}`)
-    return extendedSalt
-  }
-}
-
-/**
  * Retrieve and decrypt encryption key from database using master password
  * @param {string} masterPassword - Master password for decryption
  * @param {string} createdAt - Creation date string used for salt generation
@@ -314,9 +404,7 @@ export async function getAndDecryptKeyFromDB(
     `getAndDecryptKeyFromDB: masterPassword="${masterPassword}", createdAt="${createdAt}"`
   )
   try {
-    const keyDoc = (await localUserDB.get(
-      `${DocType.ENCRYPTION_KEY}`
-    )) as EncryptionKeyDocument
+    const keyDoc = await localUserDB.get(DocType.LOCAL_USER)
 
     if (!keyDoc || !keyDoc.encryptedKey) {
       console.log('No encrypted key found in database')
@@ -357,121 +445,6 @@ export async function getAndDecryptKeyFromDB(
   } catch (error) {
     console.error('Error retrieving and decrypting encryption key:', error)
     return null
-  }
-}
-
-/**
- * Store encrypted encryption key in database
- * @param {CryptoKey} key - Encryption key to encrypt and store
- * @param {CryptoKey} masterPasswordKey - Key to encrypt the main key with
- * @param {string} createdAt - Creation date for salt generation
- * @returns {Promise<PouchDB.Core.Response>} Storage operation result
- */
-async function storeEncryptedKeyInDB(
-  key: CryptoKey,
-  masterPasswordKey: CryptoKey,
-  createdAt: string
-): Promise<PouchDB.Core.Response> {
-  try {
-    // Export the key to encrypt it
-    const keyData = await window.crypto.subtle.exportKey('jwk', key)
-    console.log(`storeEncryptedKeyInDB: keyData=${JSON.stringify(keyData)}`)
-
-    // Encrypt the entire JWK as a string
-    const encryptedKey = await encryptField(
-      JSON.stringify(keyData),
-      masterPasswordKey
-    )
-    console.log(
-      `storeEncryptedKeyInDB: encrypted key length=${encryptedKey.length}`
-    )
-
-    // Try to get existing document to update it
-    let keyDoc: EncryptionKeyDocument
-    try {
-      const existingDoc = (await localUserDB.get(
-        DocType.ENCRYPTION_KEY
-      )) as EncryptionKeyDocument
-      keyDoc = {
-        ...existingDoc,
-        encryptedKey: encryptedKey,
-        createdAt: createdAt, // Store the creation date for salt generation
-        updatedAt: new Date().toISOString()
-      }
-      // Remove the old unencrypted key field if it exists
-      delete keyDoc.key
-    } catch (error) {
-      // Create new document
-      console.error(error)
-      keyDoc = {
-        _id: DocType.ENCRYPTION_KEY,
-        encryptedKey: encryptedKey,
-        createdAt: createdAt,
-        type: 'encryptionKey'
-      }
-    }
-
-    console.log(`storeEncryptedKeyInDB: final doc=${JSON.stringify(keyDoc)}`)
-    return await localUserDB.put(keyDoc)
-  } catch (error) {
-    console.error('Failed to store encrypted encryption key:', error)
-    throw error
-  }
-}
-
-/**
- * Initialize encryption system with master password
- * @param {string} masterPassword - Master password
- * @param {string} createdAt - Creation date string for salt generation
- * @returns {Promise<boolean>} Success status
- */
-export async function updateEncryptionWithMP(
-  masterPassword: string,
-  createdAt: string
-): Promise<boolean> {
-  try {
-    console.log(
-      `updateEncryptionWithMP: masterPassword="${masterPassword}", createdAt="${createdAt}"`
-    )
-
-    // 1. Create new encryption key
-    const newEncryptionKey = await generateNewKey()
-    console.log(`newEncryptionKey generated`)
-
-    // 2. Cache the decrypted values in memory
-    cachedEncryptionKey = newEncryptionKey
-    cachedMasterPassword = masterPassword
-    console.log('Keys cached in memory')
-
-    // 3. Retrieve old encryption key to run recryption
-    const oldEncryptionKey = await getKeyFromDB()
-    console.log(`oldEncryptionKey: ${oldEncryptionKey ? 'found' : 'not found'}`)
-
-    // 4. Recrypt all the existing secrets with the new key
-    if (oldEncryptionKey) {
-      await recryptSecrets(oldEncryptionKey, newEncryptionKey)
-      console.log('Secrets recrypted')
-    }
-
-    // 5. Generate salt from the SAME date that will be used for unlocking
-    const salt = await dateToSalt(createdAt, createdAt.length)
-    console.log(`salt generated: ${Array.from(salt)}`)
-
-    const keyFromMP = await deriveKeyFromPassword(masterPassword, salt)
-    console.log(`keyFromMP derived`)
-
-    // 6. Store the new encryption key encrypted with the master password-derived key
-    const result = await storeEncryptedKeyInDB(
-      newEncryptionKey,
-      keyFromMP,
-      createdAt
-    )
-    console.log(`storeEncryptedKeyInDB completed, result: ${result}`)
-
-    return true
-  } catch (error) {
-    console.error('Error in updateEncryptionWithMP:', error)
-    return false
   }
 }
 

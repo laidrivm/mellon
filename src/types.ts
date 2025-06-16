@@ -24,17 +24,6 @@ export interface UserCredentials {
 }
 
 /**
- * Represents encryption key document
- * @interface EncryptionKeyDocument
- */
-export interface EncryptionKeyDocument {
-  _id: string
-  key: JsonWebKey
-  createdAt: string
-  type: 'encryptionKey'
-}
-
-/**
  * Represents master password data
  * @interface MasterPassword
  */
@@ -115,21 +104,29 @@ export enum DocType {
   LOCAL_USER = 'local_user',
   SECRET = 'secret',
   USER_CREDENTIALS = 'user_credentials',
-  ENCRYPTION_KEY = 'encryption_key',
   MASTER_PASSWORD = 'master_password'
 }
 
 export interface AddSecretFormProps {
   onboarding: OnboardingStage
   addSecret: (secret: Secret) => Promise<void>
-  handleSetShowSecretForm: (show: boolean) => void
+  handleSetShowtForm: (form: FormState) => void
   formError?: string | null
   initialData?: Secret | null
 }
 
 export interface StoredSecretsProps {
   secrets: Secret[]
-  showSecretForm: boolean
-  handleSetShowSecretForm: (show: boolean) => void
+  showForm: FormState
+  handleSetShowtForm: (form: FormState) => void
   removeSecret: (secretId: string) => void
 }
+
+export interface MasterPasswordFormProps {
+  addMasterPassword: (masterPassword: MasterPassword) => void
+  handleSetShowtForm: (form: FormState) => void
+  formError?: string | null
+  initialData?: MasterPassword | null
+}
+
+export type FormState = 'secret' | 'masterPassword' | 'email' | 'emailCode'

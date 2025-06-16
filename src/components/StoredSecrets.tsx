@@ -7,12 +7,12 @@ import type {StoredSecretsProps} from '../types.ts'
 
 export default function StoredSecrets({
   secrets,
-  showSecretForm,
-  handleSetShowSecretForm,
+  showForm,
+  handleSetShowForm,
   removeSecret
 }: StoredSecretsProps): JSX.Element {
   function onClick(): void {
-    handleSetShowSecretForm(true)
+    handleSetShowForm('secret')
   }
 
   return (
@@ -20,7 +20,7 @@ export default function StoredSecrets({
       <div className='flex justify-between'>
         <h2 className='text-3xl'>Stored Secrets</h2>
 
-        {!showSecretForm && (
+        {showForm !== 'secret' && (
           <Button style='inline' onClick={onClick}>
             Add New
           </Button>

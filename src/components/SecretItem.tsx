@@ -19,7 +19,6 @@ export default function SecretItem({
 
   async function handleRemove() {
     setTimeout(() => {
-      console.log(secret._id)
       removeSecret(secret._id)
     }, 0)
   }

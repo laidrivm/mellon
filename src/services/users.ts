@@ -83,6 +83,47 @@ export async function updateOnboardingStage(
   }
 }
 
+/**
+ * Store master password in local database (encrypted with encryption key)
+ * @param {MasterPassword} masterPassword - an object with a password itself and a hint
+ * @returns {Promise<ServiceResponse>} Operation result
+ */
+export async function storeMasterPassword(
+  masterPassword: MasterPassword
+): Promise<ServiceResponse> {
+  const password = masterPassword.password
+  const hint = masterPassword.hint || 'Hint has never been set'
+  try {
+    // Update the encryption system with the master password
+    const success = await updateEncryptionWithMP(password)
+    if (!success) {
+      return {
+        success: false,
+        error: 'Failed to initialize encryption system'
+      }
+    }
+
+    // Get the encryption key (now available in memory)
+    const encryptionKey = await getCachedEncryptionKey()
+    // Encrypt the master password with the encryption key
+    const encryptedPassword = await encryptField(password, encryptionKey)
+
+    const result = await localUserDB.put({
+      _id: `${DocType.MASTER_PASSWORD}`,
+      password: encryptedPassword,
+      hint
+    })
+
+    return {success: true, data: result}
+  } catch (error) {
+    console.error('Error storing master password:', error)
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : String(error)
+    }
+  }
+}
+
 // ---------------------------------------------------------------------------------------------------
 // refactoring line ----------------------------------------------------------------------------------
 // ---------------------------------------------------------------------------------------------------
@@ -154,49 +195,6 @@ export async function createUserCredentials(
 export async function isAuthenticated(): Promise<boolean> {
   const credentials = await getUserCredentials()
   return !!credentials
-}
-
-/**
- * Store master password in local database (encrypted with encryption key)
- * @param {MasterPassword} masterPassword - an object with a password itself and a hint
- * @returns {Promise<ServiceResponse>} Operation result
- */
-export async function storeMasterPassword(
-  masterPassword: MasterPassword
-): Promise<ServiceResponse> {
-  const password = masterPassword.password
-  const hint = masterPassword.hint || 'Hint has never been set'
-  try {
-    // Update the encryption system with the master password
-    const createdAt = new Date().toISOString()
-    const success = await updateEncryptionWithMP(password, createdAt)
-    if (!success) {
-      return {
-        success: false,
-        error: 'Failed to initialize encryption system'
-      }
-    }
-
-    // Get the encryption key (now available in memory)
-    const encryptionKey = await getCachedEncryptionKey()
-    // Encrypt the master password with the encryption key
-    const encryptedPassword = await encryptField(password, encryptionKey)
-
-    const result = await localUserDB.put({
-      _id: `${DocType.MASTER_PASSWORD}`,
-      password: encryptedPassword,
-      hint,
-      createdAt
-    })
-
-    return {success: true, data: result}
-  } catch (error) {
-    console.error('Error storing master password:', error)
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : String(error)
-    }
-  }
 }
 
 /**

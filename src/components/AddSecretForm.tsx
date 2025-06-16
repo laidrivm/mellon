@@ -8,7 +8,7 @@ import type {AddSecretFormProps} from '../types.ts'
 export default function AddSecretForm({
   onboarding,
   addSecret,
-  handleSetShowSecretForm,
+  handleSetShowForm,
   formError,
   initialData
 }: AddSecretFormProps): JSX.Element {
@@ -59,12 +59,12 @@ export default function AddSecretForm({
     setPassword('')
     setNotes('')
     setPasswordError(false)
-    handleSetShowSecretForm(false)
+    handleSetShowForm(null)
   }
 
   function hideTheForm(event): void {
     event.preventDefault()
-    handleSetShowSecretForm(false)
+    handleSetShowForm(null)
   }
 
   return (
@@ -93,7 +93,7 @@ export default function AddSecretForm({
           </Button>
         )}
       </form>
-      {formError && <div className='text-red text-md'>{formError}</div>}
+      {formError && <div className='text-md text-red-500'>{formError}</div>}
     </div>
   )
 }
