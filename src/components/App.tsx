@@ -56,6 +56,7 @@ export default function App(): JSX.Element {
         setShowForm('masterPassword')
         break
       case 'sign':
+        setShowForm(null)
         console.log('ok')
         break
       default:
@@ -129,6 +130,7 @@ export default function App(): JSX.Element {
             setShowForm('masterPassword')
             break
           case 'sign':
+            setShowForm(null)
             console.log('wok')
             break
           default:
@@ -151,7 +153,7 @@ export default function App(): JSX.Element {
 
       if (result.success) {
         if (onboarding === 'master') {
-          await saveOnboardingStage('sign') // no failure check
+          await saveOnboardingStage('recovery') // no failure check
           setIsAuthenticated(true)
         }
       } else {
@@ -204,6 +206,7 @@ export default function App(): JSX.Element {
           setShowForm('masterPassword')
           break
         case 'sign':
+          setShowForm(null)
           console.log('poke')
           break
         default:
@@ -241,6 +244,7 @@ export default function App(): JSX.Element {
             initialData={failedMasterPasswordData}
           />
         )}
+        {onboarding === 'recovery' && <></>}
         {onboarding === 'secret' || onboarding === 'master' || isAuthenticated ?
           <StoredSecrets
             secrets={secrets}
@@ -258,10 +262,6 @@ export default function App(): JSX.Element {
 // ---------------------------------------------------------------------------------------------------
 // refactoring line ----------------------------------------------------------------------------------
 // ---------------------------------------------------------------------------------------------------
-
-const INACTIVITY_TIMEOUT = 2 * 2 * 1000 // 2 minutes in milliseconds
-const LOCKED_STORAGE_KEY = 'app_locked'
-const SESSION_STORAGE_KEY = 'app_session_active'
 
 export function OldApp(): JSX.Element {
   const [email, setEmail] = React.useState<string | null>(null)
@@ -371,15 +371,6 @@ export function OldApp(): JSX.Element {
       clearLockTimer()
     }
   }, [handleUserActivity, startLockTimer, clearLockTimer, locked])
-
-  /**
-   * Update onboarding stage based on secrets count
-   */
-  React.useEffect(() => {
-    if (onboarding === 'secret' && secrets.length > 0) {
-      setOnboarding('master')
-    }
-  }, [secrets.length, onboarding])
 
   /**
    * Load initial data on mount

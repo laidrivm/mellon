@@ -74,7 +74,13 @@ export type ButtonStyle =
  * Onboarding stages
  * @type OnboardingStage
  */
-export type OnboardingStage = 'secret' | 'master' | 'sign' | 'finished'
+export type OnboardingStage =
+  | 'secret'
+  | 'master'
+  | 'recovery'
+  | 'sign'
+  | 'code'
+  | 'finished'
 
 /**
  * Database names used in application

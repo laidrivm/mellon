@@ -3,7 +3,7 @@ import {
   encryptField,
   decryptField,
   updateEncryptionWithMP,
-  getCachedEncryptionKey,
+  getEncryptionKey,
   getAndDecryptKeyFromDB
 } from './encryption.ts'
 import {
@@ -104,7 +104,7 @@ export async function storeMasterPassword(
     }
 
     // Get the encryption key (now available in memory)
-    const encryptionKey = await getCachedEncryptionKey()
+    const encryptionKey = await getEncryptionKey()
     // Encrypt the master password with the encryption key
     const encryptedPassword = await encryptField(password, encryptionKey)
 
