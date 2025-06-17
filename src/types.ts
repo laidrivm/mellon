@@ -13,17 +13,6 @@ export interface Secret {
 }
 
 /**
- * Represents user account credentials
- * @interface UserCredentials
- */
-export interface UserCredentials {
-  uuid: string
-  password: string
-  dbName: string
-  createdAt?: string
-}
-
-/**
  * Represents master password data
  * @interface MasterPassword
  */
@@ -102,9 +91,7 @@ export enum DbName {
  */
 export enum DocType {
   LOCAL_USER = 'local_user',
-  SECRET = 'secret',
-  USER_CREDENTIALS = 'user_credentials',
-  MASTER_PASSWORD = 'master_password'
+  SECRET = 'secret'
 }
 
 export interface AddSecretFormProps {

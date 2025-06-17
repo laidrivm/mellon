@@ -162,24 +162,21 @@ export default function App(): JSX.Element {
   )
 
   /**
-   * TODO: Verify if password is valid
+   * Verify if password is valid
    */
   const handleUnlock = React.useCallback(
     async (masterPasswordCandidate: string) => {
-      try {
-        const result = await verifyMasterPassword(masterPasswordCandidate)
-        if (result) {
-          setLocked(false)
-          // Mark session as active when unlocking
-          sessionStorage.setItem(SESSION_STORAGE_KEY, 'true')
-          // Reload secrets now that encryption is available
-          const secretsResult = await getAllSecrets()
-          if (secretsResult.success && secretsResult.data) {
-            setSecrets(secretsResult.data)
-          }
-        }
-      } catch (error) {
-        console.error('Error during unlock:', error)
+      setFormError(null)
+      const result = await verifyMasterPassword(masterPasswordCandidate)
+      if (result) {
+        setIsAuthenticated(true)
+        // Reload secrets now that encryption is available
+        const secretsResult = await getAllSecrets()
+        if (secretsResult.success && secretsResult.data) {
+          setSecrets(secretsResult.data)
+        } // no error handling as there might be no stored secrets on unlock
+      } else {
+        setFormError('Invalid master password. Please try again.')
       }
     },
     []
@@ -251,7 +248,7 @@ export default function App(): JSX.Element {
             handleSetShowForm={handleSetShowForm}
             removeSecret={removeSecret}
           />
-        : <UnlockForm tryUnlock={handleUnlock} />}
+        : <UnlockForm tryUnlock={handleUnlock} formError={formError} />}
       </Layout>
       <Footer />
     </div>

@@ -353,43 +353,6 @@ export async function updateEncryptionWithMP(
   }
 }
 
-// ---------------------------------------------------------------------------------------------------
-// refactoring line ----------------------------------------------------------------------------------
-// ---------------------------------------------------------------------------------------------------
-
-/**
- * Get encryption key from memory (must be unlocked first)
- * @returns {Promise<CryptoKey>} Encryption key
- * @throws {Error} If app is locked or key not available
- */
-export async function getCachedEncryptionKey(): Promise<CryptoKey> {
-  if (!cachedEncryptionKey) {
-    throw new Error('Application is locked. Please unlock first.')
-  }
-  return cachedEncryptionKey
-}
-
-/**
- * Get master password from memory (must be unlocked first)
- * @returns {string} Master password
- * @throws {Error} If app is locked or password not available
- */
-export function getCachedMasterPassword(): string {
-  if (!cachedMasterPassword) {
-    throw new Error('Application is locked. Please unlock first.')
-  }
-  return cachedMasterPassword
-}
-
-/**
- * Clear all cached encryption data from memory. Called on lock
- */
-export function clearEncryptionCache(): void {
-  cachedEncryptionKey = null
-  cachedMasterPassword = null
-  console.log('Encryption cache cleared')
-}
-
 /**
  * Retrieve and decrypt encryption key from database using master password
  * @param {string} masterPassword - Master password for decryption
@@ -407,7 +370,7 @@ export async function getAndDecryptKeyFromDB(
     const keyDoc = await localUserDB.get(DocType.LOCAL_USER)
 
     if (!keyDoc || !keyDoc.encryptedKey) {
-      console.log('No encrypted key found in database')
+      console.error('No encrypted key found in database')
       return null
     }
 
@@ -448,45 +411,29 @@ export async function getAndDecryptKeyFromDB(
   }
 }
 
+// ---------------------------------------------------------------------------------------------------
+// refactoring line ----------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------
+
 /**
- * Unlock encryption system with master password
- * @param {string} masterPassword - Master password
- * @param {string} createdAt - Creation date string for salt generation
- * @returns {Promise<boolean>} Success status
+ * Get master password from memory (must be unlocked first)
+ * @returns {string} Master password
+ * @throws {Error} If app is locked or password not available
  */
-export async function unlockEncryption(
-  masterPassword: string,
-  createdAt: string
-): Promise<boolean> {
-  try {
-    console.log(
-      `started unlockEncryption: masterPassword="${masterPassword}", createdAt="${createdAt}"`
-    )
-
-    // Try to decrypt the stored encryption key with the master password
-    const decryptedKey = await getAndDecryptKeyFromDB(masterPassword, createdAt)
-
-    console.log(`decryptedKey: ${JSON.stringify(decryptedKey)}`)
-
-    if (!decryptedKey) {
-      console.log(
-        'Failed to decrypt encryption key - wrong password or no key found'
-      )
-      return false
-    }
-
-    // Cache the decrypted values in memory
-    cachedEncryptionKey = decryptedKey
-    cachedMasterPassword = masterPassword
-
-    console.log(
-      `Encryption system unlocked successfully, cachedEncryptionKey: ${JSON.stringify(cachedEncryptionKey)}, cachedMasterPassword: ${cachedMasterPassword}`
-    )
-    return true
-  } catch (error) {
-    console.error('Error unlocking encryption:', error)
-    return false
+export function getCachedMasterPassword(): string {
+  if (!cachedMasterPassword) {
+    throw new Error('Application is locked. Please unlock first.')
   }
+  return cachedMasterPassword
+}
+
+/**
+ * Clear all cached encryption data from memory. Called on lock
+ */
+export function clearEncryptionCache(): void {
+  cachedEncryptionKey = null
+  cachedMasterPassword = null
+  console.log('Encryption cache cleared')
 }
 
 /**

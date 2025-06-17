@@ -108,8 +108,10 @@ export async function storeMasterPassword(
     // Encrypt the master password with the encryption key
     const encryptedPassword = await encryptField(password, encryptionKey)
 
+    const doc = await localUserDB.get(DocType.LOCAL_USER)
+
     const result = await localUserDB.put({
-      _id: `${DocType.MASTER_PASSWORD}`,
+      ...doc,
       password: encryptedPassword,
       hint
     })
@@ -117,6 +119,62 @@ export async function storeMasterPassword(
     return {success: true, data: result}
   } catch (error) {
     console.error('Error storing master password:', error)
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : String(error)
+    }
+  }
+}
+
+/**
+ * Verify master password against stored value
+ * @param {string} password - Password to verify
+ * @returns {Promise<boolean>} Whether password is correct
+ */
+export async function verifyMasterPassword(password: string): Promise<boolean> {
+  try {
+    console.log(`Entering verifyMasterPassword with ${password} candidate`)
+    // Retrieve Master Password and the creation date from the DB
+    const doc = await localUserDB.get(`${DocType.LOCAL_USER}`)
+    console.log(`got from DB: ${JSON.stringify(doc)}`)
+    const encryptedMP = doc.password
+    console.log(`encryptedMP: ${encryptedMP}`)
+    const createdAt = doc.createdAt
+    console.log(`createdAt: ${createdAt}`)
+    // Apply this key to decrypt the encryption key
+    const encryptionKey = await getAndDecryptKeyFromDB(password, createdAt)
+
+    if (!encryptionKey) {
+      return false
+    }
+
+    // Use the result to decrypt the stored master-password
+    const decryptedPassword = await decryptField(encryptedMP, encryptionKey)
+    console.log(`decryptedPassword: ${decryptedPassword}`)
+
+    return decryptedPassword === password
+  } catch (error) {
+    console.error('Error verifying master password:', error)
+    return false
+  }
+}
+
+/**
+ * Get master password hint from the database
+ * @returns {Promise<ServiceResponse<{hint: string}>>} Return hint for master password
+ */
+export async function getMasterPasswordHint(): Promise<
+  ServiceResponse<{hint: string}>
+> {
+  try {
+    const doc = await localUserDB.get(`${DocType.LOCAL_USER}`)
+
+    return {
+      success: true,
+      data: {hint: doc.hint}
+    }
+  } catch (error) {
+    console.error('Error getting master password hint:', error)
     return {
       success: false,
       error: error instanceof Error ? error.message : String(error)
@@ -198,37 +256,6 @@ export async function isAuthenticated(): Promise<boolean> {
 }
 
 /**
- * Verify master password against stored value
- * @param {string} password - Password to verify
- * @returns {Promise<boolean>} Whether password is correct
- */
-export async function verifyMasterPassword(password: string): Promise<boolean> {
-  try {
-    console.log(`Entering verifyMasterPassword with ${password} candidate`)
-    // 1. Retrieve Master Password and the creation date from the DB
-    const doc = await localUserDB.get(`${DocType.MASTER_PASSWORD}`)
-    console.log(`got from DB: ${JSON.stringify(doc)}`)
-    const encryptedMP = doc.password
-    console.log(`encryptedMP: ${encryptedMP}`)
-    const createdAt = doc.createdAt
-    console.log(`createdAt: ${createdAt}`)
-    // 2. Apply this key to decrypt the encryption key
-    const encryptionKey = await getAndDecryptKeyFromDB(password, createdAt)
-    console.log(
-      `encryptionKey: ${encryptionKey.type}, ${encryptionKey.algorithm}, ${encryptionKey.usages}`
-    )
-    // 3. Use the result to decrypt the stored master-password
-    const decryptedPassword = await decryptField(encryptedMP, encryptionKey)
-    console.log(`decryptedPassword: ${decryptedPassword}`)
-
-    return decryptedPassword === password
-  } catch (error) {
-    console.error('Error verifying master password:', error)
-    return false
-  }
-}
-
-/**
  * Check if master password is stored in the database
  * @returns {Promise<ServiceResponse<boolean>>}
  */
@@ -246,29 +273,6 @@ export async function hasMasterPassword(): Promise<ServiceResponse<boolean>> {
       }
     }
     console.error('Error getting master password:', error)
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : String(error)
-    }
-  }
-}
-
-/**
- * Get master password hint from the database
- * @returns {Promise<ServiceResponse<{hint: string}>>} Return hint for master password
- */
-export async function getMasterPasswordHint(): Promise<
-  ServiceResponse<{hint: string}>
-> {
-  try {
-    const doc = await localUserDB.get(`${DocType.MASTER_PASSWORD}`)
-
-    return {
-      success: true,
-      data: {hint: doc.hint}
-    }
-  } catch (error) {
-    console.error('Error getting master password hint:', error)
     return {
       success: false,
       error: error instanceof Error ? error.message : String(error)

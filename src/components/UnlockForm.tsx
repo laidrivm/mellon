@@ -1,26 +1,47 @@
-import React, {ReactNode} from 'react'
+import React from 'react'
 
 import InputNewPassword from './InputNewPassword.tsx'
 import Button from './Button.tsx'
 import {getMasterPasswordHint} from '../services/users.ts'
 
-export default function UnlockMellon({
-  tryUnlock
+export default function UnlockForm({
+  tryUnlock,
+  formError
 }: {
   tryUnlock: (masterPasswordCandidate: string) => void
-}): ReactNode {
+  formError: string | null
+}): JSX.Element {
   const [password, setPassword] = React.useState('')
+  const [passwordError, setPasswordError] = React.useState(false)
+  const [hint, setHint] = React.useState(null)
+  const [hintError, setHintError] = React.useState(null)
 
   async function verifyPassword(event): void {
     event.preventDefault()
+    setPasswordError(false)
+    if (!password) {
+      setPasswordError(true)
+      return
+    }
     await tryUnlock(password)
     setPassword('')
   }
 
-  async function showHint(event): void {
+  async function handleHint(event): void {
     event.preventDefault()
-    const hint = await getMasterPasswordHint()
-    console.log(`Hint: ${hint.data.hint}`)
+
+    if (hint || hintError) {
+      setHint(null)
+      setHintError(null)
+      return
+    }
+
+    const response = await getMasterPasswordHint()
+    if (response.success) {
+      setHint(response.data.hint)
+    } else {
+      setHintError('Failed to load the hint')
+    }
   }
 
   return (
@@ -35,15 +56,19 @@ export default function UnlockMellon({
           password={password}
           setPassword={setPassword}
           isGenerationAvailable={false}
+          error={passwordError}
         />
         <div className='mt-6 flex items-center justify-center gap-6'>
-          <Button style='secondary' onClick={showHint}>
+          <Button style='secondary' onClick={handleHint}>
             Hint
           </Button>
           <Button style='secondary'>Recover</Button>
           <Button>Unlock</Button>
         </div>
       </form>
+      {formError && <div className='text-md text-red-500'>{formError}</div>}
+      {hint && <div className='text-md'>{`Hint: ${hint}`}</div>}
+      {hintError && <div className='text-md text-red-500'>{hintError}</div>}
     </div>
   )
 }
