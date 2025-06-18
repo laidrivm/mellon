@@ -360,8 +360,8 @@ export default function App(): JSX.Element {
 
   return (
     <div className='flex flex-col items-center bg-white px-4 font-light text-black antialiased md:subpixel-antialiased'>
+      {isAuthenticated && <Header email={email} />}
       <Layout>
-        {isAuthenticated && <Header email={email} />}
         {showForm === 'secret' && (
           <SecretForm
             onboarding={onboarding}
