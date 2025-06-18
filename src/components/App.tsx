@@ -6,6 +6,7 @@ import Layout from './Layout.tsx'
 import AddSecretForm from './AddSecretForm.tsx'
 import StoredSecrets from './StoredSecrets.tsx'
 import MasterPasswordForm from './MasterPasswordForm.tsx'
+import RecoveryDisplay from './RecoveryDisplay.tsx'
 import UnlockForm from './UnlockForm.tsx'
 import SignUpForm from './SignUpForm.tsx'
 import Header from './Header.tsx'
@@ -122,6 +123,9 @@ export default function App(): JSX.Element {
       case 'master':
         setShowForm('masterPassword')
         break
+      case 'recovery':
+        setShowForm(null)
+        break
       case 'sign':
         setShowForm(null)
         console.log('ok')
@@ -196,6 +200,9 @@ export default function App(): JSX.Element {
           case 'master':
             setShowForm('masterPassword')
             break
+          case 'recovery':
+            setShowForm(null)
+            break
           case 'sign':
             setShowForm(null)
             console.log('wok')
@@ -220,8 +227,8 @@ export default function App(): JSX.Element {
 
       if (result.success) {
         if (onboarding === 'master') {
-          await saveOnboardingStage('sign') // no failure check
-          setIsAuthenticated(true) // move to recovery
+          await saveOnboardingStage('recovery') // no failure check
+          setIsAuthenticated(true)
         }
       } else {
         showMasterPasswordError(result.error, masterPassword)
@@ -229,6 +236,15 @@ export default function App(): JSX.Element {
     },
     [onboarding]
   )
+
+  /**
+   * Handle recovery display continuation
+   */
+  const handleRecoveryContinue = React.useCallback(async () => {
+    if (onboarding === 'recovery') {
+      await saveOnboardingStage('sign')
+    }
+  }, [onboarding])
 
   /**
    * Verify if password is valid
@@ -272,6 +288,9 @@ export default function App(): JSX.Element {
         case 'master':
           setShowForm('masterPassword')
           break
+        case 'recovery':
+          setShowForm(null)
+          break
         case 'sign':
           setShowForm(null)
           console.log('poke')
@@ -311,7 +330,9 @@ export default function App(): JSX.Element {
             initialData={failedMasterPasswordData}
           />
         )}
-        {onboarding === 'recovery' && <></>}
+        {onboarding === 'recovery' && isAuthenticated && (
+          <RecoveryDisplay onContinue={handleRecoveryContinue} />
+        )}
         {onboarding === 'sign' && <></>} {/*Maybe might work on showForm*/}
         {onboarding === 'code' && <></>} {/*Maybe might work on showForm*/}
         {onboarding === 'secret' || onboarding === 'master' || isAuthenticated ?
@@ -321,7 +342,14 @@ export default function App(): JSX.Element {
             handleSetShowForm={handleSetShowForm}
             removeSecret={removeSecret}
           />
-        : <UnlockForm tryUnlock={handleUnlock} formError={formError} />}
+        : showForm === 'recovery' ?
+          <></>
+        : <UnlockForm
+            tryUnlock={handleUnlock}
+            handleSetShowForm={handleSetShowForm}
+            formError={formError}
+          />
+        }
       </Layout>
       <Footer />
     </div>

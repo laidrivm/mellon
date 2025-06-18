@@ -122,4 +122,19 @@ export interface MasterPasswordFormProps {
   initialData?: MasterPassword | null
 }
 
-export type FormState = 'secret' | 'masterPassword' | 'email' | 'emailCode'
+export interface UnlockFormProps {
+  tryUnlock: (masterPasswordCandidate: string) => void
+  handleSetShowtForm: (form: FormState) => void
+  formError?: string | null
+}
+
+export type FormState =
+  | 'secret'
+  | 'masterPassword'
+  | 'recovery'
+  | 'email'
+  | 'emailCode'
+
+export interface RecoveryDisplayProps {
+  onContinue: () => void
+}

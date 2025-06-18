@@ -55,7 +55,7 @@ export default function ButtonCopyAll({secret}: {secret: Secret}): JSX.Element {
       <span
         className={`transition-opacity duration-300 ${copied ? 'opacity-100' : 'opacity-100'}`}
       >
-        {copied ? 'Done' : 'Copy All'}
+        {copied ? 'Copied' : 'Copy All'}
       </span>
     </button>
   )

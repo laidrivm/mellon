@@ -4,13 +4,13 @@ import InputNewPassword from './InputNewPassword.tsx'
 import Button from './Button.tsx'
 import {getMasterPasswordHint} from '../services/users.ts'
 
+import type {UnlockFormProps} from '../types.ts'
+
 export default function UnlockForm({
   tryUnlock,
+  handleSetShowForm,
   formError
-}: {
-  tryUnlock: (masterPasswordCandidate: string) => void
-  formError: string | null
-}): JSX.Element {
+}: UnlockFormProps): JSX.Element {
   const [password, setPassword] = React.useState('')
   const [passwordError, setPasswordError] = React.useState(false)
   const [hint, setHint] = React.useState(null)
@@ -44,6 +44,12 @@ export default function UnlockForm({
     }
   }
 
+  async function handleRecover(event): void {
+    event.preventDefault()
+
+    handleSetShowForm('recovery')
+  }
+
   return (
     <div className='space-y-4'>
       <h1 className='text-center text-xl'>Speak Friend and Enter</h1>
@@ -62,7 +68,9 @@ export default function UnlockForm({
           <Button style='secondary' onClick={handleHint}>
             Hint
           </Button>
-          <Button style='secondary'>Recover</Button>
+          <Button style='secondary' onClick={handleRecover}>
+            Recover
+          </Button>
           <Button>Unlock</Button>
         </div>
       </form>
