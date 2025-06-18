@@ -24,7 +24,7 @@ export default function RecoveryDisplay({
 
   const handleCopyAllWords = async () => {
     try {
-      const allWords = recoveryWords.join('\n')
+      const allWords = recoveryShares.join('\n')
       await navigator.clipboard.writeText(allWords)
       setCopied(true)
       // Reset after 2 seconds

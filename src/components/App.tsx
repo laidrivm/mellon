@@ -3,11 +3,12 @@ import React from 'react'
 import './App.css'
 
 import Layout from './Layout.tsx'
-import AddSecretForm from './AddSecretForm.tsx'
+import SecretForm from './SecretForm.tsx'
 import StoredSecrets from './StoredSecrets.tsx'
 import MasterPasswordForm from './MasterPasswordForm.tsx'
 import RecoveryDisplay from './RecoveryDisplay.tsx'
 import UnlockForm from './UnlockForm.tsx'
+import RecoveryForm from './RecoveryForm.tsx'
 import SignUpForm from './SignUpForm.tsx'
 import Header from './Header.tsx'
 import Footer from './Footer.tsx'
@@ -21,7 +22,8 @@ import {
   storeMasterPassword,
   getEmail,
   createUserAccount,
-  verifyMasterPassword
+  verifyMasterPassword,
+  verifyRecoveredMasterPassword
 } from '../services/users.ts'
 import {clearEncryptionCache} from '../services/encryption.ts'
 import {OnboardingStage, Secret, FormState} from '../types.ts'
@@ -87,12 +89,7 @@ export default function App(): JSX.Element {
    * Set up user activity listeners and session management
    */
   React.useEffect(() => {
-    const activityEvents = [
-      'mousedown',
-      'keypress',
-      'scroll',
-      'touchstart'
-    ]
+    const activityEvents = ['mousedown', 'keypress', 'scroll', 'touchstart']
 
     // Add event listeners
     activityEvents.forEach((event) => {
@@ -246,6 +243,7 @@ export default function App(): JSX.Element {
   }, [onboarding])
 
   /**
+   * TODO: merge handleUnlock and handleRecoveryAttempt
    * Verify if password is valid
    */
   const handleUnlock = React.useCallback(
@@ -265,6 +263,25 @@ export default function App(): JSX.Element {
     },
     []
   )
+
+  /**
+   * Handle recovery attempt
+   */
+  const handleRecoveryAttempt = React.useCallback(async (shares: string[]) => {
+    setFormError(null)
+    const result = await verifyRecoveredMasterPassword(shares)
+    if (result) {
+      setIsAuthenticated(true)
+      setShowForm(null)
+      // Reload secrets now that encryption is available
+      const secretsResult = await getAllSecrets()
+      if (secretsResult.success && secretsResult.data) {
+        setSecrets(secretsResult.data)
+      } // no error handling as there might be no stored secrets on unlock
+    } else {
+      setFormError('Invalid recovery words. Please try again.')
+    }
+  }, [])
 
   /**
    * Load initial data on mount
@@ -313,7 +330,7 @@ export default function App(): JSX.Element {
     <div className='flex flex-col items-center bg-white px-4 font-light text-black antialiased md:subpixel-antialiased'>
       <Layout>
         {showForm === 'secret' && (
-          <AddSecretForm
+          <SecretForm
             onboarding={onboarding}
             addSecret={addSecret}
             handleSetShowForm={handleSetShowForm}
@@ -342,7 +359,11 @@ export default function App(): JSX.Element {
             removeSecret={removeSecret}
           />
         : showForm === 'recovery' ?
-          <></>
+          <RecoveryForm
+            onRecoveryAttempt={handleRecoveryAttempt}
+            handleSetShowForm={handleSetShowForm}
+            formError={formError}
+          />
         : <UnlockForm
             tryUnlock={handleUnlock}
             handleSetShowForm={handleSetShowForm}

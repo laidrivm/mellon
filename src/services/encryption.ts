@@ -1,4 +1,4 @@
-import {split} from 'shamir-secret-sharing'
+import {split, combine} from 'shamir-secret-sharing'
 
 import {localUserDB} from './pouchDB.ts'
 import {DocType} from '../types.ts'
@@ -362,8 +362,8 @@ export async function updateEncryptionWithMP(
  * @returns {Promise<CryptoKey | null>} Decrypted encryption key or null if failed
  */
 export async function getAndDecryptKeyFromDB(
-  masterPassword: string,
-  createdAt: string
+  masterPassword: string | CryptoKey,
+  createdAt?: string
 ): Promise<CryptoKey | null> {
   console.log(
     `getAndDecryptKeyFromDB: masterPassword="${masterPassword}", createdAt="${createdAt}"`
@@ -376,13 +376,17 @@ export async function getAndDecryptKeyFromDB(
       return null
     }
 
-    console.log(`keyDoc found with encryptedKey`)
+    let keyFromMP: CryptoKey
 
-    // Generate salt from the SAME date that was used during storage
-    const salt = await dateToSalt(createdAt, 32)
-
-    // Derive key from master password using the same salt
-    const keyFromMP = await deriveKeyFromPassword(masterPassword, salt)
+    if (masterPassword instanceof CryptoKey) {
+      // Password recovery flow
+      keyFromMP = masterPassword
+    } else {
+      // Generate salt from the SAME date that was used during storage
+      const salt = await dateToSalt(createdAt, 32)
+      // Derive key from master password using the same salt
+      keyFromMP = await deriveKeyFromPassword(masterPassword, salt)
+    }
 
     // Decrypt the stored encryption key (which is a stringified JWK)
     const decryptedKeyString = await decryptField(
@@ -445,9 +449,7 @@ function bytesToMnemonic(bytes: Uint8Array): string[] {
  * @param {string} createdAt - Creation timestamp for salt generation
  * @returns {Promise<{shares: string[], success: boolean}>} Recovery shares as mnemonic words
  */
-export async function generateRecoveryShares(
-  createdAt: string
-): Promise<{shares: string[]; success: boolean}> {
+export async function generateRecoveryShares(createdAt: string) {
   try {
     // Generate salt from creation date
     const salt = await dateToSalt(createdAt, 32)
@@ -465,7 +467,7 @@ export async function generateRecoveryShares(
     console.log(`shares: ${shares}`)
 
     // Convert share to mnemonic words
-    const mnemonicShares = shares.map(share => {
+    const mnemonicShares = shares.map((share) => {
       const words = bytesToMnemonic(share)
       return words.join(' ')
     })
@@ -479,6 +481,72 @@ export async function generateRecoveryShares(
     return {
       success: false,
       error: error instanceof Error ? error.message : String(error)
+    }
+  }
+}
+
+/**
+ * Convert mnemonic words back to bytes
+ * @param {string[]} words - Mnemonic words
+ * @returns {Uint8Array} Reconstructed bytes
+ */
+function mnemonicToBytes(words: string[]): Uint8Array {
+  let bitString = ''
+
+  for (const word of words) {
+    const wordIndex = BIP39_WORDLIST.words.indexOf(word.toLowerCase())
+    if (wordIndex === -1) {
+      throw new Error(`Invalid mnemonic word: ${word}`)
+    }
+    bitString += wordIndex.toString(2).padStart(11, '0')
+  }
+
+  // Convert bit string back to bytes
+  const bytes: number[] = []
+  for (let i = 0; i < bitString.length; i += 8) {
+    const bits = bitString.slice(i, i + 8)
+    if (bits.length === 8) {
+      bytes.push(parseInt(bits, 2))
+    }
+  }
+
+  return new Uint8Array(bytes)
+}
+
+/**
+ * Reconstruct master password from recovery shares
+ * @param {string[]} mnemonicShares - Recovery shares as mnemonic phrases
+ * @returns {Promise<{data: CryptoKey | null, success: boolean}>} Reconstructed master key
+ */
+export async function reconstructMasterKey(mnemonicShares: string[]) {
+  try {
+    // Convert mnemonic shares back to bytes
+    const shareBytes = mnemonicShares.map((mnemonic) => {
+      const words = mnemonic.trim().split(/\s+/)
+      return mnemonicToBytes(words)
+    })
+
+    // Reconstruct the key using Shamir Secret Sharing
+    const reconstructedKeyBytes = await combine(shareBytes)
+
+    // Import the reconstructed key
+    const reconstructedKey = await window.crypto.subtle.importKey(
+      'raw',
+      reconstructedKeyBytes,
+      {name: 'AES-GCM', length: 256},
+      false,
+      ['encrypt', 'decrypt']
+    )
+
+    return {
+      data: reconstructedKey,
+      success: true
+    }
+  } catch (error) {
+    console.error('Error reconstructing master password:', error)
+    return {
+      data: null,
+      success: false
     }
   }
 }

@@ -138,3 +138,9 @@ export type FormState =
 export interface RecoveryDisplayProps {
   onContinue: () => void
 }
+
+export interface RecoveryFormProps {
+  onRecoveryAttempt: (shares: string[]) => void
+  handleSetShowForm: (form: FormState) => void
+  formError?: string | null
+}
