@@ -1,27 +1,26 @@
 import React from 'react'
 import Button from './Button.tsx'
 
+import {getRecoveryShares} from '../services/users.ts'
+
 import type {RecoveryDisplayProps} from '../types.ts'
 
 export default function RecoveryDisplay({
   onContinue
 }: RecoveryDisplayProps): JSX.Element {
   const [copied, setCopied] = React.useState<Record<boolean>>(false)
+  const [recoveryShares, setRecoveryShares] = React.useState<string[]>([])
 
-  const recoveryWords = [
-    'idea',
-    'away',
-    'road',
-    'trophy',
-    'indoor',
-    'bamboo',
-    'project',
-    'mammal',
-    'detail',
-    'name',
-    'stone',
-    'exclude'
-  ]
+  React.useEffect(() => {
+    async function loadInitialData() {
+      const response = await getRecoveryShares()
+      if (response.success && response.data) {
+        setRecoveryShares(response.data)
+      }
+    }
+
+    loadInitialData()
+  }, [])
 
   const handleCopyAllWords = async () => {
     try {
@@ -35,6 +34,11 @@ export default function RecoveryDisplay({
     } catch (error) {
       console.error('Failed to copy to clipboard:', error)
     }
+  }
+
+  const handleContinue = () => {
+    setRecoveryShares([])
+    onContinue()
   }
 
   return (
@@ -73,8 +77,8 @@ export default function RecoveryDisplay({
         </div>
 
         <ol style={{listStyleType: 'decimal'}}>
-          {recoveryWords.map((word, index) => {
-            return <li key={index}>{word}</li>
+          {recoveryShares.map((share, index) => {
+            return <li key={index}>{share}</li>
           })}
         </ol>
       </div>
@@ -90,7 +94,7 @@ export default function RecoveryDisplay({
       </div>
 
       <div className='flex justify-center pt-4'>
-        <Button onClick={onContinue}>Continue</Button>
+        <Button onClick={handleContinue}>Continue</Button>
       </div>
     </div>
   )

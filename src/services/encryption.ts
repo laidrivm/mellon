@@ -1,6 +1,10 @@
+import {split} from 'shamir-secret-sharing'
+
 import {localUserDB} from './pouchDB.ts'
 import {DocType} from '../types.ts'
 import {recryptSecrets} from './secrets.ts'
+
+import BIP39_WORDLIST from './englishMnemonics.json'
 
 // In-memory storage for decrypted keys (cleared on lock)
 let cachedEncryptionKey: CryptoKey | null = null
@@ -194,12 +198,12 @@ export async function decryptField(
 /**
  * Convert ISO date string to Uint8Array salt for cryptographic use
  * @param {string} isoDateString - ISO date string (e.g., "2024-12-11T10:30:45.123Z")
- * @param {number} saltLength - Desired salt length in bytes (default: 16)
+ * @param {number} saltLength - Desired salt length in bytes (default: 32)
  * @returns {Promise<Uint8Array>} Cryptographic salt derived from date
  */
 export async function dateToSalt(
   isoDateString: string,
-  saltLength = 16
+  saltLength = 32
 ): Promise<Uint8Array> {
   // Convert ISO string to UTF-8 bytes
   const encoder = new TextEncoder()
@@ -264,7 +268,7 @@ export async function deriveKeyFromPassword(
       name: 'AES-GCM',
       length: 256
     },
-    false,
+    true,
     ['encrypt', 'decrypt']
   )
 
@@ -275,7 +279,6 @@ export async function deriveKeyFromPassword(
  * Store encrypted encryption key in database
  * @param {CryptoKey} key - Encryption key to encrypt and store
  * @param {CryptoKey} masterPasswordKey - Key to encrypt the main key with
- * @param {string} createdAt - Creation date for salt generation
  * @returns {Promise<PouchDB.Core.Response>} Storage operation result
  */
 async function storeEncryptedKeyInDB(
@@ -312,7 +315,6 @@ async function storeEncryptedKeyInDB(
 /**
  * Initialize encryption system with master password
  * @param {string} masterPassword - Master password
- * @param {string} createdAt - Creation date string for salt generation
  * @returns {Promise<boolean>} Success status
  */
 export async function updateEncryptionWithMP(
@@ -328,7 +330,7 @@ export async function updateEncryptionWithMP(
     // Generate salt from the SAME date that will be used for unlocking
     const createdAt = await getLocalUserCreatedTime()
     console.log(`createdAt: ${createdAt}`)
-    const salt = await dateToSalt(createdAt, createdAt.length)
+    const salt = await dateToSalt(createdAt, 32)
     console.log(`salt: ${salt}`)
 
     // Create encryption key using the salt and the master password
@@ -377,7 +379,7 @@ export async function getAndDecryptKeyFromDB(
     console.log(`keyDoc found with encryptedKey`)
 
     // Generate salt from the SAME date that was used during storage
-    const salt = await dateToSalt(createdAt, createdAt.length)
+    const salt = await dateToSalt(createdAt, 32)
 
     // Derive key from master password using the same salt
     const keyFromMP = await deriveKeyFromPassword(masterPassword, salt)
@@ -408,6 +410,76 @@ export async function getAndDecryptKeyFromDB(
   } catch (error) {
     console.error('Error retrieving and decrypting encryption key:', error)
     return null
+  }
+}
+
+/**
+ * Convert bytes to mnemonic words using BIP39 wordlist
+ * @param {Uint8Array} bytes - Bytes to convert
+ * @returns {string[]} Array of mnemonic words
+ */
+
+function bytesToMnemonic(bytes: Uint8Array): string[] {
+  const words: string[] = []
+
+  // Convert every 11 bits to a word index (BIP39 standard)
+  let bitString = ''
+  for (const byte of bytes) {
+    bitString += byte.toString(2).padStart(8, '0')
+  }
+
+  // Take 11 bits at a time and convert to word index
+  for (let i = 0; i < bitString.length; i += 11) {
+    const bits = bitString.slice(i, i + 11)
+    if (bits.length === 11) {
+      const wordIndex = parseInt(bits, 2) % BIP39_WORDLIST.words.length
+      words.push(BIP39_WORDLIST.words[wordIndex])
+    }
+  }
+
+  return words
+}
+
+/**
+ * Generate Shamir Secret Sharing recovery shares for master password
+ * @param {string} createdAt - Creation timestamp for salt generation
+ * @returns {Promise<{shares: string[], success: boolean}>} Recovery shares as mnemonic words
+ */
+export async function generateRecoveryShares(
+  createdAt: string
+): Promise<{shares: string[]; success: boolean}> {
+  try {
+    // Generate salt from creation date
+    const salt = await dateToSalt(createdAt, 32)
+
+    // Derive a key from the master password
+    const derivedKey = await deriveKeyFromPassword(cachedMasterPassword, salt)
+
+    // Export the key to get raw bytes for Shamir sharing
+    const keyData = await window.crypto.subtle.exportKey('raw', derivedKey)
+    const keyBytes = new Uint8Array(keyData)
+
+    // Use Shamir Secret Sharing: 1 share, 1 required (as requested)
+    const shares = await split(keyBytes, 2, 2)
+
+    console.log(`shares: ${shares}`)
+
+    // Convert share to mnemonic words
+    const mnemonicShares = shares.map(share => {
+      const words = bytesToMnemonic(share)
+      return words.join(' ')
+    })
+
+    return {
+      success: true,
+      data: mnemonicShares
+    }
+  } catch (error) {
+    console.error('Error generating recovery shares:', error)
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : String(error)
+    }
   }
 }
 

@@ -4,7 +4,8 @@ import {
   decryptField,
   updateEncryptionWithMP,
   getEncryptionKey,
-  getAndDecryptKeyFromDB
+  getAndDecryptKeyFromDB,
+  generateRecoveryShares
 } from './encryption.ts'
 import {
   DocType,
@@ -48,8 +49,8 @@ export async function createLocalUser(): Promise<ServiceResponse> {
 
 export async function getOnboardingStage(): Promise<OnboardingStage | null> {
   try {
-    const doc = await localUserDB.get(DocType.LOCAL_USER)
-    return doc.onboarding
+    const userDoc = await localUserDB.get(DocType.LOCAL_USER)
+    return userDoc.onboarding
   } catch (error) {
     console.error('Error getting the onboarding stage:', error)
     return null
@@ -167,14 +168,38 @@ export async function getMasterPasswordHint(): Promise<
   ServiceResponse<{hint: string}>
 > {
   try {
-    const doc = await localUserDB.get(`${DocType.LOCAL_USER}`)
+    const userDoc = await localUserDB.get(`${DocType.LOCAL_USER}`)
 
     return {
       success: true,
-      data: {hint: doc.hint}
+      data: {hint: userDoc.hint}
     }
   } catch (error) {
     console.error('Error getting master password hint:', error)
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : String(error)
+    }
+  }
+}
+
+/**
+ * Get recovery words
+ * @returns {Promise<ServiceResponse<{shares: string[]}>>} Recovery shares
+ */
+export async function getRecoveryShares(): Promise<ServiceResponse<string[]>> {
+  try {
+    const userDoc = await localUserDB.get(DocType.LOCAL_USER)
+
+    const recoveryResult = await generateRecoveryShares(userDoc.createdAt)
+
+    if (!recoveryResult.success) {
+      throw new Error('Failed to generate recovery shares')
+    }
+
+    return recoveryResult
+  } catch (error) {
+    console.error('Error getting recovery shares:', error)
     return {
       success: false,
       error: error instanceof Error ? error.message : String(error)

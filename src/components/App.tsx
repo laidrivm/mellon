@@ -26,7 +26,7 @@ import {
 import {clearEncryptionCache} from '../services/encryption.ts'
 import {OnboardingStage, Secret, FormState} from '../types.ts'
 
-const INACTIVITY_TIMEOUT = 2 * 2 * 1000 // 2 minutes in milliseconds
+const INACTIVITY_TIMEOUT = 2 * 60 * 1000 // 2 minutes in milliseconds
 
 /**
  * Main application component
@@ -91,8 +91,7 @@ export default function App(): JSX.Element {
       'mousedown',
       'keypress',
       'scroll',
-      'touchstart',
-      'mousemove'
+      'touchstart'
     ]
 
     // Add event listeners
