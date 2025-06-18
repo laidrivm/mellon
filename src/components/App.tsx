@@ -21,7 +21,7 @@ import {
   updateOnboardingStage,
   storeMasterPassword,
   getEmail,
-  createUserAccount,
+  storeEmail,
   verifyMasterPassword,
   verifyRecoveredMasterPassword
 } from '../services/users.ts'
@@ -40,6 +40,7 @@ export default function App(): JSX.Element {
   const [secrets, setSecrets] = React.useState<Secret[]>([])
   const [showForm, setShowForm] = React.useState<FormState | null>(null)
   const [isAuthenticated, setIsAuthenticated] = React.useState<boolean>(false)
+  const [email, setEmail] = React.useState<string | null>(null)
   const [formError, setFormError] = React.useState<string | null>(null)
   //TODO: rewrite into unified failedData state and showError function
   const [failedSecretData, setFailedSecretData] = React.useState<Secret | null>(
@@ -73,6 +74,7 @@ export default function App(): JSX.Element {
         console.log('Inactivity timeout - locking application')
         setSecrets([]) // Clear secrets from state when locked
         clearEncryptionCache() // Clear encryption cache when locking due to inactivity
+        setShowForm(null)
         setIsAuthenticated(false)
       }, INACTIVITY_TIMEOUT)
     }
@@ -123,8 +125,10 @@ export default function App(): JSX.Element {
         setShowForm(null)
         break
       case 'sign':
+        setShowForm('sign')
+        break
+      case 'code':
         setShowForm(null)
-        console.log('ok')
         break
       default:
         console.error('Error: unknown onboarding stage')
@@ -200,8 +204,10 @@ export default function App(): JSX.Element {
             setShowForm(null)
             break
           case 'sign':
+            setShowForm('sign')
+            break
+          case 'code':
             setShowForm(null)
-            console.log('wok')
             break
           default:
             console.error('Error: unknown onboarding stage')
@@ -284,6 +290,25 @@ export default function App(): JSX.Element {
   }, [])
 
   /**
+   * Handle email signup
+   */
+  const handleEmail = React.useCallback(
+    async (email: string) => {
+      setFormError(null)
+      const result = await storeEmail(email)
+      if (result.success) {
+        if (onboarding === 'sign') {
+          await saveOnboardingStage('code')
+        }
+        setEmail(email)
+      } else {
+        setFormError('Invalid email. Please try again.')
+      }
+    },
+    [onboarding]
+  )
+
+  /**
    * Load initial data on mount
    */
   React.useEffect(() => {
@@ -308,8 +333,10 @@ export default function App(): JSX.Element {
           setShowForm(null)
           break
         case 'sign':
+          setShowForm('sign')
+          break
+        case 'code':
           setShowForm(null)
-          console.log('poke')
           break
         default:
           console.error('Error: unknown onboarding stage')
@@ -321,14 +348,20 @@ export default function App(): JSX.Element {
       if (secretsResult.success && secretsResult.data) {
         setSecrets(secretsResult.data)
       }
+
+      const emailResult = await getEmail()
+      if (emailResult.success && emailResult.data.email) {
+        setEmail(emailResult.data.email)
+      }
     }
 
     loadInitialData()
-  }, [])
+  }, [isAuthenticated])
 
   return (
     <div className='flex flex-col items-center bg-white px-4 font-light text-black antialiased md:subpixel-antialiased'>
       <Layout>
+        {isAuthenticated && <Header email={email} />}
         {showForm === 'secret' && (
           <SecretForm
             onboarding={onboarding}
@@ -349,7 +382,9 @@ export default function App(): JSX.Element {
         {onboarding === 'recovery' && isAuthenticated && (
           <RecoveryDisplay onContinue={handleRecoveryContinue} />
         )}
-        {onboarding === 'sign' && <></>} {/*Maybe might work on showForm*/}
+        {showForm === 'sign' && isAuthenticated && (
+          <SignUpForm handleEmail={handleEmail} formError={formError} />
+        )}
         {onboarding === 'code' && <></>} {/*Maybe might work on showForm*/}
         {onboarding === 'secret' || onboarding === 'master' || isAuthenticated ?
           <StoredSecrets
@@ -373,60 +408,5 @@ export default function App(): JSX.Element {
       </Layout>
       <Footer />
     </div>
-  )
-}
-
-// ---------------------------------------------------------------------------------------------------
-// refactoring line ----------------------------------------------------------------------------------
-// ---------------------------------------------------------------------------------------------------
-
-export function OldApp(): JSX.Element {
-  const [email, setEmail] = React.useState<string | null>(null)
-
-  /**
-   * Load initial data on mount
-   */
-  React.useEffect(() => {
-    async function loadInitialData() {
-      try {
-        // Load email to determine correct onboarding stage
-        const emailResult = await getEmail()
-        if (emailResult.success && emailResult.data.email) {
-          setOnboarding('finished')
-          setEmail(emailResult.data.email)
-        } else {
-          setOnboarding('sign')
-        }
-      } catch (error) {
-        console.error('Error loading initial data:', error)
-      }
-    }
-
-    loadInitialData()
-  }, [])
-
-  /**
-   * Handle email signup
-   */
-  const handleEmail = React.useCallback(async (email: string) => {
-    try {
-      await createUserAccount(email)
-      setOnboarding('finished')
-      setEmail(email)
-    } catch (error) {
-      console.error('Error creating user account:', error)
-      // TODO: Show error notification to user
-    }
-  }, [])
-
-  return (
-    <>
-      {!locked && <Header email={email} />}
-      <Layout>
-        {locked ?
-          <></>
-        : <>{onboarding === 'sign' && <SignUpForm addEmail={handleEmail} />}</>}
-      </Layout>
-    </>
   )
 }

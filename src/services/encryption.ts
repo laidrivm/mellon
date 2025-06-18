@@ -407,7 +407,7 @@ export async function getAndDecryptKeyFromDB(
     )
 
     cachedEncryptionKey = importedKey
-    cachedMasterPassword = masterPassword
+    cachedMasterPassword = masterPassword //caches CryptoKey in case of RecoveryFlow
 
     console.log('Successfully decrypted and imported encryption key')
     return importedKey

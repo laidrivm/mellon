@@ -144,3 +144,8 @@ export interface RecoveryFormProps {
   handleSetShowForm: (form: FormState) => void
   formError?: string | null
 }
+
+export interface SignUpFormProps {
+  handleEmail: (email: string) => void
+  formError?: string | null
+}

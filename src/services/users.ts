@@ -245,6 +245,76 @@ export async function verifyRecoveredMasterPassword(
   }
 }
 
+/**
+ * Get email from user credentials
+ * @returns {Promise<ServiceResponse<{email: string}>>} User email
+ */
+export async function getEmail(): Promise<ServiceResponse<{email: string}>> {
+  try {
+    const userDoc = await localUserDB.get(DocType.LOCAL_USER)
+
+    return {
+      success: true,
+      data: {email: userDoc.email}
+    }
+  } catch (error) {
+    if (error.name === 'not_found') {
+      return {
+        success: false
+      }
+    }
+    console.error('Error getting email:', error)
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : String(error)
+    }
+  }
+}
+
+/**
+ * Validate email format
+ * @param {string} email - Email to validate
+ * @returns {boolean} Whether email is valid
+ */
+function isValidEmail(email: string): boolean {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  return emailRegex.test(email)
+}
+
+/**
+ * Create a new user account on the backend
+ * @param {string} email - User email
+ * @returns {Promise<ServiceResponse>} Account creation result
+ */
+export async function storeEmail(email: string): Promise<ServiceResponse> {
+  try {
+    if (!isValidEmail(email)) {
+      return {success: false, error: 'Invalid email address'}
+    }
+
+    const userDoc = await localUserDB.get(DocType.LOCAL_USER)
+
+    const updatedUserDoc = {
+      ...userDoc,
+      email,
+      updatedAt: new Date().toISOString()
+    }
+
+    const result = await localUserDB.put(updatedUserDoc)
+
+    return {
+      success: true,
+      data: result
+    }
+  } catch (error) {
+    console.error('Error creating user account:', error)
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : String(error)
+    }
+  }
+}
+
 // ---------------------------------------------------------------------------------------------------
 // refactoring line ----------------------------------------------------------------------------------
 // ---------------------------------------------------------------------------------------------------
@@ -316,76 +386,4 @@ export async function createUserCredentials(
 export async function isAuthenticated(): Promise<boolean> {
   const credentials = await getUserCredentials()
   return !!credentials
-}
-
-/**
- * Validate email format
- * @param {string} email - Email to validate
- * @returns {boolean} Whether email is valid
- */
-function isValidEmail(email: string): boolean {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-  return emailRegex.test(email)
-}
-
-/**
- * Create a new user account on the backend
- * @param {string} email - User email
- * @returns {Promise<ServiceResponse>} Account creation result
- */
-export async function createUserAccount(
-  email: string
-): Promise<ServiceResponse> {
-  try {
-    if (!isValidEmail(email)) {
-      return {success: false, message: 'Invalid email address'}
-    }
-
-    const currentCreds = await localUserDB.get(DocType.USER_CREDENTIALS)
-
-    const updatedCreds = {
-      ...currentCreds,
-      email,
-      updatedAt: new Date().toISOString()
-    }
-
-    const result = await localUserDB.put(updatedCreds)
-
-    return {
-      success: true,
-      data: result
-    }
-  } catch (error) {
-    console.error('Error creating user account:', error)
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : String(error)
-    }
-  }
-}
-
-/**
- * Get email from user credentials
- * @returns {Promise<ServiceResponse<{email: string}>>} User email
- */
-export async function getEmail(): Promise<ServiceResponse<{email: string}>> {
-  try {
-    const doc = await localUserDB.get(DocType.USER_CREDENTIALS)
-
-    return {
-      success: true,
-      data: {email: doc.email}
-    }
-  } catch (error) {
-    if (error.name === 'not_found') {
-      return {
-        success: false
-      }
-    }
-    console.error('Error getting email:', error)
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : String(error)
-    }
-  }
 }
