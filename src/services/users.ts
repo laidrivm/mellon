@@ -256,31 +256,6 @@ export async function isAuthenticated(): Promise<boolean> {
 }
 
 /**
- * Check if master password is stored in the database
- * @returns {Promise<ServiceResponse<boolean>>}
- */
-export async function hasMasterPassword(): Promise<ServiceResponse<boolean>> {
-  try {
-    const doc = await localUserDB.get(`${DocType.MASTER_PASSWORD}`)
-
-    return {
-      success: doc.password ? true : false
-    }
-  } catch (error) {
-    if (error.name === 'not_found') {
-      return {
-        success: false
-      }
-    }
-    console.error('Error getting master password:', error)
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : String(error)
-    }
-  }
-}
-
-/**
  * Validate email format
  * @param {string} email - Email to validate
  * @returns {boolean} Whether email is valid
