@@ -8,31 +8,8 @@ export interface Secret {
   username: string
   password: string
   notes?: string
-  url?: string
   createdAt?: string
   updatedAt?: string
-}
-
-/**
- * Represents user account credentials
- * @interface UserCredentials
- */
-export interface UserCredentials {
-  uuid: string
-  password: string
-  dbName: string
-  createdAt?: string
-}
-
-/**
- * Represents encryption key document
- * @interface EncryptionKeyDocument
- */
-export interface EncryptionKeyDocument {
-  _id: string
-  key: JsonWebKey
-  createdAt: string
-  type: 'encryptionKey'
 }
 
 /**
@@ -69,7 +46,7 @@ export interface ServiceResponse<T = unknown> {
   success: boolean
   message?: string
   data?: T
-  error?: Error | string
+  error?: string
 }
 
 /**
@@ -97,7 +74,13 @@ export type ButtonStyle =
  * Onboarding stages
  * @type OnboardingStage
  */
-export type OnboardingStage = 'secret' | 'master' | 'sign' | 'finished'
+export type OnboardingStage =
+  | 'secret'
+  | 'master'
+  | 'recovery'
+  | 'sign'
+  | 'code'
+  | 'finished'
 
 /**
  * Database names used in application
@@ -113,8 +96,62 @@ export enum DbName {
  * @type DocType
  */
 export enum DocType {
-  SECRET = 'secret',
-  USER_CREDENTIALS = 'user_credentials',
-  ENCRYPTION_KEY = 'encryption_key',
-  MASTER_PASSWORD = 'master_password'
+  LOCAL_USER = 'local_user',
+  SECRET = 'secret'
+}
+
+export interface AddSecretFormProps {
+  onboarding: OnboardingStage
+  addSecret: (secret: Secret) => Promise<void>
+  handleSetShowtForm: (form: FormState) => void
+  formError?: string | null
+  initialData?: Secret | null
+}
+
+export interface StoredSecretsProps {
+  secrets: Secret[]
+  showForm: FormState
+  handleSetShowtForm: (form: FormState) => void
+  removeSecret: (secretId: string) => void
+}
+
+export interface MasterPasswordFormProps {
+  addMasterPassword: (masterPassword: MasterPassword) => void
+  handleSetShowtForm: (form: FormState) => void
+  formError?: string | null
+  initialData?: MasterPassword | null
+}
+
+export interface UnlockFormProps {
+  tryUnlock: (masterPasswordCandidate: string) => void
+  handleSetShowtForm: (form: FormState) => void
+  formError?: string | null
+}
+
+export type FormState =
+  | 'secret'
+  | 'masterPassword'
+  | 'recovery'
+  | 'email'
+  | 'emailCode'
+
+export interface RecoveryDisplayProps {
+  onContinue: () => void
+}
+
+export interface RecoveryFormProps {
+  onRecoveryAttempt: (shares: string[]) => void
+  handleSetShowForm: (form: FormState) => void
+  formError?: string | null
+}
+
+export interface SignUpFormProps {
+  handleEmail: (email: string) => void
+  formError?: string | null
+}
+
+export interface CodeFormProps {
+  email: string
+  handleCode: (code: string) => void
+  formError?: string | null
 }

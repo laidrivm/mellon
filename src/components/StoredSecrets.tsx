@@ -1,21 +1,18 @@
-import React, {ReactNode} from 'react'
+import React from 'react'
 
 import Button from './Button.tsx'
 import SecretItem from './SecretItem.tsx'
 
-import type {Secret} from '../types.ts'
+import type {StoredSecretsProps} from '../types.ts'
 
 export default function StoredSecrets({
   secrets,
-  showSecretForm,
-  setShowSecretForm
-}: {
-  secrets: [Secret]
-  showSecretForm: boolean
-  setShowSecretForm: (showSecretForm: boolean) => void
-}): ReactNode {
+  showForm,
+  handleSetShowForm,
+  removeSecret
+}: StoredSecretsProps): JSX.Element {
   function onClick(): void {
-    setShowSecretForm(true)
+    handleSetShowForm('secret')
   }
 
   return (
@@ -23,7 +20,7 @@ export default function StoredSecrets({
       <div className='flex justify-between'>
         <h2 className='text-3xl'>Stored Secrets</h2>
 
-        {secrets.length !== 0 && !showSecretForm && (
+        {showForm !== 'secret' && (
           <Button style='inline' onClick={onClick}>
             Add New
           </Button>
@@ -34,7 +31,11 @@ export default function StoredSecrets({
         <p className='text-md mt-2'>No stored secrets yet</p>
       : <ul className='mt-4 space-y-4'>
           {secrets.map((secret, index) => (
-            <SecretItem secret={secret} key={index} />
+            <SecretItem
+              secret={secret}
+              key={index}
+              removeSecret={removeSecret}
+            />
           ))}
         </ul>
       }

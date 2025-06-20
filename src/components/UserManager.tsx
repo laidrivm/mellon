@@ -1,6 +1,6 @@
 import React from 'react'
 
-import {getUserCredentials, createUserCredentials} from '../services/users.ts'
+import {createUserCredentials, getUserCredentials} from '../services/users.ts'
 import {initializeRemoteDb} from '../services/pouchDB.ts'
 import {UserCreationResponse} from '../types.ts'
 import type {UserState, ConnectionState} from '../types.ts'

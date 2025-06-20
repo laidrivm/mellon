@@ -1,18 +1,19 @@
-import React, {ReactNode} from 'react'
+import React from 'react'
 
 import Input from './Input.tsx'
 import Button from './Button.tsx'
 
+import type {SignUpFormProps} from '../types.ts'
+
 export default function SignUpForm({
-  addEmail
-}: {
-  addEmail: (email: string) => void
-}): ReactNode {
+  handleEmail,
+  formError
+}: SignUpFormProps): JSX.Element {
   const [emailInput, setEmailInput] = React.useState('')
 
-  function handleEmail(event): void {
+  function addEmail(event): void {
     event.preventDefault()
-    addEmail(emailInput)
+    handleEmail(emailInput)
   }
 
   return (
@@ -22,10 +23,11 @@ export default function SignUpForm({
         It will allow you to share secrets across devices and enable two-factor
         authorisation.
       </p>
-      <form className='space-y-4' onSubmit={handleEmail}>
+      <form className='space-y-4' onSubmit={addEmail}>
         <Input name='Email' value={emailInput} setValue={setEmailInput} />
         <Button>Sign Up</Button>
       </form>
+      {formError && <div className='text-md text-red-500'>{formError}</div>}
     </div>
   )
 }

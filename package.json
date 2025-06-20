@@ -19,6 +19,7 @@
     "pouchdb-browser": "^9.0.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
+    "shamir-secret-sharing": "^0.0.4",
     "tailwindcss": "^4.1.4",
     "uuidv7": "^1.0.2"
   },

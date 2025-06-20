@@ -1,11 +1,14 @@
 import PouchDB from 'pouchdb-browser'
-import {uuidv7} from 'uuidv7'
 
 import {DbName, ServiceResponse, UserCredentials} from '../types'
 
 // Database instances
 export const localSecretsDB = new PouchDB(DbName.SECRETS)
 export const localUserDB = new PouchDB(DbName.USER)
+
+// ---------------------------------------------------------------------------------------------------
+// refactoring line ----------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------
 
 // Sync handler to manage live replication
 let syncHandler: PouchDB.Replication.Sync<object> | null = null
@@ -193,13 +196,4 @@ export async function setupRemoteConnection(
       error: error instanceof Error ? error.message : String(error)
     }
   }
-}
-
-/**
- * Generate a unique document ID
- * @param {string} prefix - Document type prefix
- * @returns {string} Unique document ID
- */
-export function generateDocId(prefix: string): string {
-  return `${prefix}:${uuidv7()}`
 }

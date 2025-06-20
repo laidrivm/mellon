@@ -1,10 +1,11 @@
-import {localSecretsDB, generateDocId} from '../services/pouchDB.ts'
+import {uuidv7} from 'uuidv7'
+import {localSecretsDB} from '../services/pouchDB.ts'
 import {
+  getEncryptionKey,
   encryptField,
-  decryptField,
-  getEncryptionKey
+  decryptField
 } from '../services/encryption.ts'
-import {DocType, Secret, ServiceResponse} from '../types.ts'
+import {Secret, ServiceResponse} from '../types.ts'
 
 /**
  * Validate secret data
@@ -17,14 +18,9 @@ function validateSecret(secret: Secret): boolean {
     typeof secret.name === 'string' &&
     secret.name.trim().length > 0 &&
     typeof secret.username === 'string' &&
-    secret.username.trim().length > 0 &&
     typeof secret.password === 'string' &&
     secret.password.length > 0
   )
-}
-
-function validateId(id: Secret): boolean {
-  return !!id && typeof id === 'string' && id.trim().length > 0
 }
 
 /**
@@ -37,17 +33,15 @@ export async function createSecret(secret: Secret): Promise<ServiceResponse> {
     if (!validateSecret(secret)) {
       return {
         success: false,
-        message:
-          'Invalid secret data. Name, username and password are required.'
+        error: 'Invalid secret data. Name, username and password are required.'
       }
     }
 
     const encryptionKey = await getEncryptionKey()
 
-    // Prepare document
     const newSecret: Secret = {
       ...secret,
-      _id: generateDocId(DocType.SECRET),
+      _id: uuidv7(),
       createdAt: new Date().toISOString()
     }
 
@@ -69,6 +63,72 @@ export async function createSecret(secret: Secret): Promise<ServiceResponse> {
 }
 
 /**
+ * Delete a secret
+ * @param {string} id - Secret document ID
+ * @returns {Promise<ServiceResponse>} Operation result
+ */
+export async function deleteSecret(id: string): Promise<ServiceResponse> {
+  try {
+    const secret = await localSecretsDB.get(id)
+
+    const result = await localSecretsDB.remove(secret)
+
+    return {
+      success: true,
+      data: result
+    }
+  } catch (error) {
+    console.error('Error deleting secret:', error)
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : String(error)
+    }
+  }
+}
+
+/**
+ * Recrypt all secrets from old encryption key to new encryption key
+ * @param {CryptoKey | null} oldEncryptionKey - Previous encryption key (null for first-time setup)
+ * @param {CryptoKey} newEncryptionKey - New encryption key to use
+ * @returns {Promise<{success: boolean, processed: number, errors: number}>} Recryption result
+ */
+export async function recryptSecrets(
+  newEncryptionKey: CryptoKey
+): Promise<boolean> {
+  let success = true
+  const secrets = await getAllSecrets()
+  const recryptPromises = secrets.data.map(async (secret) => {
+    try {
+      const newEncryptedPassword = await encryptField(
+        secret.password,
+        newEncryptionKey
+      )
+
+      const updatedSecret = {
+        ...secret,
+        password: newEncryptedPassword,
+        updatedAt: new Date().toISOString()
+      }
+
+      await localSecretsDB.put(updatedSecret)
+    } catch (error) {
+      console.error(`Error processing secret ${secret.id}:`, error)
+      success = false
+    }
+  })
+
+  await Promise.all(recryptPromises)
+
+  return success
+}
+
+// ---------------------------------------------------------------------------------------------------
+// refactoring line ----------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------
+
+/**
+ * TODO: Split operations in two: first — get the list of all secrets, second — get exact secret data
+ * when acually needed — not to decrypt and store in memory everything at once
  * Retrieve all secrets
  * @returns {Promise<ServiceResponse<Secret[]>>} All secrets
  */
@@ -78,9 +138,7 @@ export async function getAllSecrets(): Promise<ServiceResponse<Secret[]>> {
 
     const result = await localSecretsDB.allDocs({
       include_docs: true,
-      descending: true,
-      startkey: `${DocType.SECRET}:\uffff`,
-      endkey: `${DocType.SECRET}:`
+      descending: true
     })
 
     const secrets: Secret[] = []
@@ -93,8 +151,8 @@ export async function getAllSecrets(): Promise<ServiceResponse<Secret[]>> {
           encryptionKey
         )
         secrets.push(decryptedSecret)
-      } catch (decryptError) {
-        console.error('Error decrypting secret:', decryptError)
+      } catch (error) {
+        console.error('Error decrypting secret:', error)
       }
     }
 
@@ -118,13 +176,6 @@ export async function getAllSecrets(): Promise<ServiceResponse<Secret[]>> {
  */
 export async function getSecret(id: string): Promise<ServiceResponse<Secret>> {
   try {
-    if (!validateId(id)) {
-      return {
-        success: false,
-        message: 'Invalid secret ID'
-      }
-    }
-
     const encryptionKey = await getEncryptionKey()
     const secret = await localSecretsDB.get(id)
 
@@ -157,13 +208,6 @@ export async function updateSecret(
   updates: Partial<Secret>
 ): Promise<ServiceResponse> {
   try {
-    if (!validateId(id)) {
-      return {
-        success: false,
-        message: 'Invalid secret ID'
-      }
-    }
-
     const current = await localSecretsDB.get(id)
 
     const updatedSecret = {
@@ -193,42 +237,4 @@ export async function updateSecret(
       error: error instanceof Error ? error.message : String(error)
     }
   }
-}
-
-/**
- * Delete a secret
- * @param {string} id - Secret document ID
- * @returns {Promise<ServiceResponse>} Operation result
- */
-export async function deleteSecret(id: string): Promise<ServiceResponse> {
-  try {
-    if (!validateId(id)) {
-      return {
-        success: false,
-        message: 'Invalid secret ID'
-      }
-    }
-
-    const secret = await localSecretsDB.get(id)
-
-    const result = await localSecretsDB.remove(secret)
-
-    return {
-      success: true,
-      data: result
-    }
-  } catch (error) {
-    console.error('Error deleting secret:', error)
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : String(error)
-    }
-  }
-}
-
-export async function recryptSecrets(oldEncryptionKey, newEncryptionKey) {
-  console.log(`${oldEncryptionKey}, ${newEncryptionKey}`)
-  return new Promise((resolveInner) => {
-    setTimeout(resolveInner, 100)
-  })
 }
