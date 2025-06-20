@@ -149,3 +149,9 @@ export interface SignUpFormProps {
   handleEmail: (email: string) => void
   formError?: string | null
 }
+
+export interface CodeFormProps {
+  email: string
+  handleCode: (code: string) => void
+  formError?: string | null
+}

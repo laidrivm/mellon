@@ -94,7 +94,6 @@ async function storeKeyInDB(key: CryptoKey): Promise<PouchDB.Core.Response> {
 export async function getEncryptionKey(): Promise<CryptoKey | null> {
   // If we have cached key, return it
   if (cachedEncryptionKey) {
-    console.log(`returning cachedEncryptionKey`)
     return cachedEncryptionKey
   }
 
@@ -102,7 +101,6 @@ export async function getEncryptionKey(): Promise<CryptoKey | null> {
   const key = await getKeyFromDB()
   if (key) {
     cachedEncryptionKey = key
-    console.log(`returning key from DB`)
     return key
   }
 
@@ -112,7 +110,6 @@ export async function getEncryptionKey(): Promise<CryptoKey | null> {
   try {
     await storeKeyInDB(newKey)
     cachedEncryptionKey = newKey
-    console.log(`returing new key`)
   } catch (error) {
     console.error('Failed to store encryption key:', error)
     return null
@@ -329,9 +326,7 @@ export async function updateEncryptionWithMP(
 
     // Generate salt from the SAME date that will be used for unlocking
     const createdAt = await getLocalUserCreatedTime()
-    console.log(`createdAt: ${createdAt}`)
     const salt = await dateToSalt(createdAt, 32)
-    console.log(`salt: ${salt}`)
 
     // Create encryption key using the salt and the master password
     const keyFromMP = await deriveKeyFromPassword(masterPassword, salt)
@@ -342,11 +337,6 @@ export async function updateEncryptionWithMP(
     // Renew cached values
     cachedEncryptionKey = newEncryptionKey
     cachedMasterPassword = masterPassword
-
-    console.log(cachedMasterPassword)
-    console.log(
-      `cachedEncryptionKey: ${cachedEncryptionKey.type}, ${cachedEncryptionKey.extractable}, ${JSON.stringify(cachedEncryptionKey.algorithm)}, ${cachedEncryptionKey.usages}`
-    )
 
     return true
   } catch (error) {
@@ -365,9 +355,6 @@ export async function getAndDecryptKeyFromDB(
   masterPassword: string | CryptoKey,
   createdAt?: string
 ): Promise<CryptoKey | null> {
-  console.log(
-    `getAndDecryptKeyFromDB: masterPassword="${masterPassword}", createdAt="${createdAt}"`
-  )
   try {
     const keyDoc = await localUserDB.get(DocType.LOCAL_USER)
 
@@ -393,7 +380,6 @@ export async function getAndDecryptKeyFromDB(
       keyDoc.encryptedKey,
       keyFromMP
     )
-    console.log(`decryptedKeyString: ${decryptedKeyString}`)
 
     // Parse the JWK and import it as a CryptoKey
     const keyData = JSON.parse(decryptedKeyString)
@@ -408,8 +394,6 @@ export async function getAndDecryptKeyFromDB(
 
     cachedEncryptionKey = importedKey
     cachedMasterPassword = masterPassword //caches CryptoKey in case of RecoveryFlow
-
-    console.log('Successfully decrypted and imported encryption key')
     return importedKey
   } catch (error) {
     console.error('Error retrieving and decrypting encryption key:', error)
@@ -463,8 +447,6 @@ export async function generateRecoveryShares(createdAt: string) {
 
     // Use Shamir Secret Sharing: 1 share, 1 required (as requested)
     const shares = await split(keyBytes, 2, 2)
-
-    console.log(`shares: ${shares}`)
 
     // Convert share to mnemonic words
     const mnemonicShares = shares.map((share) => {
@@ -551,35 +533,10 @@ export async function reconstructMasterKey(mnemonicShares: string[]) {
   }
 }
 
-// ---------------------------------------------------------------------------------------------------
-// refactoring line ----------------------------------------------------------------------------------
-// ---------------------------------------------------------------------------------------------------
-
-/**
- * Get master password from memory (must be unlocked first)
- * @returns {string} Master password
- * @throws {Error} If app is locked or password not available
- */
-export function getCachedMasterPassword(): string {
-  if (!cachedMasterPassword) {
-    throw new Error('Application is locked. Please unlock first.')
-  }
-  return cachedMasterPassword
-}
-
 /**
  * Clear all cached encryption data from memory. Called on lock
  */
 export function clearEncryptionCache(): void {
   cachedEncryptionKey = null
   cachedMasterPassword = null
-  console.log('Encryption cache cleared')
-}
-
-/**
- * Check if encryption system is initialized (unlocked)
- * @returns {boolean} Whether encryption is available
- */
-export function isEncryptionInitialized(): boolean {
-  return cachedEncryptionKey !== null && cachedMasterPassword !== null
 }

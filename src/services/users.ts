@@ -135,14 +135,10 @@ export async function storeMasterPassword(
  */
 export async function verifyMasterPassword(password: string): Promise<boolean> {
   try {
-    console.log(`Entering verifyMasterPassword with ${password} candidate`)
     // Retrieve Master Password and the creation date from the DB
     const doc = await localUserDB.get(DocType.LOCAL_USER)
-    console.log(`got from DB: ${JSON.stringify(doc)}`)
     const encryptedMP = doc.password
-    console.log(`encryptedMP: ${encryptedMP}`)
     const createdAt = doc.createdAt
-    console.log(`createdAt: ${createdAt}`)
     // Apply this key to decrypt the encryption key
     const encryptionKey = await getAndDecryptKeyFromDB(password, createdAt)
 
@@ -152,7 +148,6 @@ export async function verifyMasterPassword(password: string): Promise<boolean> {
 
     // Use the result to decrypt the stored master-password
     const decryptedPassword = await decryptField(encryptedMP, encryptionKey)
-    console.log(`decryptedPassword: ${decryptedPassword}`)
 
     return decryptedPassword === password
   } catch (error) {
@@ -217,8 +212,6 @@ export async function verifyRecoveredMasterPassword(
   mnemonicShares: string[]
 ): Promise<boolean> {
   try {
-    console.log('Attempting to verify recovered master password')
-
     // Reconstruct the master password from shares
     const reconstructResult = await reconstructMasterKey(mnemonicShares)
 
@@ -237,7 +230,6 @@ export async function verifyRecoveredMasterPassword(
     }
 
     // If we successfully got the encryption key, the recovery was successful
-    console.log('Successfully verified recovered master password')
     return true
   } catch (error) {
     console.error('Error verifying recovered master password:', error)

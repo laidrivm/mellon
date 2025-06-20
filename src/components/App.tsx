@@ -10,6 +10,7 @@ import RecoveryDisplay from './RecoveryDisplay.tsx'
 import UnlockForm from './UnlockForm.tsx'
 import RecoveryForm from './RecoveryForm.tsx'
 import SignUpForm from './SignUpForm.tsx'
+import CodeForm from './CodeForm.tsx'
 import Header from './Header.tsx'
 import Footer from './Footer.tsx'
 
@@ -50,6 +51,34 @@ export default function App(): JSX.Element {
     React.useState<MasterPassword | null>(null)
 
   const lockTimerRef = React.useRef<number | null>(null)
+
+  function initOnboarding(stage: OnboardingStage): void {
+    setOnboarding(stage)
+    switch (stage) {
+      case 'secret':
+        setShowForm('secret')
+        setIsAuthenticated(true)
+        break
+      case 'master':
+        setShowForm('masterPassword')
+        setIsAuthenticated(true)
+        break
+      case 'recovery':
+        setShowForm(null)
+        break
+      case 'sign':
+        setShowForm('sign')
+        break
+      case 'code':
+        setShowForm('code')
+        break
+      case 'finished':
+        setShowForm(null)
+        break
+      default:
+        console.error('Error: unknown onboarding stage')
+    }
+  }
 
   /**
    * Clear existing lock timer
@@ -111,28 +140,8 @@ export default function App(): JSX.Element {
   }, [handleUserActivity, startLockTimer, clearLockTimer])
 
   async function saveOnboardingStage(stage: OnboardingStage): void {
-    setOnboarding(stage)
     await updateOnboardingStage(stage)
-    // TODO: move to onboarding state machine
-    switch (stage) {
-      case 'secret':
-        setShowForm('secret')
-        break
-      case 'master':
-        setShowForm('masterPassword')
-        break
-      case 'recovery':
-        setShowForm(null)
-        break
-      case 'sign':
-        setShowForm('sign')
-        break
-      case 'code':
-        setShowForm(null)
-        break
-      default:
-        console.error('Error: unknown onboarding stage')
-    }
+    initOnboarding(stage)
   }
 
   function showSecretsError(errorMessage: string, secret: Secret): void {
@@ -189,29 +198,7 @@ export default function App(): JSX.Element {
         setFormError(null)
         setFailedSecretData(null)
         setFailedMasterPasswordData(null)
-
-        console.log(onboarding)
-
-        // TODO: move to onboarding state machine
-        switch (onboarding) {
-          case 'secret':
-            setShowForm('secret')
-            break
-          case 'master':
-            setShowForm('masterPassword')
-            break
-          case 'recovery':
-            setShowForm(null)
-            break
-          case 'sign':
-            setShowForm('sign')
-            break
-          case 'code':
-            setShowForm(null)
-            break
-          default:
-            console.error('Error: unknown onboarding stage')
-        }
+        initOnboarding(onboarding)
       }
     },
     [onboarding]
@@ -302,7 +289,26 @@ export default function App(): JSX.Element {
         }
         setEmail(email)
       } else {
-        setFormError('Invalid email. Please try again.')
+        setFormError(result.error)
+      }
+    },
+    [onboarding]
+  )
+
+  const handleCode = React.useCallback(
+    async (code: string) => {
+      setFormError(null)
+      //const result = await verifyCode(code)
+      const result = {
+        success: true,
+        data: code
+      }
+      if (result.success) {
+        if (onboarding === 'code') {
+          await saveOnboardingStage('finished')
+        }
+      } else {
+        setFormError(result.error)
       }
     },
     [onboarding]
@@ -319,28 +325,7 @@ export default function App(): JSX.Element {
       }
 
       const currentOnboardingStage = await getOnboardingStage()
-      setOnboarding(currentOnboardingStage)
-
-      // TODO: move to onboarding state machine
-      switch (currentOnboardingStage) {
-        case 'secret':
-          setShowForm('secret')
-          break
-        case 'master':
-          setShowForm('masterPassword')
-          break
-        case 'recovery':
-          setShowForm(null)
-          break
-        case 'sign':
-          setShowForm('sign')
-          break
-        case 'code':
-          setShowForm(null)
-          break
-        default:
-          console.error('Error: unknown onboarding stage')
-      }
+      initOnboarding(currentOnboardingStage)
 
       if (!isAuthenticated) return
 
@@ -385,8 +370,14 @@ export default function App(): JSX.Element {
         {showForm === 'sign' && isAuthenticated && (
           <SignUpForm handleEmail={handleEmail} formError={formError} />
         )}
-        {onboarding === 'code' && <></>} {/*Maybe might work on showForm*/}
-        {onboarding === 'secret' || onboarding === 'master' || isAuthenticated ?
+        {showForm === 'code' && (
+          <CodeForm
+            email={email}
+            handleCode={handleCode}
+            formError={formError}
+          />
+        )}
+        {isAuthenticated ?
           <StoredSecrets
             secrets={secrets}
             showForm={showForm}

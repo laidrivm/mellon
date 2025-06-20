@@ -1,6 +1,6 @@
 import React from 'react'
 
-import {stopSync, setupRemoteConnection} from '../services/pouchDB.ts'
+import {setupRemoteConnection, stopSync} from '../services/pouchDB.ts'
 import {getUserCredentials} from '../services/users.ts'
 import {ConnectionState} from '../types.ts'
 

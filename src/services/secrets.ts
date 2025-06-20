@@ -63,6 +63,72 @@ export async function createSecret(secret: Secret): Promise<ServiceResponse> {
 }
 
 /**
+ * Delete a secret
+ * @param {string} id - Secret document ID
+ * @returns {Promise<ServiceResponse>} Operation result
+ */
+export async function deleteSecret(id: string): Promise<ServiceResponse> {
+  try {
+    const secret = await localSecretsDB.get(id)
+
+    const result = await localSecretsDB.remove(secret)
+
+    return {
+      success: true,
+      data: result
+    }
+  } catch (error) {
+    console.error('Error deleting secret:', error)
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : String(error)
+    }
+  }
+}
+
+/**
+ * Recrypt all secrets from old encryption key to new encryption key
+ * @param {CryptoKey | null} oldEncryptionKey - Previous encryption key (null for first-time setup)
+ * @param {CryptoKey} newEncryptionKey - New encryption key to use
+ * @returns {Promise<{success: boolean, processed: number, errors: number}>} Recryption result
+ */
+export async function recryptSecrets(
+  newEncryptionKey: CryptoKey
+): Promise<boolean> {
+  let success = true
+  const secrets = await getAllSecrets()
+  const recryptPromises = secrets.data.map(async (secret) => {
+    try {
+      const newEncryptedPassword = await encryptField(
+        secret.password,
+        newEncryptionKey
+      )
+
+      const updatedSecret = {
+        ...secret,
+        password: newEncryptedPassword,
+        updatedAt: new Date().toISOString()
+      }
+
+      await localSecretsDB.put(updatedSecret)
+    } catch (error) {
+      console.error(`Error processing secret ${secret.id}:`, error)
+      success = false
+    }
+  })
+
+  await Promise.all(recryptPromises)
+
+  return success
+}
+
+// ---------------------------------------------------------------------------------------------------
+// refactoring line ----------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------
+
+/**
+ * TODO: Split operations in two: first — get the list of all secrets, second — get exact secret data
+ * when acually needed — not to decrypt and store in memory everything at once
  * Retrieve all secrets
  * @returns {Promise<ServiceResponse<Secret[]>>} All secrets
  */
@@ -102,71 +168,6 @@ export async function getAllSecrets(): Promise<ServiceResponse<Secret[]>> {
     }
   }
 }
-
-/**
- * Delete a secret
- * @param {string} id - Secret document ID
- * @returns {Promise<ServiceResponse>} Operation result
- */
-export async function deleteSecret(id: string): Promise<ServiceResponse> {
-  try {
-    const secret = await localSecretsDB.get(id)
-
-    const result = await localSecretsDB.remove(secret)
-
-    return {
-      success: true,
-      data: result
-    }
-  } catch (error) {
-    console.error('Error deleting secret:', error)
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : String(error)
-    }
-  }
-}
-
-/**
- * Recrypt all secrets from old encryption key to new encryption key
- * @param {CryptoKey | null} oldEncryptionKey - Previous encryption key (null for first-time setup)
- * @param {CryptoKey} newEncryptionKey - New encryption key to use
- * @returns {Promise<{success: boolean, processed: number, errors: number}>} Recryption result
- */
-export async function recryptSecrets(
-  newEncryptionKey: CryptoKey
-): Promise<boolean> {
-  let success = true
-  console.log(`in recryptSecrets calling getAllSecrets`)
-  const secrets = await getAllSecrets()
-  const recryptPromises = secrets.data.map(async (secret) => {
-    try {
-      const newEncryptedPassword = await encryptField(
-        secret.password,
-        newEncryptionKey
-      )
-
-      const updatedSecret = {
-        ...secret,
-        password: newEncryptedPassword,
-        updatedAt: new Date().toISOString()
-      }
-
-      await localSecretsDB.put(updatedSecret)
-    } catch (error) {
-      console.error(`Error processing secret ${secret.id}:`, error)
-      success = false
-    }
-  })
-
-  await Promise.all(recryptPromises)
-
-  return success
-}
-
-// ---------------------------------------------------------------------------------------------------
-// refactoring line ----------------------------------------------------------------------------------
-// ---------------------------------------------------------------------------------------------------
 
 /**
  * Get a single secret by ID
