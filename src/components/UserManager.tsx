@@ -1,9 +1,11 @@
 import React from 'react'
-
-import {createUserCredentials, getUserCredentials} from '../services/users.ts'
 import {initializeRemoteDb} from '../services/pouchDB.ts'
-import {UserCreationResponse} from '../types.ts'
-import type {UserState, ConnectionState} from '../types.ts'
+import {createUserCredentials, getUserCredentials} from '../services/users.ts'
+import type {
+  ConnectionState,
+  UserCreationResponse,
+  UserState
+} from '../types.ts'
 
 /**
  * UserManager component to handle user identity states
@@ -19,7 +21,7 @@ export default function UuidManager({
   const [uuid, setUuid] = React.useState<string | null>(null)
   const [userState, setUserState] = React.useState<UserState>('loading')
 
-  async function requestNewUuid() {
+  const requestNewUuid = React.useCallback(async () => {
     try {
       const response = await fetch('/api/generate-uuid', {
         method: 'POST',
@@ -60,7 +62,7 @@ export default function UuidManager({
     } catch (error) {
       console.error('Error in UUID request process:', error)
     }
-  }
+  }, [setConnectionState])
 
   React.useEffect(() => {
     let isMounted = true
@@ -69,7 +71,7 @@ export default function UuidManager({
       try {
         const doc = await getUserCredentials()
 
-        if (doc && doc.uuid) {
+        if (doc?.uuid) {
           if (!isMounted) return
 
           setUuid(doc.uuid)
@@ -94,7 +96,7 @@ export default function UuidManager({
     return () => {
       isMounted = false
     }
-  }, [email])
+  }, [email, requestNewUuid])
 
   return (
     <div className='user-status flex items-center'>

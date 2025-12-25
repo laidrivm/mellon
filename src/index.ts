@@ -1,7 +1,6 @@
-import {serve} from 'bun'
-import {file} from 'bun'
-import index from './index.html'
+import {file, serve} from 'bun'
 import {generateUUID} from './api/generate-uuid.ts'
+import index from './index.html'
 
 const server = serve({
   port: process.env.PORT,

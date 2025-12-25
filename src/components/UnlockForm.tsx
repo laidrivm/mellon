@@ -1,10 +1,8 @@
 import React from 'react'
-
-import InputNewPassword from './InputNewPassword.tsx'
-import Button from './Button.tsx'
 import {getMasterPasswordHint} from '../services/users.ts'
-
 import type {UnlockFormProps} from '../types.ts'
+import Button from './Button.tsx'
+import InputNewPassword from './InputNewPassword.tsx'
 
 export default function UnlockForm({
   tryUnlock,

@@ -1,10 +1,10 @@
 import React from 'react'
-import Button from './Button.tsx'
-import ButtonShowPassword from './ButtonShowPassword.tsx'
-import ButtonCopyPassword from './ButtonCopyPassword.tsx'
-import ButtonCopyAll from './ButtonCopyAll.tsx'
-import ButtonDeleteSecret from './ButtonDeleteSecret.tsx'
 import type {Secret} from '../types.ts'
+import Button from './Button.tsx'
+import ButtonCopyAll from './ButtonCopyAll.tsx'
+import ButtonCopyPassword from './ButtonCopyPassword.tsx'
+import ButtonDeleteSecret from './ButtonDeleteSecret.tsx'
+import ButtonShowPassword from './ButtonShowPassword.tsx'
 
 export default function SecretItem({
   secret,
@@ -26,6 +26,7 @@ export default function SecretItem({
   return (
     <li>
       <button
+        type='button'
         onClick={() => {
           setOpen(!open)
           setShowPassword(false)
@@ -48,9 +49,11 @@ export default function SecretItem({
           <p>Username: {secret.username}</p>
           <div className='flex items-center justify-between'>
             <div className='flex-1'>
-              {showPassword ?
+              {showPassword ? (
                 <p>Password: {secret.password}</p>
-              : <p>Password: {hiddenPassword}</p>}
+              ) : (
+                <p>Password: {hiddenPassword}</p>
+              )}
             </div>
             <div className='ml-4 flex items-center space-x-2'>
               <ButtonShowPassword

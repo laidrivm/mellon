@@ -1,10 +1,8 @@
 import React from 'react'
-
+import type {MasterPassword, MasterPasswordFormProps} from '../types.ts'
+import Button from './Button.tsx'
 import InputNewPassword from './InputNewPassword.tsx'
 import InputTextArea from './InputTextArea.tsx'
-import Button from './Button.tsx'
-
-import {MasterPassword, MasterPasswordFormProps} from '../types.ts'
 
 export default function MasterPasswordForm({
   addMasterPassword,

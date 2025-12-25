@@ -1,4 +1,4 @@
-import React, {ReactNode} from 'react'
+import type {ReactNode} from 'react'
 
 import type {ButtonStyle} from '../types.ts'
 
@@ -32,7 +32,7 @@ export default function Button({
   }
 
   return (
-    <button className={className} onClick={onClick}>
+    <button type='button' className={className} onClick={onClick}>
       {children}
     </button>
   )

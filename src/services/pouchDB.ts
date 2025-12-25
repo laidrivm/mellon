@@ -1,6 +1,6 @@
 import PouchDB from 'pouchdb-browser'
 
-import {DbName, ServiceResponse, UserCredentials} from '../types'
+import {DbName, type ServiceResponse, type UserCredentials} from '../types'
 
 // Database instances
 export const localSecretsDB = new PouchDB(DbName.SECRETS)

@@ -2,7 +2,7 @@ import React from 'react'
 
 import {setupRemoteConnection, stopSync} from '../services/pouchDB.ts'
 import {getUserCredentials} from '../services/users.ts'
-import {ConnectionState} from '../types.ts'
+import type {ConnectionState} from '../types.ts'
 
 /**
  * Custom hook to track online status
@@ -41,6 +41,23 @@ export default function ConnectionManager({
   const isOnline = useOnlineStatus()
   const [retryCount, setRetryCount] = React.useState(0)
   const retryTimeoutRef = React.useRef<NodeJS.Timeout | null>(null)
+  const checkConnectionRef = React.useRef<() => Promise<void>>()
+
+  const scheduleRetry = React.useCallback(() => {
+    if (retryTimeoutRef.current) {
+      clearTimeout(retryTimeoutRef.current)
+    }
+
+    // Progressive backoff: 1s, 2s, 4s, ... 64s max
+    const delay = Math.min(1000 * 2 ** retryCount, 64 * 1000)
+
+    console.log(`Scheduling connection retry in ${delay / 1000} seconds`)
+
+    retryTimeoutRef.current = setTimeout(() => {
+      setRetryCount((prev) => prev + 1)
+      checkConnectionRef.current?.()
+    }, delay)
+  }, [retryCount])
 
   const checkConnection = React.useCallback(async () => {
     if (!isOnline) {
@@ -74,23 +91,12 @@ export default function ConnectionManager({
       setConnectionState('local_only')
       scheduleRetry()
     }
-  }, [isOnline])
+  }, [isOnline, scheduleRetry, setConnectionState])
 
-  const scheduleRetry = React.useCallback(() => {
-    if (retryTimeoutRef.current) {
-      clearTimeout(retryTimeoutRef.current)
-    }
-
-    // Progressive backoff: 1s, 2s, 4s, ... 64s max
-    const delay = Math.min(1000 * Math.pow(2, retryCount), 64 * 1000)
-
-    console.log(`Scheduling connection retry in ${delay / 1000} seconds`)
-
-    retryTimeoutRef.current = setTimeout(() => {
-      setRetryCount((prev) => prev + 1)
-      checkConnection()
-    }, delay)
-  }, [retryCount, checkConnection])
+  // Keep ref in sync with the latest checkConnection
+  React.useEffect(() => {
+    checkConnectionRef.current = checkConnection
+  }, [checkConnection])
 
   React.useEffect(() => {
     checkConnection()
@@ -101,7 +107,7 @@ export default function ConnectionManager({
         clearTimeout(retryTimeoutRef.current)
       }
     }
-  }, [isOnline, checkConnection])
+  }, [checkConnection])
 
   React.useEffect(() => {
     if (isOnline && connectionState === 'connected') {
@@ -128,20 +134,19 @@ export default function ConnectionManager({
   }
 
   return (
-    <div
-      className='connection-status flex items-center'
-      role='status'
-      aria-live='polite'
-    >
+    <output className='connection-status flex items-center' aria-live='polite'>
       <span
         className={`mr-2 h-2 w-2 rounded-full ${
-          connectionState === 'offline' ? 'border border-black bg-white'
-          : connectionState === 'connecting' ? 'animate-pulse bg-gray-500'
-          : connectionState === 'connected' ? 'bg-black'
-          : 'bg-red-500'
+          connectionState === 'offline'
+            ? 'border border-black bg-white'
+            : connectionState === 'connecting'
+              ? 'animate-pulse bg-gray-500'
+              : connectionState === 'connected'
+                ? 'bg-black'
+                : 'bg-red-500'
         }`}
       ></span>
       <span>{getStatusMessage()}</span>
-    </div>
+    </output>
   )
 }

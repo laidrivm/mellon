@@ -37,12 +37,13 @@ export default function ButtonCopyPassword({
 
   return (
     <button
+      type='button'
       onClick={handleCopy}
       disabled={copied}
       className={`transition-all duration-300 ${
-        copied ?
-          'cursor-not-allowed opacity-75'
-        : 'cursor-pointer hover:underline'
+        copied
+          ? 'cursor-not-allowed opacity-75'
+          : 'cursor-pointer hover:underline'
       }`}
     >
       <span

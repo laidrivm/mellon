@@ -4,7 +4,7 @@ import {
   createUserRelatedCouchDb
 } from '../services/couchDB.ts'
 
-import {UserCreationResponse} from '../types.ts'
+import type {UserCreationResponse} from '../types.ts'
 
 /**
  * Generate a new UUID for user

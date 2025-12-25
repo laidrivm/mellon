@@ -1,10 +1,10 @@
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wdth,wght@0,75..100,100..700;1,75..100,100..700&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300&display=swap');
-@import 'tailwindcss';
+@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wdth,wght@0,75..100,100..700;1,75..100,100..700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300&display=swap");
+@import "tailwindcss";
 
 @theme {
-  --font-ibm-plex-sans: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
-  --font-ibm-plex-mono: 'IBM Plex Mono', monospace;
+  --font-ibm-plex-sans: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-ibm-plex-mono: "IBM Plex Mono", monospace;
 }
 
 body {

@@ -1,10 +1,8 @@
-import {split, combine} from 'shamir-secret-sharing'
-
-import {localUserDB} from './pouchDB.ts'
+import {combine, split} from 'shamir-secret-sharing'
 import {DocType} from '../types.ts'
-import {recryptSecrets} from './secrets.ts'
-
 import BIP39_WORDLIST from './englishMnemonics.json'
+import {localUserDB} from './pouchDB.ts'
+import {recryptSecrets} from './secrets.ts'
 
 // In-memory storage for decrypted keys (cleared on lock)
 let cachedEncryptionKey: CryptoKey | null = null

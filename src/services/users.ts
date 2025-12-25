@@ -1,20 +1,20 @@
-import {localUserDB} from './pouchDB.ts'
-import {
-  encryptField,
-  decryptField,
-  updateEncryptionWithMP,
-  getEncryptionKey,
-  getAndDecryptKeyFromDB,
-  generateRecoveryShares,
-  reconstructMasterKey
-} from './encryption.ts'
 import {
   DocType,
-  OnboardingStage,
-  MasterPassword,
-  UserCredentials,
-  ServiceResponse
+  type MasterPassword,
+  type OnboardingStage,
+  type ServiceResponse,
+  type UserCredentials
 } from '../types.ts'
+import {
+  decryptField,
+  encryptField,
+  generateRecoveryShares,
+  getAndDecryptKeyFromDB,
+  getEncryptionKey,
+  reconstructMasterKey,
+  updateEncryptionWithMP
+} from './encryption.ts'
+import {localUserDB} from './pouchDB.ts'
 
 export async function existsLocalUser(): Promise<boolean> {
   try {
