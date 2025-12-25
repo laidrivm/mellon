@@ -71,7 +71,7 @@ export default function SecretItem({
           )}
           <div className='flex items-center justify-between pt-4'>
             <div className='flex items-center space-x-4'>
-              <Button>Update</Button>
+              <Button type='button'>Update</Button>
               <ButtonCopyAll secret={secret} />
             </div>
             <div className='flex items-center'>

@@ -88,7 +88,7 @@ export default function AddSecretForm({
         <InputTextArea name='Notes' value={notes} setValue={setNotes} />
         <Button>Add a Secret</Button>
         {onboarding !== 'secret' && (
-          <Button style='secondary' onClick={hideTheForm}>
+          <Button type='button' style='secondary' onClick={hideTheForm}>
             Clear and hide
           </Button>
         )}

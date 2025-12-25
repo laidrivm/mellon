@@ -93,7 +93,9 @@ export default function RecoveryDisplay({
       </div>
 
       <div className='flex justify-center pt-4'>
-        <Button onClick={handleContinue}>Continue</Button>
+        <Button type='button' onClick={handleContinue}>
+          Continue
+        </Button>
       </div>
     </div>
   )

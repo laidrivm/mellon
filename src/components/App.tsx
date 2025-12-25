@@ -15,7 +15,12 @@ import {
   verifyMasterPassword,
   verifyRecoveredMasterPassword
 } from '../services/users.ts'
-import type {FormState, OnboardingStage, Secret} from '../types.ts'
+import type {
+  FormState,
+  MasterPassword,
+  OnboardingStage,
+  Secret
+} from '../types.ts'
 import CodeForm from './CodeForm.tsx'
 import Footer from './Footer.tsx'
 import Header from './Header.tsx'

@@ -122,11 +122,13 @@ export default function RecoveryInput({
       )}
 
       <div className='flex items-center justify-between space-x-4'>
-        <Button style='secondary' onClick={onCancel}>
+        <Button type='button' style='secondary' onClick={onCancel}>
           Cancel
         </Button>
 
-        <Button onClick={handleTextModeSubmit}>Recover Password</Button>
+        <Button type='button' onClick={handleTextModeSubmit}>
+          Recover Password
+        </Button>
       </div>
     </div>
   )

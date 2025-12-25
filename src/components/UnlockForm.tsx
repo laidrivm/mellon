@@ -63,10 +63,10 @@ export default function UnlockForm({
           error={passwordError}
         />
         <div className='mt-6 flex items-center justify-center gap-6'>
-          <Button style='secondary' onClick={handleHint}>
+          <Button type='button' style='secondary' onClick={handleHint}>
             Hint
           </Button>
-          <Button style='secondary' onClick={handleRecover}>
+          <Button type='button' style='secondary' onClick={handleRecover}>
             Recover
           </Button>
           <Button>Unlock</Button>
