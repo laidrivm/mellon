@@ -1,9 +1,7 @@
 import React from 'react'
-import Button from './Button.tsx'
-
 import {getRecoveryShares} from '../services/users.ts'
-
 import type {RecoveryDisplayProps} from '../types.ts'
+import Button from './Button.tsx'
 
 export default function RecoveryDisplay({
   onContinue
@@ -59,12 +57,13 @@ export default function RecoveryDisplay({
           <h2 className='text-lg font-medium'>Recovery Words</h2>
           <div className='flex gap-2'>
             <button
+              type='button'
               onClick={handleCopyAllWords}
               disabled={copied}
               className={`transition-all duration-300 ${
-                copied ?
-                  'cursor-not-allowed opacity-75'
-                : 'cursor-pointer hover:underline'
+                copied
+                  ? 'cursor-not-allowed opacity-75'
+                  : 'cursor-pointer hover:underline'
               }`}
             >
               <span
@@ -77,8 +76,8 @@ export default function RecoveryDisplay({
         </div>
 
         <ol style={{listStyleType: 'decimal'}}>
-          {recoveryShares.map((share, index) => {
-            return <li key={index}>{share}</li>
+          {recoveryShares.map((share) => {
+            return <li key={share}>{share}</li>
           })}
         </ol>
       </div>
@@ -94,7 +93,9 @@ export default function RecoveryDisplay({
       </div>
 
       <div className='flex justify-center pt-4'>
-        <Button onClick={handleContinue}>Continue</Button>
+        <Button type='button' onClick={handleContinue}>
+          Continue
+        </Button>
       </div>
     </div>
   )

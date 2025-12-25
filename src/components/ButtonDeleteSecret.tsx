@@ -62,6 +62,7 @@ export default function ButtonDelete({
   if (state === 'initial') {
     return (
       <button
+        type='button'
         onClick={handleDelete}
         className='text-red-600 transition-all duration-300 hover:underline'
       >
@@ -74,12 +75,14 @@ export default function ButtonDelete({
     return (
       <div className='flex space-x-2'>
         <button
+          type='button'
           onClick={handleConfirm}
           className='text-red-600 transition-all duration-300 hover:underline'
         >
           Confirm
         </button>
         <button
+          type='button'
           onClick={handleCancel}
           className='transition-all duration-300 hover:underline'
         >
@@ -93,13 +96,19 @@ export default function ButtonDelete({
     return (
       <div className='flex items-center space-x-3'>
         <button
+          type='button'
           onClick={handleUndo}
           className='transition-all duration-300 hover:underline'
         >
           Undo
         </button>
         <div className='relative flex h-8 w-8 items-center justify-center'>
-          <svg className='h-8 w-8 -rotate-90 transform' viewBox='0 0 32 32'>
+          <svg
+            role='img'
+            className='h-8 w-8 -rotate-90 transform'
+            viewBox='0 0 32 32'
+            aria-label='Countdown timer'
+          >
             <circle
               cx='16'
               cy='16'

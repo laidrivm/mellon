@@ -1,9 +1,6 @@
-import React from 'react'
-
+import type {StoredSecretsProps} from '../types.ts'
 import Button from './Button.tsx'
 import SecretItem from './SecretItem.tsx'
-
-import type {StoredSecretsProps} from '../types.ts'
 
 export default function StoredSecrets({
   secrets,
@@ -21,24 +18,25 @@ export default function StoredSecrets({
         <h2 className='text-3xl'>Stored Secrets</h2>
 
         {showForm !== 'secret' && (
-          <Button style='inline' onClick={onClick}>
+          <Button type='button' style='inline' onClick={onClick}>
             Add New
           </Button>
         )}
       </div>
 
-      {secrets.length === 0 ?
+      {secrets.length === 0 ? (
         <p className='text-md mt-2'>No stored secrets yet</p>
-      : <ul className='mt-4 space-y-4'>
-          {secrets.map((secret, index) => (
+      ) : (
+        <ul className='mt-4 space-y-4'>
+          {secrets.map((secret) => (
             <SecretItem
               secret={secret}
-              key={index}
+              key={secret._id}
               removeSecret={removeSecret}
             />
           ))}
         </ul>
-      }
+      )}
     </div>
   )
 }

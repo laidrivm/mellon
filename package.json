@@ -6,11 +6,14 @@
   "main": "src/index.ts",
   "module": "src/index.ts",
   "scripts": {
-    "format": "prettier --write 'src/**/*.{css,html,js,ts,tsx}'",
-    "lint": "bun eslint --fix",
-    "dev": "bun run format && bun run lint && BUN_RUNTIME_TRANSPILER_CACHE_PATH=0 bun --hot --no-clear-screen src/index.ts",
+    "check": "biome check --write",
+    "dev": "bun run check && BUN_RUNTIME_TRANSPILER_CACHE_PATH=0 bun --hot --no-clear-screen src/index.ts",
     "start": "NODE_ENV=production bun src/index.ts",
-    "build": "bun run build.ts"
+    "build": "bun run build.ts",
+    "prepare": "simple-git-hooks"
+  },
+  "simple-git-hooks": {
+    "pre-commit": "bun biome check --staged --write --no-errors-on-unmatched"
   },
   "dependencies": {
     "bun-plugin-tailwind": "^0.0.15",
@@ -24,17 +27,12 @@
     "uuidv7": "^1.0.2"
   },
   "devDependencies": {
-    "@eslint/js": "^9.25.0",
+    "@biomejs/biome": "^2.3.10",
     "@types/bun": "^1.2.10",
     "@types/pouchdb": "^6.4.2",
     "@types/react": "^19.1.2",
     "@types/react-dom": "^19.1.2",
-    "eslint": "^9.25.0",
-    "eslint-plugin-react": "^7.37.5",
-    "globals": "^16.0.0",
-    "prettier": "3.5.3",
-    "prettier-plugin-tailwindcss": "^0.6.11",
-    "typescript": "^5.8.3",
-    "typescript-eslint": "^8.30.1"
+    "simple-git-hooks": "^2.13.1",
+    "typescript": "^5.8.3"
   }
 }

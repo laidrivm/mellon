@@ -2,32 +2,36 @@ import React from 'react'
 
 import './App.css'
 
-import Layout from './Layout.tsx'
-import SecretForm from './SecretForm.tsx'
-import StoredSecrets from './StoredSecrets.tsx'
-import MasterPasswordForm from './MasterPasswordForm.tsx'
-import RecoveryDisplay from './RecoveryDisplay.tsx'
-import UnlockForm from './UnlockForm.tsx'
-import RecoveryForm from './RecoveryForm.tsx'
-import SignUpForm from './SignUpForm.tsx'
-import CodeForm from './CodeForm.tsx'
-import Header from './Header.tsx'
-import Footer from './Footer.tsx'
-
-import {createSecret, getAllSecrets, deleteSecret} from '../services/secrets.ts'
+import {clearEncryptionCache} from '../services/encryption.ts'
+import {createSecret, deleteSecret, getAllSecrets} from '../services/secrets.ts'
 import {
-  existsLocalUser,
   createLocalUser,
-  getOnboardingStage,
-  updateOnboardingStage,
-  storeMasterPassword,
+  existsLocalUser,
   getEmail,
+  getOnboardingStage,
   storeEmail,
+  storeMasterPassword,
+  updateOnboardingStage,
   verifyMasterPassword,
   verifyRecoveredMasterPassword
 } from '../services/users.ts'
-import {clearEncryptionCache} from '../services/encryption.ts'
-import {OnboardingStage, Secret, FormState} from '../types.ts'
+import type {
+  FormState,
+  MasterPassword,
+  OnboardingStage,
+  Secret
+} from '../types.ts'
+import CodeForm from './CodeForm.tsx'
+import Footer from './Footer.tsx'
+import Header from './Header.tsx'
+import Layout from './Layout.tsx'
+import MasterPasswordForm from './MasterPasswordForm.tsx'
+import RecoveryDisplay from './RecoveryDisplay.tsx'
+import RecoveryForm from './RecoveryForm.tsx'
+import SecretForm from './SecretForm.tsx'
+import SignUpForm from './SignUpForm.tsx'
+import StoredSecrets from './StoredSecrets.tsx'
+import UnlockForm from './UnlockForm.tsx'
 
 const INACTIVITY_TIMEOUT = 2 * 60 * 1000 // 2 minutes in milliseconds
 
@@ -52,7 +56,7 @@ export default function App(): JSX.Element {
 
   const lockTimerRef = React.useRef<number | null>(null)
 
-  function initOnboarding(stage: OnboardingStage): void {
+  const initOnboarding = React.useCallback((stage: OnboardingStage): void => {
     setOnboarding(stage)
     switch (stage) {
       case 'secret':
@@ -78,7 +82,7 @@ export default function App(): JSX.Element {
       default:
         console.error('Error: unknown onboarding stage')
     }
-  }
+  }, [])
 
   /**
    * Clear existing lock timer
@@ -139,24 +143,30 @@ export default function App(): JSX.Element {
     }
   }, [handleUserActivity, startLockTimer, clearLockTimer])
 
-  async function saveOnboardingStage(stage: OnboardingStage): void {
-    await updateOnboardingStage(stage)
-    initOnboarding(stage)
-  }
+  const saveOnboardingStage = React.useCallback(
+    async (stage: OnboardingStage): Promise<void> => {
+      await updateOnboardingStage(stage)
+      initOnboarding(stage)
+    },
+    [initOnboarding]
+  )
 
-  function showSecretsError(errorMessage: string, secret: Secret): void {
-    setFormError(errorMessage)
-    setFailedSecretData(secret)
-    setShowForm('secret')
-  }
+  const showSecretsError = React.useCallback(
+    (errorMessage: string, secret: Secret): void => {
+      setFormError(errorMessage)
+      setFailedSecretData(secret)
+      setShowForm('secret')
+    },
+    []
+  )
 
-  function showMasterPasswordError(
-    errorMessage: string,
-    masterPassword: MasterPassword
-  ): void {
-    setFormError(errorMessage)
-    setFailedMasterPasswordData(masterPassword)
-  }
+  const showMasterPasswordError = React.useCallback(
+    (errorMessage: string, masterPassword: MasterPassword): void => {
+      setFormError(errorMessage)
+      setFailedMasterPasswordData(masterPassword)
+    },
+    []
+  )
 
   /**
    * Handle adding a new secret
@@ -180,7 +190,7 @@ export default function App(): JSX.Element {
         showSecretsError(result.error, secret)
       }
     },
-    [onboarding, setShowForm]
+    [onboarding, saveOnboardingStage, showSecretsError]
   )
 
   const removeSecret = React.useCallback((secretId: string) => {
@@ -201,7 +211,7 @@ export default function App(): JSX.Element {
         initOnboarding(onboarding)
       }
     },
-    [onboarding]
+    [onboarding, initOnboarding]
   )
 
   /**
@@ -223,7 +233,7 @@ export default function App(): JSX.Element {
         showMasterPasswordError(result.error, masterPassword)
       }
     },
-    [onboarding]
+    [onboarding, saveOnboardingStage, showMasterPasswordError]
   )
 
   /**
@@ -233,7 +243,7 @@ export default function App(): JSX.Element {
     if (onboarding === 'recovery') {
       await saveOnboardingStage('sign')
     }
-  }, [onboarding])
+  }, [onboarding, saveOnboardingStage])
 
   /**
    * TODO: merge handleUnlock and handleRecoveryAttempt
@@ -292,7 +302,7 @@ export default function App(): JSX.Element {
         setFormError(result.error)
       }
     },
-    [onboarding]
+    [onboarding, saveOnboardingStage]
   )
 
   const handleCode = React.useCallback(
@@ -311,7 +321,7 @@ export default function App(): JSX.Element {
         setFormError(result.error)
       }
     },
-    [onboarding]
+    [onboarding, saveOnboardingStage]
   )
 
   /**
@@ -341,7 +351,7 @@ export default function App(): JSX.Element {
     }
 
     loadInitialData()
-  }, [isAuthenticated])
+  }, [isAuthenticated, initOnboarding])
 
   return (
     <div className='flex flex-col items-center bg-white px-4 font-light text-black antialiased md:subpixel-antialiased'>
@@ -377,25 +387,26 @@ export default function App(): JSX.Element {
             formError={formError}
           />
         )}
-        {isAuthenticated ?
+        {isAuthenticated ? (
           <StoredSecrets
             secrets={secrets}
             showForm={showForm}
             handleSetShowForm={handleSetShowForm}
             removeSecret={removeSecret}
           />
-        : showForm === 'recovery' ?
+        ) : showForm === 'recovery' ? (
           <RecoveryForm
             onRecoveryAttempt={handleRecoveryAttempt}
             handleSetShowForm={handleSetShowForm}
             formError={formError}
           />
-        : <UnlockForm
+        ) : (
+          <UnlockForm
             tryUnlock={handleUnlock}
             handleSetShowForm={handleSetShowForm}
             formError={formError}
           />
-        }
+        )}
       </Layout>
       <Footer />
     </div>

@@ -1,9 +1,9 @@
 import React from 'react'
+import type {AddSecretFormProps} from '../types.ts'
+import Button from './Button.tsx'
 import Input from './Input.tsx'
 import InputNewPassword from './InputNewPassword.tsx'
 import InputTextArea from './InputTextArea.tsx'
-import Button from './Button.tsx'
-import type {AddSecretFormProps} from '../types.ts'
 
 export default function AddSecretForm({
   onboarding,
@@ -88,7 +88,7 @@ export default function AddSecretForm({
         <InputTextArea name='Notes' value={notes} setValue={setNotes} />
         <Button>Add a Secret</Button>
         {onboarding !== 'secret' && (
-          <Button style='secondary' onClick={hideTheForm}>
+          <Button type='button' style='secondary' onClick={hideTheForm}>
             Clear and hide
           </Button>
         )}

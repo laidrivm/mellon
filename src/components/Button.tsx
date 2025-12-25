@@ -1,17 +1,19 @@
-import React, {ReactNode} from 'react'
+import type {ReactNode} from 'react'
 
 import type {ButtonStyle} from '../types.ts'
 
 export default function Button({
   children,
   style = 'primary',
+  type = 'submit',
   onClick = () => {
     // do nothing
   }
 }: {
   children: ReactNode
-  style: ButtonStyle
-  onClick: () => void
+  style?: ButtonStyle
+  type?: 'submit' | 'button' | 'reset'
+  onClick?: () => void
 }): ReactNode {
   let className = ''
 
@@ -32,7 +34,7 @@ export default function Button({
   }
 
   return (
-    <button className={className} onClick={onClick}>
+    <button type={type} className={className} onClick={onClick}>
       {children}
     </button>
   )

@@ -1,7 +1,6 @@
 import React from 'react'
-import Button from './Button.tsx'
-
 import type {RecoveryFormProps} from '../types.ts'
+import Button from './Button.tsx'
 
 export default function RecoveryInput({
   onRecoveryAttempt,
@@ -75,7 +74,7 @@ export default function RecoveryInput({
   const onCancel = React.useCallback(() => {
     handleSetShowForm('null')
     //setFormError(null)
-  }, [])
+  }, [handleSetShowForm])
 
   return (
     <div className='space-y-6'>
@@ -89,8 +88,11 @@ export default function RecoveryInput({
       </div>
 
       <div className='space-y-3'>
-        <label className='block text-sm font-medium'>Recovery Words</label>
+        <label htmlFor='recovery-words' className='block text-sm font-medium'>
+          Recovery Words
+        </label>
         <textarea
+          id='recovery-words'
           value={recoveryText}
           onChange={(e) => setRecoveryText(e.target.value)}
           placeholder='Enter your recovery words here, one share per line...'
@@ -106,8 +108,8 @@ export default function RecoveryInput({
             Validation Errors:
           </h4>
           <ul className='space-y-1 text-sm text-red-600'>
-            {validationErrors.map((error, index) => (
-              <li key={index}>• {error}</li>
+            {validationErrors.map((error) => (
+              <li key={error}>• {error}</li>
             ))}
           </ul>
         </div>
@@ -120,11 +122,13 @@ export default function RecoveryInput({
       )}
 
       <div className='flex items-center justify-between space-x-4'>
-        <Button style='secondary' onClick={onCancel}>
+        <Button type='button' style='secondary' onClick={onCancel}>
           Cancel
         </Button>
 
-        <Button onClick={handleTextModeSubmit}>Recover Password</Button>
+        <Button type='button' onClick={handleTextModeSubmit}>
+          Recover Password
+        </Button>
       </div>
     </div>
   )

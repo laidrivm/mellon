@@ -1,9 +1,7 @@
 import React from 'react'
-
-import Input from './Input.tsx'
-import Button from './Button.tsx'
-
 import type {SignUpFormProps} from '../types.ts'
+import Button from './Button.tsx'
+import Input from './Input.tsx'
 
 export default function SignUpForm({
   handleEmail,

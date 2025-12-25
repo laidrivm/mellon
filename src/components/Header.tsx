@@ -1,7 +1,7 @@
 import React from 'react'
+import logo from '../logo.svg'
 import ConnectionManager from './ConnectionManager'
 import UserManager from './UserManager'
-import logo from '../logo.svg'
 
 console.log(logo)
 

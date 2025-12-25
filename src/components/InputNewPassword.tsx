@@ -1,4 +1,4 @@
-import React, {ReactNode} from 'react'
+import React, {type ReactNode} from 'react'
 import ButtonShowPassword from './ButtonShowPassword.tsx'
 
 function generateSecurePassword(): string {
@@ -66,9 +66,9 @@ export default function InputNewPassword({
   const showError = error && password.length === 0
 
   const inputClassName = `font-mono w-full rounded-lg border px-3 py-2 placeholder:text-gray-300 ${
-    showError ?
-      'border-red-500 focus:border-red-500 focus:ring-red-500'
-    : 'border-gray-300 focus:border-blue-500 focus:ring-blue-500'
+    showError
+      ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
+      : 'border-gray-300 focus:border-blue-500 focus:ring-blue-500'
   }`
 
   return (
@@ -87,6 +87,7 @@ export default function InputNewPassword({
         />
         {isGenerationAvailable && (
           <button
+            type='button'
             onClick={(event) => {
               event.preventDefault()
               setPassword(generateSecurePassword())

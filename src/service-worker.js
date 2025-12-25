@@ -45,15 +45,15 @@ self.addEventListener('activate', (event) => {
   event.waitUntil(
     Promise.all([
       // Clean up old caches but keep the dynamic ones
-      caches.keys().then((cacheNames) => {
-        return Promise.all(
-          cacheNames.map((cacheName) => {
-            if (cacheWhitelist.indexOf(cacheName) === -1) {
-              return caches.delete(cacheName)
-            }
-          })
-        )
-      }),
+      caches
+        .keys()
+        .then((cacheNames) => {
+          return Promise.all(
+            cacheNames
+              .filter((cacheName) => cacheWhitelist.indexOf(cacheName) === -1)
+              .map((cacheName) => caches.delete(cacheName))
+          )
+        }),
       // Take control of all clients immediately
       self.clients.claim()
     ])

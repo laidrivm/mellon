@@ -1,4 +1,4 @@
-import React, {ReactNode} from 'react'
+import type {ReactNode} from 'react'
 
 export default function ButtonShowPassword({
   showPassword,
@@ -9,6 +9,7 @@ export default function ButtonShowPassword({
 }): ReactNode {
   return (
     <button
+      type='button'
       onClick={(event) => {
         event.preventDefault()
         setShowPassword((s) => !s)

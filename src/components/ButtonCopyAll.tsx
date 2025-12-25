@@ -44,12 +44,13 @@ export default function ButtonCopyAll({secret}: {secret: Secret}): JSX.Element {
 
   return (
     <button
+      type='button'
       onClick={handleCopyAll}
       disabled={copied}
       className={`transition-all duration-300 ${
-        copied ?
-          'cursor-not-allowed opacity-75'
-        : 'cursor-pointer hover:underline'
+        copied
+          ? 'cursor-not-allowed opacity-75'
+          : 'cursor-pointer hover:underline'
       }`}
     >
       <span

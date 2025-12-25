@@ -1,11 +1,11 @@
 import {uuidv7} from 'uuidv7'
-import {localSecretsDB} from '../services/pouchDB.ts'
 import {
-  getEncryptionKey,
+  decryptField,
   encryptField,
-  decryptField
+  getEncryptionKey
 } from '../services/encryption.ts'
-import {Secret, ServiceResponse} from '../types.ts'
+import {localSecretsDB} from '../services/pouchDB.ts'
+import type {Secret, ServiceResponse} from '../types.ts'
 
 /**
  * Validate secret data

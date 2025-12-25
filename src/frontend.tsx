@@ -6,7 +6,6 @@
  */
 
 import {createRoot} from 'react-dom/client'
-import React from 'react'
 import App from './components/App.tsx'
 
 const rootElement = document.getElementById('root')
@@ -41,7 +40,7 @@ function cachePageResources() {
     // Images
     ...Array.from(document.querySelectorAll('img[src]'))
       .map((img) => img.src)
-      .filter((src) => src && src.startsWith('http')),
+      .filter((src) => src?.startsWith('http')),
 
     // Preloaded resources
     ...Array.from(document.querySelectorAll('link[rel="preload"]')).map(
@@ -55,7 +54,7 @@ function cachePageResources() {
   ].filter(Boolean) // Remove null/undefined entries
 
   // Check the network requests that have been made
-  if (performance && performance.getEntriesByType) {
+  if (performance?.getEntriesByType) {
     const networkResources = performance
       .getEntriesByType('resource')
       .map((entry) => entry.name)
@@ -82,7 +81,7 @@ function cachePageResources() {
     // Use MessageChannel for reliable communication
     const messageChannel = new MessageChannel()
     messageChannel.port1.onmessage = (event) => {
-      if (event.data && event.data.success) {
+      if (event.data?.success) {
         console.log('Service worker acknowledged asset caching request')
       }
     }
@@ -141,8 +140,10 @@ window.addEventListener('load', () => {
 
 if (import.meta.hot) {
   // With hot module reloading, `import.meta.hot.data` is persisted.
-  const root = (import.meta.hot.data.root ??= createRoot(rootElement))
-  root.render(app)
+  if (!import.meta.hot.data.root) {
+    import.meta.hot.data.root = createRoot(rootElement)
+  }
+  import.meta.hot.data.root.render(app)
 } else {
   // The hot module reloading API is not available in production.
   createRoot(rootElement).render(app)
