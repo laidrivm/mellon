@@ -14,7 +14,7 @@ Stack:
 - [PouchDB](https://pouchdb.com/) — on a client
 - [CouchDB](https://couchdb.apache.org/) — on a server side
 - [Nano](https://github.com/apache/couchdb-nano) — to connect to CouchDB from server
-- [Uuid.js](https://github.com/uuidjs/uuid) — to generate UUIDs v7 according to RFCs
+- [Uuidv7](https://github.com/LiosK/uuidv7) — to generate UUIDs v7 according to RFCs
 - [Docker](https://www.docker.com)
 - [Docker Compose](https://docs.docker.com/compose/)
 
@@ -42,11 +42,11 @@ bun dev
 To run for production:
 
 ```bash
-bun start
+bun run build
+bun prod
 ```
-`build` currently doesn't work
 
-If you need to bypass the hook temporarily, use `SKIP_SIMPLE_GIT_HOOKS=1 git commit` or `SKIP_SIMPLE_GIT_HOOKS=1 git push`.
+To bypass the hooks, use `SKIP_SIMPLE_GIT_HOOKS=1 git commit` or `SKIP_SIMPLE_GIT_HOOKS=1 git push`.
 
 ## Docker
 
