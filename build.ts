@@ -1,4 +1,11 @@
-import {copyFileSync, existsSync, mkdirSync, rmSync, readdirSync, unlinkSync} from 'node:fs'
+import {
+  copyFileSync,
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  rmSync,
+  unlinkSync
+} from 'node:fs'
 import {join} from 'node:path'
 import tailwind from 'bun-plugin-tailwind'
 
