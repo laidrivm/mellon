@@ -4,14 +4,12 @@ A prototype of a local-first password manager. Built to support IAPMEI startup a
 
 Stack:
 - [Bun](https://bun.sh)
-- [Prettier](https://prettier.io)
-- [ESLint](https://eslint.org)
+- [Biome](https://biomejs.dev/)
 - [TypeScript](https://www.typescriptlang.org)
 - [React](https://react.dev)
 - [Normalize CSS](https://necolas.github.io/normalize.css)
 - [Tailwind CSS](https://tailwindcss.com/)
-  - [Prettier Plugin for Tailwind](https://github.com/tailwindlabs/prettier-plugin-tailwindcss)
-  - [Bun Plugin for Tailwind](https://www.npmjs.com/package/bun-plugin-tailwind)
+- [Bun Plugin for Tailwind](https://www.npmjs.com/package/bun-plugin-tailwind)
 - [PouchDB](https://pouchdb.com/) — on a client
 - [CouchDB](https://couchdb.apache.org/) — on a server side
 - [Nano](https://github.com/apache/couchdb-nano) — to connect to CouchDB from server
