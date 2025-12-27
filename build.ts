@@ -39,7 +39,9 @@ Example:
 
 // Helper function to convert kebab-case to camelCase
 const toCamelCase = (str: string): string => {
-  return str.replace(/-([a-z])/g, (g) => g[1].toUpperCase())
+  return str.replace(/-([a-z])/g, (_match, letter: string) =>
+    letter.toUpperCase()
+  )
 }
 
 // Helper function to parse a value into appropriate type
@@ -72,7 +74,7 @@ function parseArgs(): Partial<BuildConfig> & {
 
   for (let i = 0; i < args.length; i++) {
     const arg = args[i]
-    if (!arg.startsWith('--')) continue
+    if (!arg || !arg.startsWith('--')) continue
 
     // Handle --no-* flags
     if (arg.startsWith('--no-')) {
@@ -82,9 +84,10 @@ function parseArgs(): Partial<BuildConfig> & {
     }
 
     // Handle --flag (boolean true)
+    const nextArg = args[i + 1]
     if (
       !arg.includes('=') &&
-      (i === args.length - 1 || args[i + 1].startsWith('--'))
+      (i === args.length - 1 || (nextArg && nextArg.startsWith('--')))
     ) {
       const key = toCamelCase(arg.slice(2))
       config[key] = true
@@ -96,10 +99,13 @@ function parseArgs(): Partial<BuildConfig> & {
     let value: string
 
     if (arg.includes('=')) {
-      ;[key, value] = arg.slice(2).split('=', 2)
+      const parts = arg.slice(2).split('=', 2)
+      key = parts[0] ?? ''
+      value = parts[1] ?? ''
     } else {
       key = arg.slice(2)
-      value = args[++i]
+      i++
+      value = args[i] ?? ''
     }
 
     // Convert kebab-case key to camelCase
@@ -107,9 +113,14 @@ function parseArgs(): Partial<BuildConfig> & {
 
     // Handle nested properties (e.g. --minify.whitespace)
     if (key.includes('.')) {
-      const [parentKey, childKey] = key.split('.')
-      config[parentKey] = config[parentKey] || {}
-      config[parentKey][childKey] = parseValue(value)
+      const parts = key.split('.')
+      const parentKey = parts[0] ?? ''
+      const childKey = parts[1] ?? ''
+      if (parentKey && childKey) {
+        config[parentKey] = config[parentKey] || {}
+        ;(config[parentKey] as Record<string, unknown>)[childKey] =
+          parseValue(value)
+      }
     } else {
       config[key] = parseValue(value)
     }
@@ -166,7 +177,8 @@ const clientResult = await build({
   plugins: [plugin],
   minify: cliConfig.minify ?? true,
   target: 'browser',
-  sourcemap: cliConfig.sourceMap || 'linked',
+  sourcemap:
+    ((cliConfig as Record<string, unknown>).sourcemap as string) || 'linked',
   define: {
     'process.env.NODE_ENV': JSON.stringify('production')
   },
@@ -193,7 +205,8 @@ const serverConfig: BuildConfig & {compile?: boolean; bytecode?: boolean} = {
   entrypoints: [serverEntrypoint],
   minify: cliConfig.minify ?? true,
   target: 'bun',
-  sourcemap: cliConfig.sourceMap || 'linked',
+  sourcemap:
+    ((cliConfig as Record<string, unknown>).sourcemap as string) || 'linked',
   // For standalone executables
   compile: cliConfig.compile,
   bytecode: cliConfig.bytecode,

@@ -97,34 +97,72 @@ export enum DbName {
  */
 export enum DocType {
   LOCAL_USER = 'local_user',
-  SECRET = 'secret'
+  SECRET = 'secret',
+  USER_CREDENTIALS = 'user_credentials'
+}
+
+/**
+ * User credentials for remote sync
+ * @interface UserCredentials
+ */
+export interface UserCredentials {
+  uuid: string
+  password: string
+  email?: string
+  dbName: string
+  createdAt?: string
+}
+
+/**
+ * PouchDB Local User Document
+ * @interface LocalUserDoc
+ */
+export interface LocalUserDoc {
+  _id: string
+  _rev?: string
+  onboarding?: OnboardingStage
+  password?: string
+  hint?: string
+  email?: string
+  createdAt?: string
+  updatedAt?: string
+  key?: JsonWebKey
+  encryptedKey?: string
+}
+
+/**
+ * PouchDB Secret Document
+ * @interface SecretDoc
+ */
+export interface SecretDoc extends Secret {
+  _rev?: string
 }
 
 export interface AddSecretFormProps {
   onboarding: OnboardingStage
   addSecret: (secret: Secret) => Promise<void>
-  handleSetShowtForm: (form: FormState) => void
+  handleSetShowForm: (form: FormState | null) => void
   formError?: string | null
   initialData?: Secret | null
 }
 
 export interface StoredSecretsProps {
   secrets: Secret[]
-  showForm: FormState
-  handleSetShowtForm: (form: FormState) => void
+  showForm: FormState | null
+  handleSetShowForm: (form: FormState | null) => void
   removeSecret: (secretId: string) => void
 }
 
 export interface MasterPasswordFormProps {
   addMasterPassword: (masterPassword: MasterPassword) => void
-  handleSetShowtForm: (form: FormState) => void
+  handleSetShowForm: (form: FormState | null) => void
   formError?: string | null
   initialData?: MasterPassword | null
 }
 
 export interface UnlockFormProps {
   tryUnlock: (masterPasswordCandidate: string) => void
-  handleSetShowtForm: (form: FormState) => void
+  handleSetShowForm: (form: FormState | null) => void
   formError?: string | null
 }
 
@@ -134,6 +172,8 @@ export type FormState =
   | 'recovery'
   | 'email'
   | 'emailCode'
+  | 'sign'
+  | 'code'
 
 export interface RecoveryDisplayProps {
   onContinue: () => void
