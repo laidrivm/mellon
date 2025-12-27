@@ -46,6 +46,8 @@ bun start
 ```
 `build` currently doesn't work
 
+If you need to bypass the hook temporarily, use `SKIP_SIMPLE_GIT_HOOKS=1 git commit` or `SKIP_SIMPLE_GIT_HOOKS=1 git push`.
+
 ## Docker
 
 To build an image for local development:
