@@ -108,13 +108,18 @@ export async function recryptSecrets(
   }
   const recryptPromises = secrets.data.map(async (secret) => {
     try {
+      if (!secret._id) return
+
+      // Get the current document to obtain _rev for update
+      const currentDoc = await localSecretsDB.get(secret._id)
+
       const newEncryptedPassword = await encryptField(
         secret.password,
         newEncryptionKey
       )
 
       const updatedSecret = {
-        ...secret,
+        ...currentDoc,
         password: newEncryptedPassword,
         updatedAt: new Date().toISOString()
       }
