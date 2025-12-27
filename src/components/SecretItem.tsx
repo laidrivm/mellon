@@ -1,4 +1,4 @@
-import React from 'react'
+import React, {type JSX} from 'react'
 import type {Secret} from '../types.ts'
 import Button from './Button.tsx'
 import ButtonCopyAll from './ButtonCopyAll.tsx'
@@ -17,9 +17,10 @@ export default function SecretItem({
   const [showPassword, setShowPassword] = React.useState(false)
   const hiddenPassword = '*'.repeat(secret.password.length)
 
-  async function handleRemove() {
+  function handleRemove() {
+    if (!secret._id) return
     setTimeout(() => {
-      removeSecret(secret._id)
+      removeSecret(secret._id as string)
     }, 0)
   }
 

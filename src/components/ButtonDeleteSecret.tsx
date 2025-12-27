@@ -1,10 +1,10 @@
-import React from 'react'
+import React, {type JSX} from 'react'
 
 export default function ButtonDelete({
   onDelete
 }: {
   onDelete: () => void
-}): JSX.Element {
+}): JSX.Element | null {
   const [state, setState] = React.useState('initial')
   const [countdown, setCountdown] = React.useState(5)
   const [progress, setProgress] = React.useState(100)

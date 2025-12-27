@@ -1,4 +1,4 @@
-import React from 'react'
+import React, {type JSX} from 'react'
 import type {Secret} from '../types.ts'
 
 export default function ButtonCopyAll({secret}: {secret: Secret}): JSX.Element {

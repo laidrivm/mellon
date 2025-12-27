@@ -1,4 +1,4 @@
-import type {ReactNode} from 'react'
+import type {MouseEvent, ReactNode} from 'react'
 
 import type {ButtonStyle} from '../types.ts'
 
@@ -6,14 +6,12 @@ export default function Button({
   children,
   style = 'primary',
   type = 'submit',
-  onClick = () => {
-    // do nothing
-  }
+  onClick
 }: {
   children: ReactNode
   style?: ButtonStyle
   type?: 'submit' | 'button' | 'reset'
-  onClick?: () => void
+  onClick?: (event: MouseEvent<HTMLButtonElement>) => void
 }): ReactNode {
   let className = ''
 

@@ -11,15 +11,15 @@ function generateSecurePassword(): string {
 
   // Start with a letter (upper or lower)
   const startChars = upperLetters + lowerLetters
-  let password = startChars[Math.floor(Math.random() * startChars.length)]
+  let password = startChars[Math.floor(Math.random() * startChars.length)] ?? ''
 
   // Ensure we have at least one of each required type
   const requiredChars = [
-    upperLetters[Math.floor(Math.random() * upperLetters.length)],
-    lowerLetters[Math.floor(Math.random() * lowerLetters.length)],
-    numbers[Math.floor(Math.random() * numbers.length)],
-    symbols[Math.floor(Math.random() * symbols.length)],
-    symbols[Math.floor(Math.random() * symbols.length)] // At least 2 symbols
+    upperLetters[Math.floor(Math.random() * upperLetters.length)] ?? '',
+    lowerLetters[Math.floor(Math.random() * lowerLetters.length)] ?? '',
+    numbers[Math.floor(Math.random() * numbers.length)] ?? '',
+    symbols[Math.floor(Math.random() * symbols.length)] ?? '',
+    symbols[Math.floor(Math.random() * symbols.length)] ?? '' // At least 2 symbols
   ]
 
   // Add minumum required characters to password
@@ -31,19 +31,21 @@ function generateSecurePassword(): string {
   while (password.length < 16) {
     const nextChar = allChars[Math.floor(Math.random() * allChars.length)]
     // Avoid consecutive duplicates
-    if (nextChar !== password[password.length - 1]) {
+    if (nextChar && nextChar !== password[password.length - 1]) {
       password += nextChar
     }
   }
 
   // Shuffle the password (except first character) to randomize positions
-  const firstChar = password[0]
+  const firstChar = password[0] ?? ''
   const restChars = password.slice(1).split('')
 
   // Fisher-Yates shuffle
   for (let i = restChars.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1))
-    ;[restChars[i], restChars[j]] = [restChars[j], restChars[i]]
+    const temp = restChars[i]
+    restChars[i] = restChars[j] ?? ''
+    restChars[j] = temp ?? ''
   }
 
   return firstChar + restChars.join('')

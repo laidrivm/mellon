@@ -12,7 +12,7 @@ export default function ButtonShowPassword({
       type='button'
       onClick={(event) => {
         event.preventDefault()
-        setShowPassword((s) => !s)
+        setShowPassword(!showPassword)
       }}
       className='hover:underline'
     >

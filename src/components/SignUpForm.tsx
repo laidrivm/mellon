@@ -1,4 +1,4 @@
-import React from 'react'
+import React, {type JSX} from 'react'
 import type {SignUpFormProps} from '../types.ts'
 import Button from './Button.tsx'
 import Input from './Input.tsx'
@@ -9,7 +9,7 @@ export default function SignUpForm({
 }: SignUpFormProps): JSX.Element {
   const [emailInput, setEmailInput] = React.useState('')
 
-  function addEmail(event): void {
+  function addEmail(event: React.FormEvent): void {
     event.preventDefault()
     handleEmail(emailInput)
   }

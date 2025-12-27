@@ -3,12 +3,12 @@ import {generateUUID} from './api/generate-uuid.ts'
 import index from './index.html'
 
 const server = serve({
-  port: process.env.PORT,
+  port: process.env['PORT'],
   routes: {
     '/service-worker.js': () => new Response(file('./src/service-worker.js')),
     '/api/generate-uuid': {
-      POST: async (req) => {
-        const res = await generateUUID(req)
+      POST: async () => {
+        const res = await generateUUID()
         return new Response(JSON.stringify(res), {
           headers: {
             'Content-Type': 'application/json',
@@ -19,7 +19,7 @@ const server = serve({
     },
     '/': index
   },
-  development: process.env.NODE_ENV !== 'production'
+  development: process.env['NODE_ENV'] !== 'production'
 })
 
 console.log(`🚀 Server running at ${server.url}`)

@@ -1,4 +1,4 @@
-import React from 'react'
+import React, {type JSX} from 'react'
 
 import {setupRemoteConnection, stopSync} from '../services/pouchDB.ts'
 import {getUserCredentials} from '../services/users.ts'
@@ -41,7 +41,9 @@ export default function ConnectionManager({
   const isOnline = useOnlineStatus()
   const [retryCount, setRetryCount] = React.useState(0)
   const retryTimeoutRef = React.useRef<NodeJS.Timeout | null>(null)
-  const checkConnectionRef = React.useRef<() => Promise<void>>()
+  const checkConnectionRef = React.useRef<(() => Promise<void>) | undefined>(
+    undefined
+  )
 
   const scheduleRetry = React.useCallback(() => {
     if (retryTimeoutRef.current) {

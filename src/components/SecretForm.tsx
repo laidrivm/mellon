@@ -1,4 +1,4 @@
-import React from 'react'
+import React, {type JSX} from 'react'
 import type {AddSecretFormProps} from '../types.ts'
 import Button from './Button.tsx'
 import Input from './Input.tsx'
@@ -62,7 +62,7 @@ export default function AddSecretForm({
     handleSetShowForm(null)
   }
 
-  function hideTheForm(event): void {
+  function hideTheForm(event: React.MouseEvent): void {
     event.preventDefault()
     handleSetShowForm(null)
   }

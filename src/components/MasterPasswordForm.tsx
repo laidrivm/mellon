@@ -1,4 +1,4 @@
-import React from 'react'
+import React, {type JSX} from 'react'
 import type {MasterPassword, MasterPasswordFormProps} from '../types.ts'
 import Button from './Button.tsx'
 import InputNewPassword from './InputNewPassword.tsx'

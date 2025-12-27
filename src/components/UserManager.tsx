@@ -1,4 +1,4 @@
-import React from 'react'
+import React, {type JSX} from 'react'
 import {initializeRemoteDb} from '../services/pouchDB.ts'
 import {createUserCredentials, getUserCredentials} from '../services/users.ts'
 import type {
@@ -15,7 +15,7 @@ export default function UuidManager({
   email,
   setConnectionState
 }: {
-  email: string
+  email: string | null
   setConnectionState: (connectionState: ConnectionState) => void
 }): JSX.Element {
   const [uuid, setUuid] = React.useState<string | null>(null)
@@ -107,8 +107,10 @@ export default function UuidManager({
         </>
       )}
       {userState === 'no_uuid' && <span>Anonymous</span>}
-      {userState === 'has_uuid' && <span>ID ...{uuid.slice(-5)}</span>}
-      {userState === 'has_email' && <span>{email.slice(0, 8)}...</span>}
+      {userState === 'has_uuid' && uuid && <span>ID ...{uuid.slice(-5)}</span>}
+      {userState === 'has_email' && email && (
+        <span>{email.slice(0, 8)}...</span>
+      )}
     </div>
   )
 }

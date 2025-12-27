@@ -1,15 +1,15 @@
-import React from 'react'
+import React, {type JSX} from 'react'
+// @ts-expect-error - SVG import
 import logo from '../logo.svg'
+import type {ConnectionState} from '../types.ts'
 import ConnectionManager from './ConnectionManager'
 import UserManager from './UserManager'
-
-console.log(logo)
 
 /**
  * Header component containing logo, connection manager, and user manager
  * @returns {JSX.Element} Header component
  */
-export default function Header({email}: {email: string}): JSX.Element {
+export default function Header({email}: {email: string | null}): JSX.Element {
   const [connectionState, setConnectionState] =
     React.useState<ConnectionState>('connecting')
 

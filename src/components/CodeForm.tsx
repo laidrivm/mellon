@@ -1,4 +1,4 @@
-import React from 'react'
+import React, {type JSX} from 'react'
 import type {CodeFormProps} from '../types.ts'
 import Button from './Button.tsx'
 import Input from './Input.tsx'
@@ -10,7 +10,7 @@ export default function CodeForm({
 }: CodeFormProps): JSX.Element {
   const [codeInput, setCodeInput] = React.useState('')
 
-  function verifyCode(event): void {
+  function verifyCode(event: React.FormEvent): void {
     event.preventDefault()
     handleCode(codeInput)
   }

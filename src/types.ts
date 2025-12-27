@@ -181,7 +181,7 @@ export interface RecoveryDisplayProps {
 
 export interface RecoveryFormProps {
   onRecoveryAttempt: (shares: string[]) => void
-  handleSetShowForm: (form: FormState) => void
+  handleSetShowForm: (form: FormState | null) => void
   formError?: string | null
 }
 
