@@ -19,3 +19,6 @@ dist
 .env.*
 .DS_Store
 !.env.example
+.tsbuildinfo
+.claude
+mellon
