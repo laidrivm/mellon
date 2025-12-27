@@ -33,4 +33,4 @@ COPY --from=base /app/dist ./dist
 EXPOSE 3000
 
 # Run the built server
-CMD ["bun", "run", "start"]
+CMD ["bun", "run", "prod"]

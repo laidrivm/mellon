@@ -14,7 +14,8 @@ const publicDir = join(scriptDir, 'public')
 
 // Production routes - serve pre-built static files
 const productionRoutes = {
-  '/service-worker.js': () => new Response(file(`${publicDir}/service-worker.js`)),
+  '/service-worker.js': () =>
+    new Response(file(`${publicDir}/service-worker.js`)),
   '/api/generate-uuid': {
     POST: async () => {
       const res = await generateUUID()
