@@ -173,7 +173,7 @@ console.log(
 // Build client-side assets
 type SourceMapType = 'none' | 'linked' | 'inline' | 'external'
 const sourcemapValue =
-  ((cliConfig as Record<string, unknown>)['sourcemap'] as SourceMapType) ||
+  ((cliConfig as Record<string, unknown>).sourcemap as SourceMapType) ||
   'linked'
 
 const clientResult = await build({
