@@ -7,13 +7,16 @@
   "module": "src/index.ts",
   "scripts": {
     "check": "biome check --write",
+    "type-check": "tsc --noEmit",
+    "type-check:fast": "tsc --noEmit --incremental",
     "dev": "bun run check && BUN_RUNTIME_TRANSPILER_CACHE_PATH=0 bun --hot --no-clear-screen src/index.ts",
     "start": "NODE_ENV=production bun src/index.ts",
-    "build": "bun run build.ts",
+    "build": "bun type-check && bun build.ts",
     "prepare": "simple-git-hooks"
   },
   "simple-git-hooks": {
-    "pre-commit": "bun biome check --staged --write --no-errors-on-unmatched"
+    "pre-commit": "bun biome check --staged --write --no-errors-on-unmatched",
+    "pre-push": "bun run type-check:fast"
   },
   "dependencies": {
     "bun-plugin-tailwind": "^0.0.15",

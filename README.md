@@ -5,6 +5,7 @@ A prototype of a local-first password manager. Built to support IAPMEI startup a
 Stack:
 - [Bun](https://bun.sh)
 - [Biome](https://biomejs.dev/)
+- [Simple Git Hooks](https://github.com/toplenboren/simple-git-hooks)
 - [TypeScript](https://www.typescriptlang.org)
 - [React](https://react.dev)
 - [Normalize CSS](https://necolas.github.io/normalize.css)
@@ -14,8 +15,8 @@ Stack:
 - [CouchDB](https://couchdb.apache.org/) — on a server side
 - [Nano](https://github.com/apache/couchdb-nano) — to connect to CouchDB from server
 - [Uuid.js](https://github.com/uuidjs/uuid) — to generate UUIDs v7 according to RFCs
--   [Docker](https://www.docker.com)
--   [Docker Compose](https://docs.docker.com/compose/)
+- [Docker](https://www.docker.com)
+- [Docker Compose](https://docs.docker.com/compose/)
 
 ## Development
 
