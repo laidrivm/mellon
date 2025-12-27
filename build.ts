@@ -1,4 +1,5 @@
-import {copyFileSync, existsSync, mkdirSync, rmSync} from 'node:fs'
+import {copyFileSync, existsSync, mkdirSync, rmSync, readdirSync, unlinkSync} from 'node:fs'
+import {join} from 'node:path'
 import tailwind from 'bun-plugin-tailwind'
 
 const DIST_DIR = './dist'
@@ -43,7 +44,12 @@ const serverBuild = await Bun.build({
   outdir: DIST_DIR,
   target: 'bun',
   minify: false, // Keep runtime env checks intact
-  external: ['nano'], // nano is a Node.js-only CouchDB client
+  external: [
+    'nano', // nano is a Node.js-only CouchDB client
+    'pouchdb-browser', // Browser-only, used by client code
+    'react',
+    'react-dom'
+  ],
   naming: {
     entry: '[dir]/[name].[ext]'
   }
@@ -56,7 +62,15 @@ if (!serverBuild.success) {
   }
   process.exit(1)
 }
-console.log(`✅ Server: ${serverBuild.outputs.length} files\n`)
+
+// Clean up HTML import artifacts (chunks, css, html) from dist root
+// These are side-effects of bundling the dev-mode HTML import
+for (const file of readdirSync(DIST_DIR)) {
+  if (file !== 'index.js' && file !== 'public' && !file.startsWith('.')) {
+    unlinkSync(join(DIST_DIR, file))
+  }
+}
+console.log('✅ Server: 1 file\n')
 
 // Copy service worker (plain JS, no bundling needed)
 console.log('📦 Copying service worker...')
