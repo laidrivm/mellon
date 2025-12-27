@@ -10,8 +10,8 @@
     "type-check": "tsc --noEmit",
     "type-check:fast": "tsc --noEmit --incremental",
     "dev": "bun run check && BUN_RUNTIME_TRANSPILER_CACHE_PATH=0 bun --hot --no-clear-screen src/index.ts",
-    "start": "NODE_ENV=production bun src/index.ts",
-    "build": "bun type-check && bun build.ts",
+    "build": "bun run type-check && bun build.ts",
+    "start": "NODE_ENV=production bun dist/index.js",
     "prepare": "simple-git-hooks"
   },
   "simple-git-hooks": {
