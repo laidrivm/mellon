@@ -27,8 +27,12 @@
     "noPropertyAccessFromIndexSignature": true,
     "forceConsistentCasingInFileNames": true,
 
-    // For PuuchDB
+    // For PouchDB
     "allowSyntheticDefaultImports": true,
+
+    // Faster subsequent checks
+    "incremental": true,
+    "tsBuildInfoFile": ".tsbuildinfo",
 
     "baseUrl": "."
   }

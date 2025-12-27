@@ -35,3 +35,6 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 
 # Files from local db run
 mellon
+
+# Subsequent checks artefact
+.tsbuildinfo
