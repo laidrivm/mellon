@@ -87,7 +87,7 @@ function parseArgs(): Partial<BuildConfig> & {
     const nextArg = args[i + 1]
     if (
       !arg.includes('=') &&
-      (i === args.length - 1 || (nextArg && nextArg.startsWith('--')))
+      (i === args.length - 1 || nextArg?.startsWith('--'))
     ) {
       const key = toCamelCase(arg.slice(2))
       config[key] = true
