@@ -3,7 +3,8 @@ import {generateUUID} from './api/generate-uuid.ts'
 import index from './index.html'
 
 const server = serve({
-  port: process.env.PORT,
+  // biome-ignore lint/complexity/useLiteralKeys: required by noPropertyAccessFromIndexSignature
+  port: process.env['PORT'],
   routes: {
     '/service-worker.js': () => new Response(file('./src/service-worker.js')),
     '/api/generate-uuid': {
@@ -19,7 +20,8 @@ const server = serve({
     },
     '/': index
   },
-  development: process.env.NODE_ENV !== 'production'
+  // biome-ignore lint/complexity/useLiteralKeys: required by noPropertyAccessFromIndexSignature
+  development: process.env['NODE_ENV'] !== 'production'
 })
 
 console.log(`🚀 Server running at ${server.url}`)

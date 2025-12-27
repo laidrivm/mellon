@@ -173,7 +173,8 @@ console.log(
 // Build client-side assets
 type SourceMapType = 'none' | 'linked' | 'inline' | 'external'
 const sourcemapValue =
-  ((cliConfig as Record<string, unknown>).sourcemap as SourceMapType) ||
+  // biome-ignore lint/complexity/useLiteralKeys: required by noPropertyAccessFromIndexSignature
+  ((cliConfig as Record<string, unknown>)['sourcemap'] as SourceMapType) ||
   'linked'
 
 const clientResult = await build({
