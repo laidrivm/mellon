@@ -1,5 +1,5 @@
 import {combine, split} from 'shamir-secret-sharing'
-import {DocType} from '../types.ts'
+import {DocType, type ServiceResponse} from '../types.ts'
 import BIP39_WORDLIST from './englishMnemonics.json'
 import {localUserDB} from './pouchDB.ts'
 import {recryptSecrets} from './secrets.ts'
@@ -27,12 +27,13 @@ async function getKeyFromDB(): Promise<CryptoKey | null> {
     }
 
     if (keyDoc?.encryptedKey) {
-      return keyDoc.encryptedKey
+      // This is a string, not a CryptoKey - return null to trigger key generation
+      return null
     }
 
     return null
   } catch (error) {
-    if (error.name !== 'not_found') {
+    if (error instanceof Error && error.name !== 'not_found') {
       console.error('Error retrieving encryption key:', error)
     }
     return null
@@ -42,9 +43,9 @@ async function getKeyFromDB(): Promise<CryptoKey | null> {
 async function getLocalUserCreatedTime(): Promise<string | null> {
   try {
     const doc = await localUserDB.get(DocType.LOCAL_USER)
-    return doc.createdAt
+    return doc.createdAt ?? null
   } catch (error) {
-    if (error.name !== 'not_found') {
+    if (error instanceof Error && error.name !== 'not_found') {
       console.error('Error retrieving user creation time:', error)
     }
     return null
@@ -254,7 +255,7 @@ export async function deriveKeyFromPassword(
   const derivedKey = await window.crypto.subtle.deriveKey(
     {
       name: 'PBKDF2',
-      salt: salt,
+      salt: salt.buffer as ArrayBuffer,
       iterations: 100000,
       hash: 'SHA-256'
     },
@@ -324,6 +325,10 @@ export async function updateEncryptionWithMP(
 
     // Generate salt from the SAME date that will be used for unlocking
     const createdAt = await getLocalUserCreatedTime()
+    if (!createdAt) {
+      console.error('No creation time found for user')
+      return false
+    }
     const salt = await dateToSalt(createdAt, 32)
 
     // Create encryption key using the salt and the master password
@@ -368,6 +373,10 @@ export async function getAndDecryptKeyFromDB(
       keyFromMP = masterPassword
     } else {
       // Generate salt from the SAME date that was used during storage
+      if (!createdAt) {
+        console.error('No creation time provided for key derivation')
+        return null
+      }
       const salt = await dateToSalt(createdAt, 32)
       // Derive key from master password using the same salt
       keyFromMP = await deriveKeyFromPassword(masterPassword, salt)
@@ -391,7 +400,10 @@ export async function getAndDecryptKeyFromDB(
     )
 
     cachedEncryptionKey = importedKey
-    cachedMasterPassword = masterPassword //caches CryptoKey in case of RecoveryFlow
+    // Only cache string passwords, not CryptoKeys (from recovery flow)
+    if (typeof masterPassword === 'string') {
+      cachedMasterPassword = masterPassword
+    }
     return importedKey
   } catch (error) {
     console.error('Error retrieving and decrypting encryption key:', error)
@@ -419,7 +431,10 @@ function bytesToMnemonic(bytes: Uint8Array): string[] {
     const bits = bitString.slice(i, i + 11)
     if (bits.length === 11) {
       const wordIndex = parseInt(bits, 2) % BIP39_WORDLIST.words.length
-      words.push(BIP39_WORDLIST.words[wordIndex])
+      const word = BIP39_WORDLIST.words[wordIndex]
+      if (word) {
+        words.push(word)
+      }
     }
   }
 
@@ -431,8 +446,17 @@ function bytesToMnemonic(bytes: Uint8Array): string[] {
  * @param {string} createdAt - Creation timestamp for salt generation
  * @returns {Promise<{shares: string[], success: boolean}>} Recovery shares as mnemonic words
  */
-export async function generateRecoveryShares(createdAt: string) {
+export async function generateRecoveryShares(
+  createdAt: string
+): Promise<ServiceResponse<string[]>> {
   try {
+    if (!cachedMasterPassword || typeof cachedMasterPassword !== 'string') {
+      return {
+        success: false,
+        error: 'Master password not available in cache'
+      }
+    }
+
     // Generate salt from creation date
     const salt = await dateToSalt(createdAt, 32)
 
@@ -443,11 +467,11 @@ export async function generateRecoveryShares(createdAt: string) {
     const keyData = await window.crypto.subtle.exportKey('raw', derivedKey)
     const keyBytes = new Uint8Array(keyData)
 
-    // Use Shamir Secret Sharing: 1 share, 1 required (as requested)
+    // Use Shamir Secret Sharing: 2 shares, 2 required
     const shares = await split(keyBytes, 2, 2)
 
     // Convert share to mnemonic words
-    const mnemonicShares = shares.map((share) => {
+    const mnemonicShares = shares.map((share: Uint8Array) => {
       const words = bytesToMnemonic(share)
       return words.join(' ')
     })
@@ -512,7 +536,7 @@ export async function reconstructMasterKey(mnemonicShares: string[]) {
     // Import the reconstructed key
     const reconstructedKey = await window.crypto.subtle.importKey(
       'raw',
-      reconstructedKeyBytes,
+      reconstructedKeyBytes.buffer as ArrayBuffer,
       {name: 'AES-GCM', length: 256},
       false,
       ['encrypt', 'decrypt']

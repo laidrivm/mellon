@@ -1,4 +1,4 @@
-import React from 'react'
+import React, {type JSX} from 'react'
 
 import './App.css'
 
@@ -179,15 +179,15 @@ export default function App(): JSX.Element {
 
       const result = await createSecret(secret)
 
-      if (result.success) {
-        secret._id = result.data.id
+      if (result.success && result.data) {
+        secret._id = (result.data as {id: string}).id
         setSecrets((prevSecrets) => [secret, ...prevSecrets])
         if (onboarding === 'secret') {
           await saveOnboardingStage('master') // no failure check
         }
       } else {
         setSecrets((prevSecrets) => prevSecrets.filter((s) => s !== secret))
-        showSecretsError(result.error, secret)
+        showSecretsError(result.error ?? 'Unknown error', secret)
       }
     },
     [onboarding, saveOnboardingStage, showSecretsError]
@@ -202,7 +202,7 @@ export default function App(): JSX.Element {
 
   // Clear the error when the form is closed
   const handleSetShowForm = React.useCallback(
-    (form: FormState) => {
+    (form: FormState | null) => {
       setShowForm(form)
       if (!form) {
         setFormError(null)
@@ -230,7 +230,7 @@ export default function App(): JSX.Element {
           setIsAuthenticated(true)
         }
       } else {
-        showMasterPasswordError(result.error, masterPassword)
+        showMasterPasswordError(result.error ?? 'Unknown error', masterPassword)
       }
     },
     [onboarding, saveOnboardingStage, showMasterPasswordError]
@@ -299,7 +299,7 @@ export default function App(): JSX.Element {
         }
         setEmail(email)
       } else {
-        setFormError(result.error)
+        setFormError(result.error ?? 'Unknown error')
       }
     },
     [onboarding, saveOnboardingStage]
@@ -309,7 +309,7 @@ export default function App(): JSX.Element {
     async (code: string) => {
       setFormError(null)
       //const result = await verifyCode(code)
-      const result = {
+      const result: {success: boolean; data?: string; error?: string} = {
         success: true,
         data: code
       }
@@ -318,7 +318,7 @@ export default function App(): JSX.Element {
           await saveOnboardingStage('finished')
         }
       } else {
-        setFormError(result.error)
+        setFormError(result.error ?? 'Unknown error')
       }
     },
     [onboarding, saveOnboardingStage]
@@ -335,7 +335,9 @@ export default function App(): JSX.Element {
       }
 
       const currentOnboardingStage = await getOnboardingStage()
-      initOnboarding(currentOnboardingStage)
+      if (currentOnboardingStage) {
+        initOnboarding(currentOnboardingStage)
+      }
 
       if (!isAuthenticated) return
 
@@ -345,7 +347,7 @@ export default function App(): JSX.Element {
       }
 
       const emailResult = await getEmail()
-      if (emailResult.success && emailResult.data.email) {
+      if (emailResult.success && emailResult.data?.email) {
         setEmail(emailResult.data.email)
       }
     }
@@ -380,7 +382,7 @@ export default function App(): JSX.Element {
         {showForm === 'sign' && isAuthenticated && (
           <SignUpForm handleEmail={handleEmail} formError={formError} />
         )}
-        {showForm === 'code' && (
+        {showForm === 'code' && email && (
           <CodeForm
             email={email}
             handleCode={handleCode}

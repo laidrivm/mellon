@@ -1,5 +1,6 @@
 import {
   DocType,
+  type LocalUserDoc,
   type MasterPassword,
   type OnboardingStage,
   type ServiceResponse,
@@ -21,7 +22,7 @@ export async function existsLocalUser(): Promise<boolean> {
     await localUserDB.get(DocType.LOCAL_USER)
     return true
   } catch (error) {
-    if (error.name !== 'not_found')
+    if (error instanceof Error && error.name !== 'not_found')
       console.error('Error getting the onboarding stage:', error)
     return false
   }
@@ -51,7 +52,7 @@ export async function createLocalUser(): Promise<ServiceResponse> {
 export async function getOnboardingStage(): Promise<OnboardingStage | null> {
   try {
     const userDoc = await localUserDB.get(DocType.LOCAL_USER)
-    return userDoc.onboarding
+    return userDoc.onboarding ?? null
   } catch (error) {
     console.error('Error getting the onboarding stage:', error)
     return null
@@ -107,6 +108,12 @@ export async function storeMasterPassword(
 
     // Get the encryption key (now available in memory)
     const encryptionKey = await getEncryptionKey()
+    if (!encryptionKey) {
+      return {
+        success: false,
+        error: 'Encryption key not available'
+      }
+    }
     // Encrypt the master password with the encryption key
     const encryptedPassword = await encryptField(password, encryptionKey)
 
@@ -139,6 +146,9 @@ export async function verifyMasterPassword(password: string): Promise<boolean> {
     const doc = await localUserDB.get(DocType.LOCAL_USER)
     const encryptedMP = doc.password
     const createdAt = doc.createdAt
+    if (!encryptedMP || !createdAt) {
+      return false
+    }
     // Apply this key to decrypt the encryption key
     const encryptionKey = await getAndDecryptKeyFromDB(password, createdAt)
 
@@ -168,7 +178,7 @@ export async function getMasterPasswordHint(): Promise<
 
     return {
       success: true,
-      data: {hint: userDoc.hint}
+      data: {hint: userDoc.hint ?? 'No hint available'}
     }
   } catch (error) {
     console.error('Error getting master password hint:', error)
@@ -187,6 +197,12 @@ export async function getRecoveryShares(): Promise<ServiceResponse<string[]>> {
   try {
     const userDoc = await localUserDB.get(DocType.LOCAL_USER)
 
+    if (!userDoc.createdAt) {
+      return {
+        success: false,
+        error: 'User creation date not found'
+      }
+    }
     const recoveryResult = await generateRecoveryShares(userDoc.createdAt)
 
     if (!recoveryResult.success) {
@@ -220,6 +236,10 @@ export async function verifyRecoveredMasterPassword(
       return false
     }
 
+    if (!reconstructResult.data) {
+      console.log('No key data from reconstruction')
+      return false
+    }
     const encryptionKey = await getAndDecryptKeyFromDB(reconstructResult.data)
 
     if (!encryptionKey) {
@@ -241,7 +261,9 @@ export async function verifyRecoveredMasterPassword(
  * Get email from user credentials
  * @returns {Promise<ServiceResponse<{email: string}>>} User email
  */
-export async function getEmail(): Promise<ServiceResponse<{email: string}>> {
+export async function getEmail(): Promise<
+  ServiceResponse<{email: string | undefined}>
+> {
   try {
     const userDoc = await localUserDB.get(DocType.LOCAL_USER)
 
@@ -250,7 +272,7 @@ export async function getEmail(): Promise<ServiceResponse<{email: string}>> {
       data: {email: userDoc.email}
     }
   } catch (error) {
-    if (error.name === 'not_found') {
+    if (error instanceof Error && error.name === 'not_found') {
       return {
         success: false
       }
@@ -317,7 +339,9 @@ export async function storeEmail(email: string): Promise<ServiceResponse> {
  */
 export async function getUserCredentials(): Promise<UserCredentials | null> {
   try {
-    const doc = await localUserDB.get(`${DocType.USER_CREDENTIALS}`)
+    const doc = (await localUserDB.get(
+      DocType.USER_CREDENTIALS
+    )) as LocalUserDoc & UserCredentials
     return {
       uuid: doc.uuid,
       password: doc.password,
@@ -326,7 +350,7 @@ export async function getUserCredentials(): Promise<UserCredentials | null> {
       createdAt: doc.createdAt
     }
   } catch (error) {
-    if (error.name !== 'not_found') {
+    if (error instanceof Error && error.name !== 'not_found') {
       console.error('Error getting user credentials:', error)
     }
     return null

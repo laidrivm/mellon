@@ -2,7 +2,7 @@ import nano from 'nano'
 
 //import {ServiceResponse, UserCreationResponse} from '../types.ts'
 
-const COUCHDB_URL = process.env.COUCH_URL
+const COUCHDB_URL = process.env['COUCH_URL'] ?? 'http://localhost:5984'
 
 const nanodb = nano(COUCHDB_URL)
 
@@ -55,7 +55,7 @@ export async function createCouchDbUser(uuid: string) {
   }
 }
 
-export async function createUserRelatedCouchDb(uuid) {
+export async function createUserRelatedCouchDb(uuid: string) {
   const dbName = `userdb-${uuid}`
 
   try {

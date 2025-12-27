@@ -28,28 +28,30 @@ function cachePageResources() {
     window.location.href,
 
     // CSS files
-    ...Array.from(document.querySelectorAll('link[rel="stylesheet"]')).map(
-      (link) => link.href
-    ),
+    ...Array.from(
+      document.querySelectorAll<HTMLLinkElement>('link[rel="stylesheet"]')
+    ).map((link) => link.href),
 
     // Scripts
-    ...Array.from(document.querySelectorAll('script[src]')).map(
-      (script) => script.src
-    ),
+    ...Array.from(
+      document.querySelectorAll<HTMLScriptElement>('script[src]')
+    ).map((script) => script.src),
 
     // Images
-    ...Array.from(document.querySelectorAll('img[src]'))
+    ...Array.from(document.querySelectorAll<HTMLImageElement>('img[src]'))
       .map((img) => img.src)
       .filter((src) => src?.startsWith('http')),
 
     // Preloaded resources
-    ...Array.from(document.querySelectorAll('link[rel="preload"]')).map(
-      (link) => link.href
-    ),
+    ...Array.from(
+      document.querySelectorAll<HTMLLinkElement>('link[rel="preload"]')
+    ).map((link) => link.href),
 
     // Font stylesheets specifically (often missed)
     ...Array.from(
-      document.querySelectorAll('link[rel="stylesheet"][href*="fonts"]')
+      document.querySelectorAll<HTMLLinkElement>(
+        'link[rel="stylesheet"][href*="fonts"]'
+      )
     ).map((link) => link.href)
   ].filter(Boolean) // Remove null/undefined entries
 

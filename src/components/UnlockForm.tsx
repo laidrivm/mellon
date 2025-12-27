@@ -1,4 +1,4 @@
-import React from 'react'
+import React, {type JSX} from 'react'
 import {getMasterPasswordHint} from '../services/users.ts'
 import type {UnlockFormProps} from '../types.ts'
 import Button from './Button.tsx'
@@ -11,10 +11,10 @@ export default function UnlockForm({
 }: UnlockFormProps): JSX.Element {
   const [password, setPassword] = React.useState('')
   const [passwordError, setPasswordError] = React.useState(false)
-  const [hint, setHint] = React.useState(null)
-  const [hintError, setHintError] = React.useState(null)
+  const [hint, setHint] = React.useState<string | null>(null)
+  const [hintError, setHintError] = React.useState<string | null>(null)
 
-  async function verifyPassword(event): void {
+  async function verifyPassword(event: React.FormEvent): Promise<void> {
     event.preventDefault()
     setPasswordError(false)
     if (!password) {
@@ -25,7 +25,7 @@ export default function UnlockForm({
     setPassword('')
   }
 
-  async function handleHint(event): void {
+  async function handleHint(event: React.MouseEvent): Promise<void> {
     event.preventDefault()
 
     if (hint || hintError) {
@@ -35,14 +35,14 @@ export default function UnlockForm({
     }
 
     const response = await getMasterPasswordHint()
-    if (response.success) {
+    if (response.success && response.data) {
       setHint(response.data.hint)
     } else {
       setHintError('Failed to load the hint')
     }
   }
 
-  async function handleRecover(event): void {
+  async function handleRecover(event: React.MouseEvent): Promise<void> {
     event.preventDefault()
 
     handleSetShowForm('recovery')

@@ -1,4 +1,4 @@
-import React from 'react'
+import React, {type JSX} from 'react'
 import type {RecoveryFormProps} from '../types.ts'
 import Button from './Button.tsx'
 
@@ -72,7 +72,7 @@ export default function RecoveryInput({
    * Cancel recovery input
    */
   const onCancel = React.useCallback(() => {
-    handleSetShowForm('null')
+    handleSetShowForm(null)
     //setFormError(null)
   }, [handleSetShowForm])
 

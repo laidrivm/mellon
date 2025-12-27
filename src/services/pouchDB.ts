@@ -1,10 +1,16 @@
 import PouchDB from 'pouchdb-browser'
 
-import {DbName, type ServiceResponse, type UserCredentials} from '../types'
+import {
+  DbName,
+  type LocalUserDoc,
+  type SecretDoc,
+  type ServiceResponse,
+  type UserCredentials
+} from '../types'
 
 // Database instances
-export const localSecretsDB = new PouchDB(DbName.SECRETS)
-export const localUserDB = new PouchDB(DbName.USER)
+export const localSecretsDB = new PouchDB<SecretDoc>(DbName.SECRETS)
+export const localUserDB = new PouchDB<LocalUserDoc>(DbName.USER)
 
 // ---------------------------------------------------------------------------------------------------
 // refactoring line ----------------------------------------------------------------------------------
@@ -111,7 +117,7 @@ export async function syncOnce(
     console.error('One-time sync failed:', error)
     return {
       success: false,
-      error: error instanceof Error ? error : new Error(String(error))
+      error: error instanceof Error ? error.message : String(error)
     }
   }
 }

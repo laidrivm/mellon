@@ -171,14 +171,18 @@ console.log(
 )
 
 // Build client-side assets
+type SourceMapType = 'none' | 'linked' | 'inline' | 'external'
+const sourcemapValue =
+  ((cliConfig as Record<string, unknown>)['sourcemap'] as SourceMapType) ||
+  'linked'
+
 const clientResult = await build({
   entrypoints: htmlEntrypoints,
   outdir,
   plugins: [plugin],
   minify: cliConfig.minify ?? true,
   target: 'browser',
-  sourcemap:
-    ((cliConfig as Record<string, unknown>).sourcemap as string) || 'linked',
+  sourcemap: sourcemapValue,
   define: {
     'process.env.NODE_ENV': JSON.stringify('production')
   },
@@ -205,8 +209,7 @@ const serverConfig: BuildConfig & {compile?: boolean; bytecode?: boolean} = {
   entrypoints: [serverEntrypoint],
   minify: cliConfig.minify ?? true,
   target: 'bun',
-  sourcemap:
-    ((cliConfig as Record<string, unknown>).sourcemap as string) || 'linked',
+  sourcemap: sourcemapValue,
   // For standalone executables
   compile: cliConfig.compile,
   bytecode: cliConfig.bytecode,

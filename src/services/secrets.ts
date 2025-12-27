@@ -38,6 +38,12 @@ export async function createSecret(secret: Secret): Promise<ServiceResponse> {
     }
 
     const encryptionKey = await getEncryptionKey()
+    if (!encryptionKey) {
+      return {
+        success: false,
+        error: 'Encryption key not available'
+      }
+    }
 
     const newSecret: Secret = {
       ...secret,
@@ -97,6 +103,9 @@ export async function recryptSecrets(
 ): Promise<boolean> {
   let success = true
   const secrets = await getAllSecrets()
+  if (!secrets.data) {
+    return true // No secrets to recrypt
+  }
   const recryptPromises = secrets.data.map(async (secret) => {
     try {
       const newEncryptedPassword = await encryptField(
@@ -112,7 +121,7 @@ export async function recryptSecrets(
 
       await localSecretsDB.put(updatedSecret)
     } catch (error) {
-      console.error(`Error processing secret ${secret.id}:`, error)
+      console.error(`Error processing secret ${secret._id}:`, error)
       success = false
     }
   })
@@ -135,6 +144,12 @@ export async function recryptSecrets(
 export async function getAllSecrets(): Promise<ServiceResponse<Secret[]>> {
   try {
     const encryptionKey = await getEncryptionKey()
+    if (!encryptionKey) {
+      return {
+        success: false,
+        error: 'Encryption key not available'
+      }
+    }
 
     const result = await localSecretsDB.allDocs({
       include_docs: true,
@@ -145,11 +160,18 @@ export async function getAllSecrets(): Promise<ServiceResponse<Secret[]>> {
 
     for (const row of result.rows) {
       try {
-        const decryptedSecret = {...row.doc}
-        decryptedSecret.password = await decryptField(
-          decryptedSecret.password,
-          encryptionKey
-        )
+        const doc = row.doc
+        if (!doc || !doc.password) continue
+
+        const decryptedSecret: Secret = {
+          _id: doc._id,
+          name: doc.name,
+          username: doc.username,
+          password: await decryptField(doc.password, encryptionKey),
+          notes: doc.notes,
+          createdAt: doc.createdAt,
+          updatedAt: doc.updatedAt
+        }
         secrets.push(decryptedSecret)
       } catch (error) {
         console.error('Error decrypting secret:', error)
@@ -177,11 +199,22 @@ export async function getAllSecrets(): Promise<ServiceResponse<Secret[]>> {
 export async function getSecret(id: string): Promise<ServiceResponse<Secret>> {
   try {
     const encryptionKey = await getEncryptionKey()
+    if (!encryptionKey) {
+      return {
+        success: false,
+        error: 'Encryption key not available'
+      }
+    }
     const secret = await localSecretsDB.get(id)
 
-    const decryptedSecret = {
-      ...secret,
-      password: await decryptField(secret.password, encryptionKey)
+    const decryptedSecret: Secret = {
+      _id: secret._id,
+      name: secret.name,
+      username: secret.username,
+      password: await decryptField(secret.password, encryptionKey),
+      notes: secret.notes,
+      createdAt: secret.createdAt,
+      updatedAt: secret.updatedAt
     }
 
     return {
@@ -218,6 +251,12 @@ export async function updateSecret(
 
     if (updates.password && updates.password !== current.password) {
       const encryptionKey = await getEncryptionKey()
+      if (!encryptionKey) {
+        return {
+          success: false,
+          error: 'Encryption key not available'
+        }
+      }
       updatedSecret.password = await encryptField(
         updates.password,
         encryptionKey

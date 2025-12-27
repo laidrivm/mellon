@@ -4,7 +4,7 @@ import {
   createUserRelatedCouchDb
 } from '../services/couchDB.ts'
 
-import type {UserCreationResponse} from '../types.ts'
+import type {ServiceResponse, UserCreationResponse} from '../types.ts'
 
 /**
  * Generate a new UUID for user
@@ -19,11 +19,14 @@ export async function generateUUID(): Promise<
     const user = await createCouchDbUser(uuid)
     const db = await createUserRelatedCouchDb(uuid)
 
-    const response: UserCreationResponse = {
-      ...user,
-      ...db,
+    const response: ServiceResponse<UserCreationResponse> = {
+      success: true,
       message: 'User created successfully',
-      success: true
+      data: {
+        ...user,
+        ...db,
+        success: true
+      }
     }
 
     return response
