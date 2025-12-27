@@ -38,3 +38,6 @@ mellon
 
 # Subsequent checks artefact
 .tsbuildinfo
+
+# Claude Code settings
+.claude
