@@ -26,17 +26,27 @@ async function getKeyFromDB(): Promise<CryptoKey | null> {
       )
     }
 
-    if (keyDoc?.encryptedKey) {
-      // This is a string, not a CryptoKey - return null to trigger key generation
-      return null
-    }
-
+    // encryptedKey means master password is set - key must be decrypted first
+    // Return null without generating new key
     return null
   } catch (error) {
     if (error instanceof Error && error.name !== 'not_found') {
       console.error('Error retrieving encryption key:', error)
     }
     return null
+  }
+}
+
+/**
+ * Check if an encrypted key exists (meaning master password is required)
+ * @returns {Promise<boolean>} True if encrypted key exists
+ */
+async function hasEncryptedKey(): Promise<boolean> {
+  try {
+    const keyDoc = await localUserDB.get(DocType.LOCAL_USER)
+    return !!keyDoc?.encryptedKey
+  } catch {
+    return false
   }
 }
 
@@ -103,7 +113,12 @@ export async function getEncryptionKey(): Promise<CryptoKey | null> {
     return key
   }
 
-  // If no key exists, generate new one
+  // If there's an encrypted key, don't generate a new one - user must unlock first
+  if (await hasEncryptedKey()) {
+    return null
+  }
+
+  // Only generate a new key if there's no key at all (first-time setup)
   const newKey = await generateNewKey()
 
   try {
