@@ -1,4 +1,4 @@
-import {describe, expect, mock, test} from 'bun:test'
+import {beforeEach, describe, expect, mock, test} from 'bun:test'
 import {generateUUID} from './generate-uuid.ts'
 
 // Mock the couchDB module
@@ -13,6 +13,11 @@ const {createCouchDbUser, createUserRelatedCouchDb} = await import(
 )
 
 describe('generateUUID', () => {
+  beforeEach(() => {
+    ;(createCouchDbUser as ReturnType<typeof mock>).mockClear()
+    ;(createUserRelatedCouchDb as ReturnType<typeof mock>).mockClear()
+  })
+
   test('returns success response when user and db creation succeed', async () => {
     // Arrange
     const mockUser = {success: true, uuid: 'test-uuid', password: 'test-pass'}

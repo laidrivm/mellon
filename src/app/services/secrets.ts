@@ -2,22 +2,7 @@ import {uuidv7} from 'uuidv7'
 import type {Secret, ServiceResponse} from '../../types.ts'
 import {decryptField, encryptField, getEncryptionKey} from './encryption.ts'
 import {localSecretsDB} from './pouchDB.ts'
-
-/**
- * Validate secret data
- * @param {Secret} secret - Secret to validate
- * @returns {boolean} Whether secret is valid
- */
-function validateSecret(secret: Secret): boolean {
-  return (
-    !!secret &&
-    typeof secret.name === 'string' &&
-    secret.name.trim().length > 0 &&
-    typeof secret.username === 'string' &&
-    typeof secret.password === 'string' &&
-    secret.password.length > 0
-  )
-}
+import {validateSecret} from './validation.ts'
 
 /**
  * Create a new secret
