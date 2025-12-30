@@ -17,7 +17,7 @@ async function getKeyFromDB(): Promise<CryptoKey | null> {
     const keyDoc = await localUserDB.get(DocType.LOCAL_USER)
 
     if (keyDoc?.key) {
-      return await window.crypto.subtle.importKey(
+      return await crypto.subtle.importKey(
         'jwk',
         keyDoc.key,
         {name: 'AES-GCM', length: 256},
@@ -67,7 +67,7 @@ async function getLocalUserCreatedTime(): Promise<string | null> {
  * @returns {Promise<CryptoKey>} Generated encryption key
  */
 async function generateNewKey(): Promise<CryptoKey> {
-  return await window.crypto.subtle.generateKey(
+  return await crypto.subtle.generateKey(
     {
       name: 'AES-GCM',
       length: 256
@@ -83,7 +83,7 @@ async function generateNewKey(): Promise<CryptoKey> {
  * @returns {Promise<PouchDB.Core.Response>} Storage operation result
  */
 async function storeKeyInDB(key: CryptoKey): Promise<PouchDB.Core.Response> {
-  const keyData = await window.crypto.subtle.exportKey('jwk', key)
+  const keyData = await crypto.subtle.exportKey('jwk', key)
 
   const doc = await localUserDB.get(DocType.LOCAL_USER)
 
@@ -143,14 +143,14 @@ export async function encryptField(
   key: CryptoKey
 ): Promise<string> {
   // Create a random initialization vector
-  const iv = window.crypto.getRandomValues(new Uint8Array(12))
+  const iv = crypto.getRandomValues(new Uint8Array(12))
 
   // Convert data to ArrayBuffer
   const encoder = new TextEncoder()
   const dataBuffer = encoder.encode(data)
 
   // Encrypt the data
-  const encryptedBuffer = await window.crypto.subtle.encrypt(
+  const encryptedBuffer = await crypto.subtle.encrypt(
     {
       name: 'AES-GCM',
       iv: iv
@@ -191,7 +191,7 @@ export async function decryptField(
   const encryptedData = bytes.slice(12)
 
   // Decrypt the data
-  const decryptedBuffer = await window.crypto.subtle.decrypt(
+  const decryptedBuffer = await crypto.subtle.decrypt(
     {
       name: 'AES-GCM',
       iv: iv
@@ -258,7 +258,7 @@ export async function deriveKeyFromPassword(
   const passwordBuffer = encoder.encode(masterPassword)
 
   // Import password as key material
-  const keyMaterial = await window.crypto.subtle.importKey(
+  const keyMaterial = await crypto.subtle.importKey(
     'raw',
     passwordBuffer,
     'PBKDF2',
@@ -267,7 +267,7 @@ export async function deriveKeyFromPassword(
   )
 
   // Derive AES key from password
-  const derivedKey = await window.crypto.subtle.deriveKey(
+  const derivedKey = await crypto.subtle.deriveKey(
     {
       name: 'PBKDF2',
       salt: salt.buffer as ArrayBuffer,
@@ -298,7 +298,7 @@ async function storeEncryptedKeyInDB(
 ): Promise<PouchDB.Core.Response> {
   try {
     // Export the key to encrypt it
-    const keyData = await window.crypto.subtle.exportKey('jwk', key)
+    const keyData = await crypto.subtle.exportKey('jwk', key)
 
     // Encrypt the entire JWK as a string
     const encryptedKey = await encryptField(
@@ -406,7 +406,7 @@ export async function getAndDecryptKeyFromDB(
     // Parse the JWK and import it as a CryptoKey
     const keyData = JSON.parse(decryptedKeyString)
 
-    const importedKey = await window.crypto.subtle.importKey(
+    const importedKey = await crypto.subtle.importKey(
       'jwk',
       keyData,
       {name: 'AES-GCM', length: 256},
@@ -479,7 +479,7 @@ export async function generateRecoveryShares(
     const derivedKey = await deriveKeyFromPassword(cachedMasterPassword, salt)
 
     // Export the key to get raw bytes for Shamir sharing
-    const keyData = await window.crypto.subtle.exportKey('raw', derivedKey)
+    const keyData = await crypto.subtle.exportKey('raw', derivedKey)
     const keyBytes = new Uint8Array(keyData)
 
     // Use Shamir Secret Sharing: 2 shares, 2 required
@@ -549,7 +549,7 @@ export async function reconstructMasterKey(mnemonicShares: string[]) {
     const reconstructedKeyBytes = await combine(shareBytes)
 
     // Import the reconstructed key
-    const reconstructedKey = await window.crypto.subtle.importKey(
+    const reconstructedKey = await crypto.subtle.importKey(
       'raw',
       reconstructedKeyBytes.buffer as ArrayBuffer,
       {name: 'AES-GCM', length: 256},
