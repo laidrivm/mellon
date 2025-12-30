@@ -1,6 +1,6 @@
 import type {MouseEvent, ReactNode} from 'react'
 
-import type {ButtonStyle} from '../types.ts'
+import type {ButtonStyle} from '../../types.ts'
 
 export default function Button({
   children,

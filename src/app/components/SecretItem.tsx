@@ -1,5 +1,5 @@
 import React, {type JSX} from 'react'
-import type {Secret} from '../types.ts'
+import type {Secret} from '../../types.ts'
 import Button from './Button.tsx'
 import ButtonCopyAll from './ButtonCopyAll.tsx'
 import ButtonCopyPassword from './ButtonCopyPassword.tsx'

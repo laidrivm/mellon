@@ -1,5 +1,5 @@
 import React, {type JSX} from 'react'
-import type {CodeFormProps} from '../types.ts'
+import type {CodeFormProps} from '../../types.ts'
 import Button from './Button.tsx'
 import Input from './Input.tsx'
 

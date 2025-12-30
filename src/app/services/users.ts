@@ -5,7 +5,7 @@ import {
   type OnboardingStage,
   type ServiceResponse,
   type UserCredentials
-} from '../types.ts'
+} from '../../types.ts'
 import {
   decryptField,
   encryptField,

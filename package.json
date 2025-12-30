@@ -13,7 +13,9 @@
     "dev": "bun run check && BUN_RUNTIME_TRANSPILER_CACHE_PATH=0 bun --hot --no-clear-screen src/index.ts",
     "build": "bun run type-check && bun build.ts",
     "prod": "NODE_ENV=production bun dist/index.js",
-    "prepare": "simple-git-hooks"
+    "prepare": "simple-git-hooks",
+    "docker-build": "docker build . -t mellon",
+    "docker-run": "docker run -d --name mellon-app -p 3000:3000 -v ./.env:/app/.env mellon"
   },
   "simple-git-hooks": {
     "pre-commit": "bun biome check --staged --write --no-errors-on-unmatched",

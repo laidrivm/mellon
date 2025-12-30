@@ -1,5 +1,5 @@
 import type {JSX} from 'react'
-import type {StoredSecretsProps} from '../types.ts'
+import type {StoredSecretsProps} from '../../types.ts'
 import Button from './Button.tsx'
 import SecretItem from './SecretItem.tsx'
 

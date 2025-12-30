@@ -55,6 +55,10 @@ To build an image for local development:
 ```bash
 docker build . -t mellon
 ```
+or
+```bash
+bun docker-build
+```
 
 To run in a container:
 ```bash
@@ -63,6 +67,10 @@ docker run -d \
   -p 3000:3000 \
   -v ./.env:/app/.env \
   mellon
+```
+or
+```bash
+bun docker-run
 ```
 
 To build an image for server shipment:

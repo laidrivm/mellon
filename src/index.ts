@@ -2,7 +2,7 @@ import {dirname, join} from 'node:path'
 import {file, serve} from 'bun'
 import {generateUUID} from './api/generate-uuid.ts'
 // HTML import for dev mode - Bun auto-bundles TSX/CSS
-import index from './index.html'
+import index from './app/assets/index.html'
 
 // Detect production mode at runtime based on NODE_ENV
 // biome-ignore lint/complexity/useLiteralKeys: required by noPropertyAccessFromIndexSignature
@@ -38,7 +38,8 @@ const productionRoutes = {
 
 // Development routes - use Bun's HTML bundling for hot reload
 const developmentRoutes = {
-  '/service-worker.js': () => new Response(file('./src/service-worker.js')),
+  '/service-worker.js': () =>
+    new Response(file('./src/app/assets/service-worker.js')),
   '/api/generate-uuid': {
     POST: async () => {
       const res = await generateUUID()

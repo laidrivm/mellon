@@ -1,11 +1,11 @@
 import React, {type JSX} from 'react'
-import {initializeRemoteDb} from '../services/pouchDB.ts'
-import {createUserCredentials, getUserCredentials} from '../services/users.ts'
 import type {
   ConnectionState,
   UserCreationResponse,
   UserState
-} from '../types.ts'
+} from '../../types.ts'
+import {initializeRemoteDb} from '../services/pouchDB.ts'
+import {createUserCredentials, getUserCredentials} from '../services/users.ts'
 
 /**
  * UserManager component to handle user identity states

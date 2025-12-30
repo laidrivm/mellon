@@ -1,6 +1,6 @@
 import React, {type JSX} from 'react'
+import type {UnlockFormProps} from '../../types.ts'
 import {getMasterPasswordHint} from '../services/users.ts'
-import type {UnlockFormProps} from '../types.ts'
 import Button from './Button.tsx'
 import InputNewPassword from './InputNewPassword.tsx'
 

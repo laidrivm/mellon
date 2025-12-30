@@ -1,5 +1,5 @@
 import {combine, split} from 'shamir-secret-sharing'
-import {DocType, type ServiceResponse} from '../types.ts'
+import {DocType, type ServiceResponse} from '../../types.ts'
 import BIP39_WORDLIST from './englishMnemonics.json'
 import {localUserDB} from './pouchDB.ts'
 import {recryptSecrets} from './secrets.ts'

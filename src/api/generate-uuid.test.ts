@@ -2,14 +2,14 @@ import {describe, expect, mock, test} from 'bun:test'
 import {generateUUID} from './generate-uuid.ts'
 
 // Mock the couchDB module
-mock.module('../services/couchDB.ts', () => ({
+mock.module('./couchDB.ts', () => ({
   createCouchDbUser: mock(),
   createUserRelatedCouchDb: mock()
 }))
 
 // Import mocked functions after mock.module
 const {createCouchDbUser, createUserRelatedCouchDb} = await import(
-  '../services/couchDB.ts'
+  './couchDB.ts'
 )
 
 describe('generateUUID', () => {

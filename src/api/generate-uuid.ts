@@ -1,10 +1,6 @@
 import {uuidv7} from 'uuidv7'
-import {
-  createCouchDbUser,
-  createUserRelatedCouchDb
-} from '../services/couchDB.ts'
-
 import type {ServiceResponse, UserCreationResponse} from '../types.ts'
+import {createCouchDbUser, createUserRelatedCouchDb} from './couchDB.ts'
 
 /**
  * Generate a new UUID for user
