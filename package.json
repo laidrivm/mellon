@@ -9,6 +9,7 @@
     "check": "biome check --write",
     "type-check": "tsc --noEmit",
     "type-check:fast": "tsc --noEmit --incremental",
+    "test": "bun test --coverage",
     "dev": "bun run check && BUN_RUNTIME_TRANSPILER_CACHE_PATH=0 bun --hot --no-clear-screen src/index.ts",
     "build": "bun run type-check && bun build.ts",
     "prod": "NODE_ENV=production bun dist/index.js",
