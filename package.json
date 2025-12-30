@@ -20,7 +20,7 @@
     "docker-logs": "docker logs -f mellon-app"
   },
   "simple-git-hooks": {
-    "pre-commit": "bun biome check --staged --write --no-errors-on-unmatched",
+    "pre-commit": "bun biome check --staged --write --no-errors-on-unmatched && bun test",
     "pre-push": "bun run type-check:fast"
   },
   "dependencies": {
