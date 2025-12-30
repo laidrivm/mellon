@@ -1,36 +1,39 @@
-# Start with the official Bun image
-FROM oven/bun:latest AS base
+# Build stage - use Alpine for smaller image
+FROM oven/bun:canary-slim AS build
 
-# Set working directory
+WORKDIR /app
+
+# Copy package files first for better layer caching
+COPY package.json bun.lock ./
+
+# Install dependencies (including dev deps for build)
+RUN bun install --frozen-lockfile
+
+# Copy only files needed for build
+COPY src ./src
+COPY build.ts ./
+
+# Run build directly (skip type-check - should be done in CI)
+RUN bun build.ts
+
+# Production stage - minimal Alpine image
+FROM oven/bun:1-alpine AS production
+
 WORKDIR /app
 
 # Copy package files
-COPY package.json bun.lock* ./
+COPY package.json bun.lock ./
 
-# Install all dependencies (including dev for build)
-RUN bun install --frozen-lockfile
+# Install production dependencies only
+RUN bun install --frozen-lockfile --production --ignore-scripts
 
-# Copy source files
-COPY src ./src
-COPY tsconfig.json biome.json build.ts ./
+# Copy built output from build stage
+COPY --from=build /app/dist ./dist
 
-# Build the application
-RUN bun run build
+# Non-root user for security
+USER bun
 
-# Production stage
-FROM oven/bun:latest AS production
-
-WORKDIR /app
-
-# Copy package files and install production deps only
-COPY package.json bun.lock* ./
-RUN bun install --frozen-lockfile --production
-
-# Copy built files
-COPY --from=base /app/dist ./dist
-
-# Expose the port
 EXPOSE 3000
 
-# Run the built server
+# Run the production server
 CMD ["bun", "run", "prod"]
