@@ -1,8 +1,7 @@
 import React, {type JSX} from 'react'
-
+import type {ConnectionState} from '../../types.ts'
 import {setupRemoteConnection, stopSync} from '../services/pouchDB.ts'
 import {getUserCredentials} from '../services/users.ts'
-import type {ConnectionState} from '../types.ts'
 
 /**
  * Custom hook to track online status

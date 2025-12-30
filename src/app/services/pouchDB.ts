@@ -6,7 +6,7 @@ import {
   type SecretDoc,
   type ServiceResponse,
   type UserCredentials
-} from '../types'
+} from '../../types'
 
 // Database instances
 export const localSecretsDB = new PouchDB<SecretDoc>(DbName.SECRETS)

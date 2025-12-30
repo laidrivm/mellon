@@ -1,6 +1,6 @@
 import React, {type JSX} from 'react'
+import type {RecoveryDisplayProps} from '../../types.ts'
 import {getRecoveryShares} from '../services/users.ts'
-import type {RecoveryDisplayProps} from '../types.ts'
 import Button from './Button.tsx'
 
 export default function RecoveryDisplay({

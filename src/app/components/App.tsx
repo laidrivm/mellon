@@ -2,6 +2,12 @@ import React, {type JSX} from 'react'
 
 import './App.css'
 
+import type {
+  FormState,
+  MasterPassword,
+  OnboardingStage,
+  Secret
+} from '../../types.ts'
 import {clearEncryptionCache} from '../services/encryption.ts'
 import {createSecret, deleteSecret, getAllSecrets} from '../services/secrets.ts'
 import {
@@ -15,12 +21,6 @@ import {
   verifyMasterPassword,
   verifyRecoveredMasterPassword
 } from '../services/users.ts'
-import type {
-  FormState,
-  MasterPassword,
-  OnboardingStage,
-  Secret
-} from '../types.ts'
 import CodeForm from './CodeForm.tsx'
 import Footer from './Footer.tsx'
 import Header from './Header.tsx'

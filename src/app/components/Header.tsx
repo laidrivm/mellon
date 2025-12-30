@@ -1,7 +1,7 @@
 import React, {type JSX} from 'react'
+import type {ConnectionState} from '../../types.ts'
 // @ts-expect-error - SVG import
-import logo from '../logo.svg'
-import type {ConnectionState} from '../types.ts'
+import logo from '../assets/logo.svg'
 import ConnectionManager from './ConnectionManager'
 import UserManager from './UserManager'
 

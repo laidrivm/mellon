@@ -1,11 +1,4 @@
-import {
-  copyFileSync,
-  existsSync,
-  mkdirSync,
-  readdirSync,
-  rmSync,
-  unlinkSync
-} from 'node:fs'
+import {copyFileSync, existsSync, mkdirSync, readdirSync, rmSync} from 'node:fs'
 import {join} from 'node:path'
 import tailwind from 'bun-plugin-tailwind'
 
@@ -22,7 +15,7 @@ console.log('🔨 Building Mellon...\n')
 // Build client (frontend + HTML)
 console.log('📦 Building client...')
 const clientBuild = await Bun.build({
-  entrypoints: ['./src/index.html'],
+  entrypoints: ['./src/app/assets/index.html'],
   outdir: `${DIST_DIR}/public`,
   target: 'browser',
   minify: true,
@@ -70,23 +63,27 @@ if (!serverBuild.success) {
   process.exit(1)
 }
 
-// Clean up HTML import artifacts (chunks, css, html) from dist root
+// Clean up HTML import artifacts (chunks, css, html, dirs) from dist root
 // These are side-effects of bundling the dev-mode HTML import
 for (const file of readdirSync(DIST_DIR)) {
   if (file !== 'index.js' && file !== 'public' && !file.startsWith('.')) {
-    unlinkSync(join(DIST_DIR, file))
+    const filePath = join(DIST_DIR, file)
+    rmSync(filePath, {recursive: true, force: true})
   }
 }
 console.log('✅ Server: 1 file\n')
 
 // Copy service worker (plain JS, no bundling needed)
 console.log('📦 Copying service worker...')
-copyFileSync('./src/service-worker.js', `${DIST_DIR}/public/service-worker.js`)
+copyFileSync(
+  './src/app/assets/service-worker.js',
+  `${DIST_DIR}/public/service-worker.js`
+)
 console.log('✅ Service worker copied\n')
 
 // Copy static assets
 console.log('📦 Copying static assets...')
-copyFileSync('./src/logo.svg', `${DIST_DIR}/public/logo.svg`)
+copyFileSync('./src/app/assets/logo.svg', `${DIST_DIR}/public/logo.svg`)
 console.log('✅ Static assets copied\n')
 
 console.log('🎉 Build complete!')
