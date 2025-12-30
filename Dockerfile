@@ -11,7 +11,7 @@ RUN bun install --frozen-lockfile
 
 # Copy only files needed for build
 COPY src ./src
-COPY build.ts ./
+COPY build.ts tsconfig.json ./
 
 # Run build directly (skip type-check - should be done in CI)
 RUN bun build.ts
