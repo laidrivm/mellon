@@ -1,22 +1,11 @@
 import {describe, expect, test} from 'bun:test'
 import type {Secret} from '../../types.ts'
+import {validateSecret} from './validation.ts'
 
 // Test validation logic and response structures without mocking DB/crypto
 // These are unit tests for the business logic
 
 describe('secrets validation', () => {
-  // Reimplement validateSecret for isolated testing
-  function validateSecret(secret: Secret): boolean {
-    return (
-      !!secret &&
-      typeof secret.name === 'string' &&
-      secret.name.trim().length > 0 &&
-      typeof secret.username === 'string' &&
-      typeof secret.password === 'string' &&
-      secret.password.length > 0
-    )
-  }
-
   describe('validateSecret', () => {
     test('accepts valid secret with all fields', () => {
       const secret: Secret = {
