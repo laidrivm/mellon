@@ -22,3 +22,5 @@ dist
 .tsbuildinfo
 .claude
 mellon
+playwright-report
+test-results

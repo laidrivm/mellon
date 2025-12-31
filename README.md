@@ -17,6 +17,7 @@ Stack:
 - [Uuidv7](https://github.com/LiosK/uuidv7) — to generate UUIDs v7 according to RFCs
 - [Docker](https://www.docker.com)
 - [Docker Compose](https://docs.docker.com/compose/)
+— [Playwright](https://playwright.dev/)
 
 ## Development
 
