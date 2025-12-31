@@ -9,18 +9,22 @@
     "check": "biome check --write",
     "type-check": "tsc --noEmit",
     "type-check:fast": "tsc --noEmit --incremental",
-    "test": "bun test --coverage",
+    "test": "bun test --randomize --concurrent src/api src/app",
+    "test:e2e": "bunx --bun playwright test",
+    "test:e2e:ui": "bunx --bun playwright test --ui",
+    "test:e2e:debug": "bunx --bun playwright test --debug",
+    "test:e2e:report": "bunx --bun playwright show-report",
     "dev": "bun run check && BUN_RUNTIME_TRANSPILER_CACHE_PATH=0 bun --hot --no-clear-screen src/index.ts",
     "build": "bun run type-check && bun build.ts",
     "prod": "NODE_ENV=production bun dist/index.js",
     "prepare": "simple-git-hooks",
-    "docker-build": "docker build . -t mellon",
-    "docker-run": "docker run -d --name mellon-app -p 3000:3000 -v ./.env:/app/.env mellon",
-    "docker-stop": "docker stop mellon-app && docker rm mellon-app",
-    "docker-logs": "docker logs -f mellon-app"
+    "docker:build": "docker build . -t mellon",
+    "docker:run": "docker run -d --name mellon-app -p 3000:3000 -v ./.env:/app/.env mellon",
+    "docker:stop": "docker stop mellon-app && docker rm mellon-app",
+    "docker:logs": "docker logs -f mellon-app"
   },
   "simple-git-hooks": {
-    "pre-commit": "bun biome check --staged --write --no-errors-on-unmatched && bun test",
+    "pre-commit": "bun biome check --staged --write --no-errors-on-unmatched && bun run test",
     "pre-push": "bun run type-check:fast"
   },
   "dependencies": {
@@ -36,6 +40,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^2.3.10",
+    "@playwright/test": "^1.57.0",
     "@types/bun": "^1.3.5",
     "@types/pouchdb": "^6.4.2",
     "@types/react": "^19.2.7",

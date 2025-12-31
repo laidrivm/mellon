@@ -41,3 +41,7 @@ mellon
 
 # Claude Code settings
 .claude
+
+# Playwright artefacts
+playwright-report
+test-results
