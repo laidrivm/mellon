@@ -12,6 +12,7 @@ concurrency:
 
 jobs:
   checks:
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: true
@@ -53,8 +54,7 @@ jobs:
           retention-days: 7
 
   deploy:
-    needs: checks
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     environment: production
 
