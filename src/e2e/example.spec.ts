@@ -6,4 +6,18 @@ test.describe('App basics', () => {
 
     await expect(page).toHaveTitle(/Mellon — Keep Your Secrets/i)
   })
+
+  test('should display the logo', async ({page}) => {
+    await page.goto('/')
+
+    const logo = page.getByRole('img', {name: 'Logo'})
+    await expect(logo).toBeVisible()
+  })
+
+  test('should display the footer', async ({page}) => {
+    await page.goto('/')
+
+    const footer = page.locator('footer')
+    await expect(footer).toBeVisible()
+  })
 })
