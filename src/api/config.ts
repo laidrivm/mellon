@@ -3,7 +3,6 @@
  * Centralizes all configuration and constants for the API layer
  */
 
-// Database constants
 export const COUCHDB_CONSTANTS = {
   USERS_DB: '_users',
   USER_PREFIX: 'org.couchdb.user:',
@@ -12,14 +11,12 @@ export const COUCHDB_CONSTANTS = {
   USER_TYPE: 'user'
 } as const
 
-// Password generation constants
 export const PASSWORD_CONSTANTS = {
-  LENGTH: 32,
+  LENGTH: 16,
   CHARSET:
     'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*'
 } as const
 
-// Error messages
 export const ERROR_MESSAGES = {
   USER_CREATION_FAILED: 'Failed to create user',
   USER_CREATION_ERROR: 'Error creating user in CouchDB',
@@ -29,7 +26,6 @@ export const ERROR_MESSAGES = {
   CONNECTION_ERROR: 'Database connection failed'
 } as const
 
-// Success messages
 export const SUCCESS_MESSAGES = {
   USER_CREATED: 'User created successfully',
   DB_CREATED: 'Database created successfully'
@@ -47,7 +43,6 @@ export interface CouchDbConfig {
  * Get CouchDB configuration from environment
  */
 export function getCouchDbConfig(): CouchDbConfig {
-  // biome-ignore lint/complexity/useLiteralKeys: required by noPropertyAccessFromIndexSignature
   const url = process.env['COUCH_URL'] ?? 'http://localhost:5984'
   return {url}
 }
