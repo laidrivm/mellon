@@ -1,0 +1,104 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: true
+      matrix:
+        check:
+          - name: biome
+            command: bun run biome check
+          - name: type-check
+            command: bun run type-check
+          - name: test
+            command: bun run test
+          - name: e2e
+            command: bun run test:e2e
+
+    name: ${{ matrix.check.name }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        if: matrix.check.name == 'e2e'
+        run: bunx playwright install --with-deps chromium
+
+      - name: Run ${{ matrix.check.name }}
+        run: ${{ matrix.check.command }}
+
+      - name: Upload Playwright report
+        uses: actions/upload-artifact@v4
+        if: matrix.check.name == 'e2e' && failure()
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7
+
+  deploy:
+    needs: checks
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ secrets.DOCKER_REGISTRY }}
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ secrets.DOCKER_REGISTRY }}/${{ secrets.DOCKER_IMAGE }}:latest
+            ${{ secrets.DOCKER_REGISTRY }}/${{ secrets.DOCKER_IMAGE }}:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Deploy to VM
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT || 22 }}
+          script: |
+            docker pull ${{ secrets.DOCKER_REGISTRY }}/${{ secrets.DOCKER_IMAGE }}:${{ github.sha }}
+            docker stop ${{ secrets.DOCKER_CONTAINER }} || true
+            docker rm ${{ secrets.DOCKER_CONTAINER }} || true
+            docker run -d \
+              --name ${{ secrets.DOCKER_CONTAINER }} \
+              --restart unless-stopped \
+              -p ${{ secrets.APP_PORT || 3000 }}:3000 \
+              -e NODE_ENV=production \
+              -e PORT=3000 \
+              -e COUCH_URL="${{ secrets.COUCH_URL }}" \
+              ${{ secrets.DOCKER_REGISTRY }}/${{ secrets.DOCKER_IMAGE }}:${{ github.sha }}
+            docker image prune -f
