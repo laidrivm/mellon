@@ -93,12 +93,5 @@ jobs:
             docker pull ${{ secrets.DOCKER_REGISTRY }}/${{ secrets.DOCKER_IMAGE }}:${{ github.sha }}
             docker stop ${{ secrets.DOCKER_CONTAINER }} || true
             docker rm ${{ secrets.DOCKER_CONTAINER }} || true
-            docker run -d \
-              --name ${{ secrets.DOCKER_CONTAINER }} \
-              --restart unless-stopped \
-              -p ${{ secrets.APP_PORT || 3000 }}:3000 \
-              -e NODE_ENV=production \
-              -e PORT=3000 \
-              -e COUCH_URL="${{ secrets.COUCH_URL }}" \
-              ${{ secrets.DOCKER_REGISTRY }}/${{ secrets.DOCKER_IMAGE }}:${{ github.sha }}
-            docker image prune -f
+            cd mellon
+            docker-compose up -d
