@@ -6,7 +6,7 @@
 import {COUCHDB_CONSTANTS, ERROR_MESSAGES, SUCCESS_MESSAGES} from './config.ts'
 import {type CouchClient, createCouchClient} from './couch-client.ts'
 import {getErrorMessage, UserCreationError} from './errors.ts'
-import {defaultPasswordGenerator, type PasswordGenerator} from './password.ts'
+import {generateSecurePassword} from './password.ts'
 
 /**
  * Response structure for user creation
@@ -23,7 +23,6 @@ export interface UserCreationResult {
  */
 export interface UserRepositoryDeps {
   client?: CouchClient
-  passwordGenerator?: PasswordGenerator
 }
 
 /**
@@ -51,9 +50,7 @@ export async function createCouchDbUser(
   deps: UserRepositoryDeps = {}
 ): Promise<UserCreationResult> {
   const client = deps.client ?? createCouchClient()
-  const passwordGen = deps.passwordGenerator ?? defaultPasswordGenerator
-
-  const password = passwordGen.generate()
+  const password = generateSecurePassword()
   const userDoc = buildUserDocument(uuid, password)
 
   try {
