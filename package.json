@@ -10,7 +10,7 @@
     "type-check": "tsc --noEmit",
     "type-check:fast": "tsc --noEmit --incremental",
     "test": "bun test --randomize --concurrent src/api src/app",
-    "test:e2e": "docker-compose up -d mellon-couchdb couchdb-init && sleep 5s && bunx playwright test",
+    "test:e2e": "bunx playwright test",
     "test:e2e:ui": "bunx playwright test --ui",
     "test:e2e:debug": "bunx playwright test --debug",
     "test:e2e:report": "bunx --bun playwright show-report",
