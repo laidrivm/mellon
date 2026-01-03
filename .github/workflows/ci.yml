@@ -91,8 +91,8 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           password: ${{ secrets.SSH_PASS }}
           script: |
-            docker pull ${{ secrets.DOCKER_REGISTRY }}/${{ secrets.DOCKER_IMAGE }}:${{ github.sha }}
-            docker stop ${{ secrets.DOCKER_CONTAINER }} || true
-            docker rm ${{ secrets.DOCKER_CONTAINER }} || true
+            docker stop ${{ secrets.DOCKER_CONTAINER }}
+            docker rm ${{ secrets.DOCKER_CONTAINER }}
+            docker pull ${{ secrets.DOCKER_REGISTRY }}/${{ secrets.DOCKER_IMAGE }}:latest
             cd mellon
             docker-compose up -d
