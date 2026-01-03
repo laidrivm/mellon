@@ -4,6 +4,8 @@ services:
     container_name: mellon-app
     ports:
       - "3000:3000"
+    environment:
+      - COUCH_HOST=mellon-couchdb
     volumes:
       - ./.env:/app/.env
     depends_on:

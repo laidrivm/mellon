@@ -28,6 +28,21 @@ jobs:
             command: bun run test:e2e
 
     name: ${{ matrix.check.name }}
+
+    services:
+      couchdb:
+        image: couchdb:latest
+        env:
+          COUCHDB_USER: admin
+          COUCHDB_PASSWORD: password
+        ports:
+          - 5984:5984
+        options: >-
+          --health-cmd "curl -f http://localhost:5984/ || exit 1"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
       - uses: actions/checkout@v4
 
@@ -38,12 +53,44 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
+      - name: Setup CouchDB
+        if: matrix.check.name == 'e2e'
+        run: |
+          # Wait for CouchDB to be ready
+          for i in {1..30}; do
+            if curl -sf http://localhost:5984/ > /dev/null; then
+              echo "CouchDB is ready"
+              break
+            fi
+            echo "Waiting for CouchDB... ($i/30)"
+            sleep 2
+          done
+
+          # Verify CouchDB is accessible
+          curl -sf http://localhost:5984/ || (echo "ERROR: CouchDB is not accessible" && exit 1)
+
+          # Create system databases
+          curl -sf -X PUT http://admin:password@localhost:5984/_users || exit 1
+          curl -sf -X PUT http://admin:password@localhost:5984/_replicator || exit 1
+          curl -sf -X PUT http://admin:password@localhost:5984/_global_changes || exit 1
+
+          echo "CouchDB setup complete"
+
+      - name: Create .env file
+        if: matrix.check.name == 'e2e'
+        run: cp .env.example .env
+
       - name: Install Playwright browsers
         if: matrix.check.name == 'e2e'
         run: bunx playwright install --with-deps chromium
 
       - name: Run ${{ matrix.check.name }}
         run: ${{ matrix.check.command }}
+        env:
+          COUCH_HOST: localhost
+          COUCH_PORT: 5984
+          COUCH_USER: admin
+          COUCH_PASSWORD: password
 
       - name: Upload Playwright report
         uses: actions/upload-artifact@v4
