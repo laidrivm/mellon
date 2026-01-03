@@ -1,0 +1,34 @@
+services:
+  mellon-app:
+    build: .
+    container_name: mellon-app
+    ports:                                                                                                   
+      - "3000:3000" 
+    volumes:
+      - ./.env:/app/.env
+    depends_on:
+      - mellon-couchdb
+    networks:
+      - web-network
+    restart: always
+
+  mellon-couchdb:
+    image: couchdb:latest
+    container_name: mellon-couchdb
+    environment:
+      - COUCHDB_USER=${COUCH_USER}
+      - COUCHDB_PASSWORD=${COUCH_PASSWORD}
+      - COUCHDB_BIND_ADDRESS=0.0.0.0
+      - COUCHDB_SECRET=${COUCHDB_SECRET}
+      - NODENAME=mellon-couchdb
+    volumes:
+      - couchdb-data:/opt/couchdb/data
+    networks:
+      - web-network
+    restart: always
+
+volumes:
+  couchdb-data:
+
+networks:
+  web-network:
