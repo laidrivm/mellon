@@ -25,13 +25,6 @@ interface SecurityDocument {
 }
 
 /**
- * Dependencies for database repository (enables DI for testing)
- */
-export interface DatabaseRepositoryDeps {
-  client?: CouchClient
-}
-
-/**
  * Generate database name for a user
  */
 export function getUserDbName(uuid: string): string {
@@ -84,10 +77,9 @@ async function setDatabaseSecurity(
  * @returns Result of database creation operation
  */
 export async function createUserDatabase(
-  uuid: string,
-  deps: DatabaseRepositoryDeps = {}
+  uuid: string
 ): Promise<DatabaseCreationResult> {
-  const client = deps.client ?? createCouchClient()
+  const client = createCouchClient()
   const dbName = getUserDbName(uuid)
 
   try {
