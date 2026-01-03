@@ -83,6 +83,18 @@ jobs:
           curl -sf -X PUT http://admin:password@localhost:5984/_replicator || true
           curl -sf -X PUT http://admin:password@localhost:5984/_global_changes || true
 
+          # Enable CORS (fixes "OPTIONS /userdb-xxx/ 401" errors)
+          curl -sf -X PUT http://admin:password@localhost:5984/_node/_local/_config/chttpd/enable_cors \
+            -d '"true"'
+          curl -sf -X PUT http://admin:password@localhost:5984/_node/_local/_config/cors/origins \
+            -d '"*"'
+          curl -sf -X PUT http://admin:password@localhost:5984/_node/_local/_config/cors/credentials \
+            -d '"true"'
+          curl -sf -X PUT http://admin:password@localhost:5984/_node/_local/_config/cors/methods \
+            -d '"GET, PUT, POST, HEAD, DELETE"'
+          curl -sf -X PUT http://admin:password@localhost:5984/_node/_local/_config/cors/headers \
+            -d '"accept, authorization, content-type, origin, referer, x-csrf-token"'
+
           # Verify databases exist
           curl -sf http://admin:password@localhost:5984/_users || exit 1
 
