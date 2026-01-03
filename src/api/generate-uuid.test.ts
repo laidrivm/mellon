@@ -1,52 +1,34 @@
 import {describe, expect, test} from 'bun:test'
 import {ERROR_MESSAGES, SUCCESS_MESSAGES} from './config.ts'
-import type {DatabaseCreationResult} from './database-repository.ts'
-import {
-  generateUUID,
-  type UserService,
-  type UuidGenerator
-} from './generate-uuid.ts'
-import type {UserCreationResult} from './user-repository.ts'
+import {generateUUID, type UserService} from './generate-uuid.ts'
 
 describe('generateUUID', () => {
-  const mockUuid = 'test-uuid-12345'
-
-  const mockUuidGenerator: UuidGenerator = {
-    generate: () => mockUuid
-  }
-
   test('returns success response when user and db creation succeed', async () => {
-    const mockUser: UserCreationResult = {
-      success: true,
-      uuid: mockUuid,
-      password: 'secure-password-123',
-      message: SUCCESS_MESSAGES.USER_CREATED
-    }
-
-    const mockDb: DatabaseCreationResult = {
-      success: true,
-      db: `userdb-${mockUuid}`,
-      message: SUCCESS_MESSAGES.DB_CREATED
-    }
+    let capturedUuid = ''
 
     const mockUserService: UserService = {
-      createUser: async () => mockUser,
-      createDatabase: async () => mockDb
+      createUser: async (uuid) => {
+        capturedUuid = uuid
+        return {
+          success: true,
+          uuid,
+          password: 'secure-password-123',
+          message: SUCCESS_MESSAGES.USER_CREATED
+        }
+      },
+      createDatabase: async (uuid) => ({
+        success: true,
+        db: `userdb-${uuid}`,
+        message: SUCCESS_MESSAGES.DB_CREATED
+      })
     }
 
-    const result = await generateUUID({
-      uuidGenerator: mockUuidGenerator,
-      userService: mockUserService
-    })
+    const result = await generateUUID({userService: mockUserService})
 
     expect(result.success).toBe(true)
     expect(result.message).toBe(SUCCESS_MESSAGES.USER_CREATED)
-    expect(result.data).toMatchObject({
-      success: true,
-      uuid: mockUuid,
-      password: mockUser.password,
-      db: mockDb.db
-    })
+    expect(result.data?.uuid).toBe(capturedUuid)
+    expect(result.data?.password).toBe('secure-password-123')
   })
 
   test('returns error response when user creation throws', async () => {
@@ -58,15 +40,12 @@ describe('generateUUID', () => {
       },
       createDatabase: async () => ({
         success: true,
-        db: `userdb-${mockUuid}`,
+        db: 'userdb-test',
         message: SUCCESS_MESSAGES.DB_CREATED
       })
     }
 
-    const result = await generateUUID({
-      uuidGenerator: mockUuidGenerator,
-      userService: mockUserService
-    })
+    const result = await generateUUID({userService: mockUserService})
 
     expect(result.success).toBe(false)
     expect(result.error).toBe(errorMessage)
@@ -77,9 +56,9 @@ describe('generateUUID', () => {
     const errorMessage = 'Database creation failed'
 
     const mockUserService: UserService = {
-      createUser: async () => ({
+      createUser: async (uuid) => ({
         success: true,
-        uuid: mockUuid,
+        uuid,
         password: 'test-pass',
         message: SUCCESS_MESSAGES.USER_CREATED
       }),
@@ -88,42 +67,10 @@ describe('generateUUID', () => {
       }
     }
 
-    const result = await generateUUID({
-      uuidGenerator: mockUuidGenerator,
-      userService: mockUserService
-    })
+    const result = await generateUUID({userService: mockUserService})
 
     expect(result.success).toBe(false)
     expect(result.error).toBe(errorMessage)
     expect(result.message).toBe(ERROR_MESSAGES.UUID_GENERATION_ERROR)
-  })
-
-  test('uses provided UUID generator', async () => {
-    const customUuid = 'custom-uuid-99999'
-    const customGenerator: UuidGenerator = {
-      generate: () => customUuid
-    }
-
-    const mockUserService: UserService = {
-      createUser: async (uuid) => ({
-        success: true,
-        uuid,
-        password: 'test-pass',
-        message: SUCCESS_MESSAGES.USER_CREATED
-      }),
-      createDatabase: async (uuid) => ({
-        success: true,
-        db: `userdb-${uuid}`,
-        message: SUCCESS_MESSAGES.DB_CREATED
-      })
-    }
-
-    const result = await generateUUID({
-      uuidGenerator: customGenerator,
-      userService: mockUserService
-    })
-
-    expect(result.success).toBe(true)
-    expect(result.data?.uuid).toBe(customUuid)
   })
 })

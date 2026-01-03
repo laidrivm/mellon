@@ -14,13 +14,6 @@ import {getErrorMessage, isApiError} from './errors.ts'
 import {createCouchDbUser, type UserCreationResult} from './user-repository.ts'
 
 /**
- * UUID generator interface for dependency injection
- */
-export interface UuidGenerator {
-  generate(): string
-}
-
-/**
  * User service interface for dependency injection
  */
 export interface UserService {
@@ -32,15 +25,7 @@ export interface UserService {
  * Dependencies for UUID generation service
  */
 export interface GenerateUuidDeps {
-  uuidGenerator?: UuidGenerator
   userService?: UserService
-}
-
-/**
- * Default UUID generator using uuidv7
- */
-const defaultUuidGenerator: UuidGenerator = {
-  generate: uuidv7
 }
 
 /**
@@ -96,11 +81,10 @@ function buildErrorResponse(
 export async function generateUUID(
   deps: GenerateUuidDeps = {}
 ): Promise<ServiceResponse<UserCreationResponse>> {
-  const uuidGen = deps.uuidGenerator ?? defaultUuidGenerator
   const userService = deps.userService ?? defaultUserService
 
   try {
-    const uuid = uuidGen.generate()
+    const uuid = uuidv7()
 
     const user = await userService.createUser(uuid)
     const db = await userService.createDatabase(uuid)
