@@ -6,7 +6,8 @@ mock.module('./user-repository.ts', () => ({
 }))
 
 mock.module('./database-repository.ts', () => ({
-  createUserDatabase: mock()
+  createUserDatabase: mock(),
+  getUserDbName: (uuid: string) => `userdb-${uuid}`
 }))
 
 const {createCouchDbUser} = await import('./user-repository.ts')
