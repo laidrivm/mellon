@@ -6,13 +6,6 @@
 import {PASSWORD_CONSTANTS} from './config.ts'
 
 /**
- * Password generator interface for dependency injection
- */
-export interface PasswordGenerator {
-  generate(length?: number): string
-}
-
-/**
  * Generate a cryptographically secure random password
  * Uses Web Crypto API for true randomness
  */
@@ -26,12 +19,4 @@ export function generateSecurePassword(
   return Array.from(randomValues)
     .map((value) => charset[value % charset.length])
     .join('')
-}
-
-/**
- * Default password generator implementation
- * Can be replaced in tests with a mock
- */
-export const defaultPasswordGenerator: PasswordGenerator = {
-  generate: generateSecurePassword
 }
