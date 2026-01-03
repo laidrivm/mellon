@@ -1,8 +1,13 @@
 [chttpd]
+bind_address = any
+port = 5984
+require_valid_user = false
+
+[httpd]
 enable_cors = true
 
 [cors]
 origins = *
 credentials = true
 methods = GET, PUT, POST, HEAD, DELETE
-headers = accept, authorization, content-type, origin, referer
+headers = accept, authorization, content-type, origin, referer, x-csrf-token
