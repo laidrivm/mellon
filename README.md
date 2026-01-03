@@ -49,6 +49,14 @@ bun prod
 
 To bypass the hooks, use `SKIP_SIMPLE_GIT_HOOKS=1 git commit` or `SKIP_SIMPLE_GIT_HOOKS=1 git push`.
 
+## CouchDB
+
+CORS set up:
+
+```bash
+cp local.ini.example local.ini
+```
+
 ## Docker
 
 To build an image for local development:
