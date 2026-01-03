@@ -4,7 +4,7 @@
  */
 
 import {COUCHDB_CONSTANTS, ERROR_MESSAGES, SUCCESS_MESSAGES} from './config.ts'
-import {type CouchClient, getDefaultCouchClient} from './couch-client.ts'
+import {type CouchClient, createCouchClient} from './couch-client.ts'
 import {DatabaseError, ErrorCode, getErrorMessage} from './errors.ts'
 
 /**
@@ -87,7 +87,7 @@ export async function createUserDatabase(
   uuid: string,
   deps: DatabaseRepositoryDeps = {}
 ): Promise<DatabaseCreationResult> {
-  const client = deps.client ?? getDefaultCouchClient()
+  const client = deps.client ?? createCouchClient()
   const dbName = getUserDbName(uuid)
 
   try {
