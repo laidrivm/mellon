@@ -19,6 +19,8 @@ dist
 .env.*
 .DS_Store
 !.env.example
+local.ini
+!local.ini.example
 .tsbuildinfo
 .claude
 mellon

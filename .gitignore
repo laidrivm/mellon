@@ -36,6 +36,9 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 # Files from local db run
 mellon
 
+# CouchDB local config (contains sensitive hashed credentials)
+local.ini
+
 # Subsequent checks artefact
 .tsbuildinfo
 
