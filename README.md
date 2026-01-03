@@ -58,7 +58,7 @@ docker build . -t mellon
 ```
 or
 ```bash
-bun docker-build
+bun docker:build
 ```
 
 To run in a container:
@@ -71,7 +71,7 @@ docker run -d \
 ```
 or
 ```bash
-bun docker-run
+bun docker:run
 ```
 
 To build an image for server shipment:
@@ -81,40 +81,4 @@ docker build --pull --platform linux/amd64 -t mellon . --tag your_resigtry_adres
 docker push your_resigtry_adress/mellon:latest
 ```
 
-`docker-compose.yml` to run everything using `docker compose up -d`:
-```yaml
-services:
-  mellon-app:
-    image: your_resigtry_adress/mellon:latest
-    container_name: mellon-app
-    volumes:
-      -./.env:/app/.env
-    depends_on:
-      - mellon-couchdb
-    networks:
-      - web-network
-    restart: always
-
-  mellon-couchdb:
-    image: couchdb:latest
-    container_name: mellon-couchdb
-    environment:
-      - COUCHDB_USER=your_admin_name
-      - COUCHDB_PASSWORD=your_admin_password
-      - COUCHDB_BIND_ADDRESS=0.0.0.0
-      - COUCHDB_SECRET=your_secret_here
-      - NODENAME=mellon-couchdb
-    volumes:
-      - couchdb-data:/opt/couchdb/data
-      - ./local.ini:/opt/couchdb/etc/local.d/local.ini
-    networks:
-      - web-network
-    restart: always
-
-volumes:
-  couchdb-data:
-
-networks:
-  web-network:
-    external: true
-```
+Run everything using `docker-compose up -d --build`.
