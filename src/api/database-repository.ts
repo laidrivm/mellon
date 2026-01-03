@@ -33,6 +33,7 @@ export function getUserDbName(uuid: string): string {
 
 /**
  * Build security document for user database
+ * Return in CouchDB's _security document format
  */
 function buildSecurityDocument(uuid: string): SecurityDocument {
   return {
@@ -73,7 +74,6 @@ async function setDatabaseSecurity(
  * Create user-specific database with proper security settings
  *
  * @param uuid - User identifier to create database for
- * @param deps - Optional dependencies for testing
  * @returns Result of database creation operation
  */
 export async function createUserDatabase(
