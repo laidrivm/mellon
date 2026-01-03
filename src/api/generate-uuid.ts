@@ -4,7 +4,7 @@
  */
 
 import {uuidv7} from 'uuidv7'
-import type {ServiceResponse, UserCreationResponse} from '../types.ts'
+import type {UserCreationResponse} from '../types.ts'
 import {ERROR_MESSAGES, SUCCESS_MESSAGES} from './config.ts'
 import {createUserDatabase} from './database-repository.ts'
 import {getErrorMessage, isApiError} from './errors.ts'
@@ -13,9 +13,7 @@ import {createCouchDbUser} from './user-repository.ts'
 /**
  * Generate a new UUID and create associated user resources
  */
-export async function generateUUID(): Promise<
-  ServiceResponse<UserCreationResponse>
-> {
+export async function generateUUID(): Promise<UserCreationResponse> {
   try {
     const uuid = uuidv7()
 
@@ -25,12 +23,9 @@ export async function generateUUID(): Promise<
     return {
       success: true,
       message: SUCCESS_MESSAGES.USER_CREATED,
-      data: {
-        success: true,
-        uuid: user.uuid,
-        password: user.password,
-        db: db.db
-      }
+      uuid: user.uuid,
+      password: user.password,
+      db: db.db
     }
   } catch (error) {
     const errorMessage = isApiError(error)

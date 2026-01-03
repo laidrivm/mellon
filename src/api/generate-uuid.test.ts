@@ -40,9 +40,9 @@ describe('generateUUID', () => {
 
     expect(result.success).toBe(true)
     expect(result.message).toBe(SUCCESS_MESSAGES.USER_CREATED)
-    expect(result.data?.uuid).toBe(mockUser.uuid)
-    expect(result.data?.password).toBe(mockUser.password)
-    expect(result.data?.db).toBe(mockDb.db)
+    expect(result.uuid).toBe(mockUser.uuid)
+    expect(result.password).toBe(mockUser.password)
+    expect(result.db).toBe(mockDb.db)
     expect(createCouchDbUser).toHaveBeenCalled()
     expect(createUserDatabase).toHaveBeenCalled()
   })

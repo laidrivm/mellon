@@ -19,9 +19,8 @@
     "prod": "NODE_ENV=production bun dist/index.js",
     "prepare": "simple-git-hooks",
     "docker:build": "docker build . -t mellon",
-    "docker:run": "docker run -d --name mellon-app -p 3000:3000 -v ./.env:/app/.env mellon",
-    "docker:stop": "docker stop mellon-app && docker rm mellon-app",
-    "docker:logs": "docker logs -f mellon-app"
+    "docker:run": "docker-compose up -d --build",
+    "docker:stop": "docker compose down",
   },
   "simple-git-hooks": {
     "pre-commit": "bun biome check --staged --write --no-errors-on-unmatched && bun run test",

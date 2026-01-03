@@ -2,19 +2,43 @@ services:
   mellon-app:
     build: .
     container_name: mellon-app
-    ports:                                                                                                   
-      - "3000:3000" 
+    ports:
+      - "3000:3000"
     volumes:
       - ./.env:/app/.env
     depends_on:
-      - mellon-couchdb
+      couchdb-init:
+        condition: service_completed_successfully
     networks:
       - web-network
     restart: always
 
+  couchdb-init:
+    image: curlimages/curl:latest
+    depends_on:
+      - mellon-couchdb
+    networks:
+      - web-network
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        until curl -s http://mellon-couchdb:5984/ > /dev/null; do
+          echo "Waiting for CouchDB..."
+          sleep 2
+        done
+        curl -X PUT http://${COUCH_USER}:${COUCH_PASSWORD}@mellon-couchdb:5984/_users
+        curl -X PUT http://${COUCH_USER}:${COUCH_PASSWORD}@mellon-couchdb:5984/_replicator
+        curl -X PUT http://${COUCH_USER}:${COUCH_PASSWORD}@mellon-couchdb:5984/_global_changes
+        echo "CouchDB initialized"
+    environment:
+      - COUCH_USER=${COUCH_USER}
+      - COUCH_PASSWORD=${COUCH_PASSWORD}
+
   mellon-couchdb:
     image: couchdb:latest
     container_name: mellon-couchdb
+    ports:
+      - "5984:5984"
     environment:
       - COUCHDB_USER=${COUCH_USER}
       - COUCHDB_PASSWORD=${COUCH_PASSWORD}
@@ -23,6 +47,7 @@ services:
       - NODENAME=mellon-couchdb
     volumes:
       - couchdb-data:/opt/couchdb/data
+      - ./local.ini:/opt/couchdb/etc/local.d/local.ini
     networks:
       - web-network
     restart: always

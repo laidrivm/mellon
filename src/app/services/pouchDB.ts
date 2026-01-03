@@ -144,7 +144,8 @@ export async function initializeRemoteDb(
     const couchDbHost = document.location.hostname
     const protocol = document.location.protocol
 
-    const remoteDbUrl = `${protocol}//${uuid}:${password}@${couchDbHost}:5984/${dbName}`
+    const encodedPassword = encodeURIComponent(password)
+    const remoteDbUrl = `${protocol}//${uuid}:${encodedPassword}@${couchDbHost}:5984/${dbName}`
 
     const remoteDB = new PouchDB(remoteDbUrl, {skip_setup: true})
 
