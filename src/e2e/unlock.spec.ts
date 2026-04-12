@@ -88,7 +88,7 @@ test.describe('Unlock Form', () => {
     await expect(
       page.getByRole('heading', {name: 'Recover Your Password'})
     ).toBeVisible()
-    await expect(page.getByText('Enter your recovery words')).toBeVisible()
+    await expect(page.getByText('Enter your 12 recovery words')).toBeVisible()
   })
 
   test('should have Hint, Recover, and Unlock buttons', async ({

@@ -1,8 +1,14 @@
-import {combine, split} from 'shamir-secret-sharing'
 import type {ServiceResponse} from '../../../types.ts'
 import BIP39_WORDLIST from '../englishMnemonics.json'
-import {getCachedMasterPassword} from '../session.ts'
-import {dateToSalt, deriveKeyFromPassword} from './webcrypto.ts'
+import {getCachedKey} from '../session.ts'
+import {
+  getEncryptedKeyByRecoveryBlob,
+  storeEncryptedKeyByRecoveryInDB
+} from './keyStore.ts'
+import {dateToSalt, decryptField, deriveKeyFromPassword} from './webcrypto.ts'
+
+const SEED_BYTES = 16
+const WORD_COUNT = 12
 
 function bytesToMnemonic(bytes: Uint8Array): string[] {
   const words: string[] = []
@@ -46,30 +52,44 @@ function mnemonicToBytes(words: string[]): Uint8Array {
   return new Uint8Array(bytes)
 }
 
+// Encode a 16-byte seed as a 12-word mnemonic.
+// The encoder consumes whole 11-bit chunks, so we append a zero byte
+// (16 bytes = 128 bits → pad to 136 bits = 12 words + 4 dropped bits).
+function seedToMnemonic(seed: Uint8Array): string[] {
+  const padded = new Uint8Array(SEED_BYTES + 1)
+  padded.set(seed)
+  return bytesToMnemonic(padded)
+}
+
+// Decode 12 words back to a 16-byte seed.
+// mnemonicToBytes returns 16 bytes (drops the trailing 4 bits).
+function mnemonicToSeed(words: string[]): Uint8Array {
+  const bytes = mnemonicToBytes(words)
+  return bytes.slice(0, SEED_BYTES)
+}
+
+function seedToPassword(seed: Uint8Array): string {
+  return btoa(String.fromCharCode(...seed))
+}
+
 export async function generateRecoveryShares(
   createdAt: string
 ): Promise<ServiceResponse<string[]>> {
   try {
-    const masterPassword = getCachedMasterPassword()
-    if (!masterPassword) {
-      return {success: false, error: 'Master password not available in cache'}
+    const encryptionKey = getCachedKey()
+    if (!encryptionKey) {
+      return {success: false, error: 'Encryption key not available'}
     }
 
+    const seed = crypto.getRandomValues(new Uint8Array(SEED_BYTES))
     const salt = await dateToSalt(createdAt, 32)
-    const derivedKey = await deriveKeyFromPassword(masterPassword, salt)
+    const wrapKey = await deriveKeyFromPassword(seedToPassword(seed), salt)
 
-    const keyData = await crypto.subtle.exportKey('raw', derivedKey)
-    const keyBytes = new Uint8Array(keyData)
+    await storeEncryptedKeyByRecoveryInDB(encryptionKey, wrapKey)
 
-    const shares = await split(keyBytes, 2, 2)
-
-    const mnemonicShares = shares.map((share: Uint8Array) =>
-      bytesToMnemonic(share).join(' ')
-    )
-
-    return {success: true, data: mnemonicShares}
+    return {success: true, data: seedToMnemonic(seed)}
   } catch (error) {
-    console.error('Error generating recovery shares:', error)
+    console.error('Error generating recovery mnemonic:', error)
     return {
       success: false,
       error: error instanceof Error ? error.message : String(error)
@@ -78,26 +98,42 @@ export async function generateRecoveryShares(
 }
 
 export async function reconstructMasterKey(
-  mnemonicShares: string[]
+  mnemonic: string[],
+  createdAt: string
 ): Promise<{data: CryptoKey | null; success: boolean}> {
   try {
-    const shareBytes = mnemonicShares.map((mnemonic) =>
-      mnemonicToBytes(mnemonic.trim().split(/\s+/))
-    )
+    const words = mnemonic
+      .flatMap((s) => s.trim().split(/\s+/))
+      .filter((w) => w.length > 0)
 
-    const reconstructedKeyBytes = await combine(shareBytes)
+    if (words.length !== WORD_COUNT) {
+      console.log(`Expected ${WORD_COUNT} recovery words, got ${words.length}`)
+      return {data: null, success: false}
+    }
 
-    const reconstructedKey = await crypto.subtle.importKey(
-      'raw',
-      reconstructedKeyBytes.buffer as ArrayBuffer,
+    const seed = mnemonicToSeed(words)
+    const salt = await dateToSalt(createdAt, 32)
+    const wrapKey = await deriveKeyFromPassword(seedToPassword(seed), salt)
+
+    const encryptedBlob = await getEncryptedKeyByRecoveryBlob()
+    if (!encryptedBlob) {
+      console.log('No recovery-wrapped key stored')
+      return {data: null, success: false}
+    }
+
+    const keyJson = await decryptField(encryptedBlob, wrapKey)
+    const jwk = JSON.parse(keyJson)
+    const encryptionKey = await crypto.subtle.importKey(
+      'jwk',
+      jwk,
       {name: 'AES-GCM', length: 256},
       false,
       ['encrypt', 'decrypt']
     )
 
-    return {data: reconstructedKey, success: true}
+    return {data: encryptionKey, success: true}
   } catch (error) {
-    console.error('Error reconstructing master password:', error)
+    console.error('Error reconstructing encryption key from mnemonic:', error)
     return {data: null, success: false}
   }
 }

@@ -93,3 +93,29 @@ export async function getEncryptedKeyBlob(): Promise<string | null> {
     return null
   }
 }
+
+export async function storeEncryptedKeyByRecoveryInDB(
+  key: CryptoKey,
+  recoveryWrapKey: CryptoKey
+): Promise<PouchDB.Core.Response> {
+  const keyData = await crypto.subtle.exportKey('jwk', key)
+  const encryptedBlob = await encryptField(
+    JSON.stringify(keyData),
+    recoveryWrapKey
+  )
+  const doc = await localUserDB.get(DocType.LOCAL_USER)
+  return await localUserDB.put({
+    ...doc,
+    encryptedKeyByRecovery: encryptedBlob,
+    updatedAt: new Date().toISOString()
+  })
+}
+
+export async function getEncryptedKeyByRecoveryBlob(): Promise<string | null> {
+  try {
+    const keyDoc = await localUserDB.get(DocType.LOCAL_USER)
+    return keyDoc?.encryptedKeyByRecovery ?? null
+  } catch {
+    return null
+  }
+}

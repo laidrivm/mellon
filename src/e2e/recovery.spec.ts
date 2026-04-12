@@ -11,7 +11,7 @@ test.describe('Recovery Flow', () => {
     await expect(
       page.getByRole('heading', {name: 'Recover Your Password'})
     ).toBeVisible()
-    await expect(page.getByText('Enter your recovery words')).toBeVisible()
+    await expect(page.getByText('Enter your 12 recovery words')).toBeVisible()
     await expect(page.getByLabel('Recovery Words')).toBeVisible()
   })
 
@@ -54,7 +54,7 @@ test.describe('Recovery Flow', () => {
     await page.getByRole('button', {name: 'Recover Password'}).click()
 
     await expect(
-      page.getByText('Please enter at least one recovery share')
+      page.getByText('Please enter your recovery words')
     ).toBeVisible()
   })
 
@@ -82,7 +82,7 @@ test.describe('Recovery Flow', () => {
     await expect(page.getByText('Validation Errors')).toBeVisible()
   })
 
-  test('should accept valid recovery words format', async ({
+  test('should reject when word count differs from 12', async ({
     authenticatedPage: {page}
   }) => {
     await page.reload()
@@ -91,8 +91,7 @@ test.describe('Recovery Flow', () => {
     await page.getByLabel('Recovery Words').fill('apple banana cherry')
     await page.getByRole('button', {name: 'Recover Password'}).click()
 
-    const validationErrors = page.getByText('Validation Errors')
-    await expect(validationErrors).not.toBeVisible()
+    await expect(page.getByText('Expected 12 words, got 3')).toBeVisible()
   })
 
   test('should recover access with correct recovery words', async ({
@@ -101,7 +100,7 @@ test.describe('Recovery Flow', () => {
     await page.reload()
 
     await page.getByRole('button', {name: 'Recover'}).click()
-    await page.getByLabel('Recovery Words').fill(recoveryWords.join('\n'))
+    await page.getByLabel('Recovery Words').fill(recoveryWords.join(' '))
     await page.getByRole('button', {name: 'Recover Password'}).click()
 
     await expect(
@@ -118,7 +117,7 @@ test.describe('Recovery Flow', () => {
     await page
       .getByLabel('Recovery Words')
       .fill(
-        'wrong words here that are not valid\nmore wrong words for another share'
+        'apple banana cherry delta echo foxtrot golf hotel india juliet kilo lima'
       )
     await page.getByRole('button', {name: 'Recover Password'}).click()
 
@@ -215,7 +214,7 @@ test.describe('Recovery Flow', () => {
       page.getByRole('heading', {name: 'Speak Friend and Enter'})
     ).toBeVisible()
     await page.getByRole('button', {name: 'Recover'}).click()
-    await page.getByLabel('Recovery Words').fill(original.join('\n'))
+    await page.getByLabel('Recovery Words').fill(original.join(' '))
     await page.getByRole('button', {name: 'Recover Password'}).click()
 
     await expect(

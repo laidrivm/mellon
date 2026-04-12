@@ -16,62 +16,41 @@ export default function RecoveryInput({
   const [recoveryText, setRecoveryText] = React.useState('')
   const [validationErrors, setValidationErrors] = React.useState<string[]>([])
 
+  const EXPECTED_WORDS = 12
+
   const validateWord = (word: string): boolean => {
     // TODO: validate against the full BIP39 wordlist
     return word.length >= 3 && /^[a-zA-Z]+$/.test(word)
   }
 
-  const validateShare = (share: string): string[] => {
-    const words = share
+  const handleTextModeSubmit = () => {
+    const words = recoveryText
       .trim()
       .split(/\s+/)
       .filter((word) => word.length > 0)
-    const errors: string[] = []
 
     if (words.length === 0) {
-      errors.push('Share cannot be empty')
-      return errors
+      setValidationErrors(['Please enter your recovery words'])
+      return
     }
 
-    if (words.length < 3) {
-      errors.push('Share must contain at least 3 words')
+    const errors: string[] = []
+    if (words.length !== EXPECTED_WORDS) {
+      errors.push(`Expected ${EXPECTED_WORDS} words, got ${words.length}`)
     }
-
     words.forEach((word, index) => {
       if (!validateWord(word)) {
         errors.push(`Word ${index + 1} ("${word}") is not valid`)
       }
     })
 
-    return errors
-  }
-
-  const handleTextModeSubmit = () => {
-    const parsedShares = recoveryText
-      .split('\n')
-      .map((line) => line.trim())
-      .filter((line) => line.length > 0)
-
-    if (parsedShares.length === 0) {
-      setValidationErrors(['Please enter at least one recovery share'])
-      return
-    }
-
-    const allErrors: string[] = []
-    parsedShares.forEach((share, index) => {
-      const shareErrors = validateShare(share)
-      shareErrors.forEach((error) => {
-        allErrors.push(`Share ${index + 1}: ${error}`)
-      })
-    })
-
-    if (allErrors.length > 0) {
-      setValidationErrors(allErrors)
+    if (errors.length > 0) {
+      setValidationErrors(errors)
       return
     }
 
     setValidationErrors([])
-    onRecoveryAttempt(parsedShares)
+    onRecoveryAttempt(words)
   }
 
   /**
@@ -87,9 +66,8 @@ export default function RecoveryInput({
       <div className='text-center'>
         <h1 className='mb-2 text-2xl font-medium'>Recover Your Password</h1>
         <p>
-          Enter your recovery words to regain access to your password vault.
-          Mind the order. Separate words with spaces. Separate shares with new
-          lines.
+          Enter your 12 recovery words to regain access to your password vault.
+          Mind the order. Separate words with spaces.
         </p>
       </div>
 
@@ -101,7 +79,7 @@ export default function RecoveryInput({
           id='recovery-words'
           value={recoveryText}
           onChange={(e) => setRecoveryText(e.target.value)}
-          placeholder='Enter your recovery words here, one share per line...'
+          placeholder='Enter your 12 recovery words separated by spaces...'
           className='h-32 w-full rounded-md border border-gray-300 px-3 py-2 font-mono text-sm shadow-sm focus:border-blue-500 focus:ring-blue-500'
           autoComplete='off'
           spellCheck={false}

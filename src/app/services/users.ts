@@ -17,6 +17,7 @@ import {
 } from './encryption.ts'
 import {localUserDB} from './pouchDB.ts'
 import {wrap} from './result.ts'
+import {setCachedKey} from './session.ts'
 
 export async function existsLocalUser(): Promise<boolean> {
   try {
@@ -191,8 +192,11 @@ export async function getRecoveryShares(): Promise<ServiceResponse<string[]>> {
       JSON.stringify(recoveryResult.data),
       encryptionKey
     )
+    // generateRecoveryShares writes encryptedKeyByRecovery to the same doc,
+    // so re-fetch to get the current rev before our update.
+    const freshDoc = await localUserDB.get(DocType.LOCAL_USER)
     await localUserDB.put({
-      ...userDoc,
+      ...freshDoc,
       recoveryShares: encryptedShares,
       updatedAt: new Date().toISOString()
     })
@@ -230,28 +234,13 @@ export async function verifyRecoveredMasterPassword(
   mnemonicShares: string[]
 ): Promise<boolean> {
   try {
-    // Reconstruct the master password from shares
-    const reconstructResult = await reconstructMasterKey(mnemonicShares)
+    const doc = await localUserDB.get(DocType.LOCAL_USER)
+    if (!doc.createdAt) return false
 
-    if (!reconstructResult.success) {
-      console.log('Failed to reconstruct master password from shares')
-      return false
-    }
+    const result = await reconstructMasterKey(mnemonicShares, doc.createdAt)
+    if (!result.success || !result.data) return false
 
-    if (!reconstructResult.data) {
-      console.log('No key data from reconstruction')
-      return false
-    }
-    const encryptionKey = await getAndDecryptKeyFromDB(reconstructResult.data)
-
-    if (!encryptionKey) {
-      console.log(
-        'Failed to decrypt encryption key with reconstructed password'
-      )
-      return false
-    }
-
-    // If we successfully got the encryption key, the recovery was successful
+    setCachedKey(result.data)
     return true
   } catch (error) {
     console.error('Error verifying recovered master password:', error)
