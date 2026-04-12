@@ -1,9 +1,17 @@
 import React, {type JSX} from 'react'
-import type {AddSecretFormProps} from '../../types.ts'
+import type {FormState, OnboardingStage, Secret} from '../../types.ts'
 import Button from './Button.tsx'
 import Input from './Input.tsx'
 import InputNewPassword from './InputNewPassword.tsx'
 import InputTextArea from './InputTextArea.tsx'
+
+interface AddSecretFormProps {
+  onboarding: OnboardingStage
+  addSecret: (secret: Secret) => Promise<void>
+  handleSetShowForm: (form: FormState | null) => void
+  formError?: string | null
+  initialData?: Secret | null
+}
 
 export default function AddSecretForm({
   onboarding,

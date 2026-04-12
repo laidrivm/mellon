@@ -1,6 +1,12 @@
 import React, {type JSX} from 'react'
-import type {RecoveryFormProps} from '../../types.ts'
+import type {FormState} from '../../types.ts'
 import Button from './Button.tsx'
+
+interface RecoveryFormProps {
+  onRecoveryAttempt: (shares: string[]) => void
+  handleSetShowForm: (form: FormState | null) => void
+  formError?: string | null
+}
 
 export default function RecoveryInput({
   onRecoveryAttempt,

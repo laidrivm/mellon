@@ -1,7 +1,10 @@
 import React, {type JSX} from 'react'
-import type {RecoveryDisplayProps} from '../../types.ts'
 import {getRecoveryShares} from '../services/users.ts'
 import Button from './Button.tsx'
+
+interface RecoveryDisplayProps {
+  onContinue: () => void
+}
 
 export default function RecoveryDisplay({
   onContinue

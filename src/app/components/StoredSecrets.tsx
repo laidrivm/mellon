@@ -1,7 +1,14 @@
 import type {JSX} from 'react'
-import type {StoredSecretsProps} from '../../types.ts'
+import type {FormState, Secret} from '../../types.ts'
 import Button from './Button.tsx'
 import SecretItem from './SecretItem.tsx'
+
+interface StoredSecretsProps {
+  secrets: Secret[]
+  showForm: FormState | null
+  handleSetShowForm: (form: FormState | null) => void
+  removeSecret: (secretId: string) => void
+}
 
 export default function StoredSecrets({
   secrets,

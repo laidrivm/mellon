@@ -1,6 +1,11 @@
 import type {JSX} from 'react'
-import type {CodeFormProps} from '../../types.ts'
 import SingleInputForm from './SingleInputForm.tsx'
+
+interface CodeFormProps {
+  email: string
+  handleCode: (code: string) => void
+  formError?: string | null
+}
 
 export default function CodeForm({
   email,

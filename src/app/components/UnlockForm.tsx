@@ -1,8 +1,14 @@
 import React, {type JSX} from 'react'
-import type {UnlockFormProps} from '../../types.ts'
+import type {FormState} from '../../types.ts'
 import {getMasterPasswordHint} from '../services/users.ts'
 import Button from './Button.tsx'
 import InputNewPassword from './InputNewPassword.tsx'
+
+interface UnlockFormProps {
+  tryUnlock: (masterPasswordCandidate: string) => void
+  handleSetShowForm: (form: FormState | null) => void
+  formError?: string | null
+}
 
 export default function UnlockForm({
   tryUnlock,
