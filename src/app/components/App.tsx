@@ -8,8 +8,8 @@ import type {
   OnboardingStage,
   Secret
 } from '../../types.ts'
-import {clearEncryptionCache} from '../services/encryption.ts'
 import {createSecret, deleteSecret, getAllSecrets} from '../services/secrets.ts'
+import {startInactivityTimer} from '../services/session.ts'
 import {
   createLocalUser,
   existsLocalUser,
@@ -48,8 +48,6 @@ export default function App(): JSX.Element {
     failedData
   } = state
 
-  const lockTimerRef = React.useRef<number | null>(null)
-
   const saveOnboardingStage = React.useCallback(
     async (stage: OnboardingStage): Promise<void> => {
       await updateOnboardingStage(stage)
@@ -62,36 +60,13 @@ export default function App(): JSX.Element {
     dispatch({type: 'SET_SHOW_FORM', form})
   }, [])
 
-  const clearLockTimer = React.useCallback(() => {
-    if (lockTimerRef.current) {
-      window.clearTimeout(lockTimerRef.current)
-      lockTimerRef.current = null
-    }
-  }, [])
-
-  const startLockTimer = React.useCallback(() => {
-    clearLockTimer()
-    if (isAuthenticated) {
-      lockTimerRef.current = window.setTimeout(() => {
-        clearEncryptionCache()
-        dispatch({type: 'LOCK'})
-      }, INACTIVITY_TIMEOUT)
-    }
-  }, [isAuthenticated, clearLockTimer])
-
   React.useEffect(() => {
-    const events = ['mousedown', 'keypress', 'scroll', 'touchstart']
-    for (const e of events) {
-      document.addEventListener(e, startLockTimer, {passive: true})
-    }
-    startLockTimer()
-    return () => {
-      for (const e of events) {
-        document.removeEventListener(e, startLockTimer)
-      }
-      clearLockTimer()
-    }
-  }, [startLockTimer, clearLockTimer])
+    if (!isAuthenticated) return
+    return startInactivityTimer(
+      () => dispatch({type: 'LOCK'}),
+      INACTIVITY_TIMEOUT
+    )
+  }, [isAuthenticated])
 
   const addSecret = React.useCallback(
     async (secret: Secret): Promise<void> => {
