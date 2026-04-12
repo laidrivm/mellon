@@ -21,6 +21,7 @@ import {
   verifyMasterPassword,
   verifyRecoveredMasterPassword
 } from '../services/users.ts'
+import {appReducer, initialAppState} from '../state/appReducer.ts'
 import CodeForm from './CodeForm.tsx'
 import Footer from './Footer.tsx'
 import Header from './Header.tsx'
@@ -33,60 +34,34 @@ import SignUpForm from './SignUpForm.tsx'
 import StoredSecrets from './StoredSecrets.tsx'
 import UnlockForm from './UnlockForm.tsx'
 
-const INACTIVITY_TIMEOUT = 2 * 60 * 1000 // 2 minutes in milliseconds
+const INACTIVITY_TIMEOUT = 2 * 60 * 1000
 
-/**
- * Main application component
- * @returns {JSX.Element} App component
- */
 export default function App(): JSX.Element {
-  const [onboarding, setOnboarding] =
-    React.useState<OnboardingStage>('finished')
-  const [secrets, setSecrets] = React.useState<Secret[]>([])
-  const [showForm, setShowForm] = React.useState<FormState | null>(null)
-  const [isAuthenticated, setIsAuthenticated] = React.useState<boolean>(false)
-  const [email, setEmail] = React.useState<string | null>(null)
-  const [formError, setFormError] = React.useState<string | null>(null)
-  //TODO: rewrite into unified failedData state and showError function
-  const [failedSecretData, setFailedSecretData] = React.useState<Secret | null>(
-    null
-  )
-  const [failedMasterPasswordData, setFailedMasterPasswordData] =
-    React.useState<MasterPassword | null>(null)
+  const [state, dispatch] = React.useReducer(appReducer, initialAppState)
+  const {
+    onboarding,
+    showForm,
+    isAuthenticated,
+    email,
+    secrets,
+    error,
+    failedData
+  } = state
 
   const lockTimerRef = React.useRef<number | null>(null)
 
-  const initOnboarding = React.useCallback((stage: OnboardingStage): void => {
-    setOnboarding(stage)
-    switch (stage) {
-      case 'secret':
-        setShowForm('secret')
-        setIsAuthenticated(true)
-        break
-      case 'master':
-        setShowForm('masterPassword')
-        setIsAuthenticated(true)
-        break
-      case 'recovery':
-        setShowForm(null)
-        break
-      case 'sign':
-        setShowForm('sign')
-        break
-      case 'code':
-        setShowForm('code')
-        break
-      case 'finished':
-        setShowForm(null)
-        break
-      default:
-        console.error('Error: unknown onboarding stage')
-    }
+  const saveOnboardingStage = React.useCallback(
+    async (stage: OnboardingStage): Promise<void> => {
+      await updateOnboardingStage(stage)
+      dispatch({type: 'SET_ONBOARDING', stage})
+    },
+    []
+  )
+
+  const setShowForm = React.useCallback((form: FormState | null) => {
+    dispatch({type: 'SET_SHOW_FORM', form})
   }, [])
 
-  /**
-   * Clear existing lock timer
-   */
   const clearLockTimer = React.useCallback(() => {
     if (lockTimerRef.current) {
       window.clearTimeout(lockTimerRef.current)
@@ -94,266 +69,153 @@ export default function App(): JSX.Element {
     }
   }, [])
 
-  /**
-   * Start/restart the inactivity timer
-   */
   const startLockTimer = React.useCallback(() => {
     clearLockTimer()
-
-    // Only set timer if user has authentication setup and is in sign or finished stage
     if (isAuthenticated) {
-      console.log('Starting inactivity timer')
       lockTimerRef.current = window.setTimeout(() => {
-        console.log('Inactivity timeout - locking application')
-        setSecrets([]) // Clear secrets from state when locked
-        clearEncryptionCache() // Clear encryption cache when locking due to inactivity
-        setShowForm(null)
-        setIsAuthenticated(false)
+        clearEncryptionCache()
+        dispatch({type: 'LOCK'})
       }, INACTIVITY_TIMEOUT)
     }
   }, [isAuthenticated, clearLockTimer])
 
-  /**
-   * Handle user activity to reset lock timer
-   */
-  const handleUserActivity = React.useCallback(() => {
-    startLockTimer()
-  }, [startLockTimer])
-
-  /**
-   * Set up user activity listeners and session management
-   */
   React.useEffect(() => {
-    const activityEvents = ['mousedown', 'keypress', 'scroll', 'touchstart']
-
-    // Add event listeners
-    activityEvents.forEach((event) => {
-      document.addEventListener(event, handleUserActivity, {passive: true})
-    })
-
-    // Start initial timer
+    const events = ['mousedown', 'keypress', 'scroll', 'touchstart']
+    for (const e of events) {
+      document.addEventListener(e, startLockTimer, {passive: true})
+    }
     startLockTimer()
-
-    // Cleanup function
     return () => {
-      activityEvents.forEach((event) => {
-        document.removeEventListener(event, handleUserActivity)
-      })
+      for (const e of events) {
+        document.removeEventListener(e, startLockTimer)
+      }
       clearLockTimer()
     }
-  }, [handleUserActivity, startLockTimer, clearLockTimer])
+  }, [startLockTimer, clearLockTimer])
 
-  const saveOnboardingStage = React.useCallback(
-    async (stage: OnboardingStage): Promise<void> => {
-      await updateOnboardingStage(stage)
-      initOnboarding(stage)
-    },
-    [initOnboarding]
-  )
-
-  const showSecretsError = React.useCallback(
-    (errorMessage: string, secret: Secret): void => {
-      setFormError(errorMessage)
-      setFailedSecretData(secret)
-      setShowForm('secret')
-    },
-    []
-  )
-
-  const showMasterPasswordError = React.useCallback(
-    (errorMessage: string, masterPassword: MasterPassword): void => {
-      setFormError(errorMessage)
-      setFailedMasterPasswordData(masterPassword)
-    },
-    []
-  )
-
-  /**
-   * Handle adding a new secret
-   * @param {Secret} secret - New secret to add
-   */
   const addSecret = React.useCallback(
     async (secret: Secret): Promise<void> => {
-      setFormError(null)
-      setFailedSecretData(null)
-
       const result = await createSecret(secret)
-
       if (result.success && result.data) {
-        secret._id = (result.data as {id: string}).id
-        setSecrets((prevSecrets) => [secret, ...prevSecrets])
-        if (onboarding === 'secret') {
-          await saveOnboardingStage('master') // no failure check
-        }
+        const persisted = {...secret, _id: (result.data as {id: string}).id}
+        dispatch({type: 'ADD_SECRET', secret: persisted})
+        if (onboarding === 'secret') await saveOnboardingStage('master')
       } else {
-        setSecrets((prevSecrets) => prevSecrets.filter((s) => s !== secret))
-        showSecretsError(result.error ?? 'Unknown error', secret)
+        dispatch({
+          type: 'SECRET_FAILED',
+          secret,
+          error: result.error ?? 'Unknown error'
+        })
       }
     },
-    [onboarding, saveOnboardingStage, showSecretsError]
+    [onboarding, saveOnboardingStage]
   )
 
-  const removeSecret = React.useCallback((secretId: string) => {
-    deleteSecret(secretId)
-    setSecrets((prevSecrets) =>
-      prevSecrets.filter((secret) => secret._id !== secretId)
-    )
+  const removeSecret = React.useCallback((id: string) => {
+    deleteSecret(id)
+    dispatch({type: 'REMOVE_SECRET', id})
   }, [])
 
-  // Clear the error when the form is closed
-  const handleSetShowForm = React.useCallback(
-    (form: FormState | null) => {
-      setShowForm(form)
-      if (!form) {
-        setFormError(null)
-        setFailedSecretData(null)
-        setFailedMasterPasswordData(null)
-        initOnboarding(onboarding)
-      }
-    },
-    [onboarding, initOnboarding]
-  )
-
-  /**
-   * Handle setting a master password
-   */
   const addMasterPassword = React.useCallback(
-    async (masterPassword: MasterPassword) => {
-      setFormError(null)
-      setFailedMasterPasswordData(null)
+    async (masterPassword: MasterPassword): Promise<void> => {
       const result = await storeMasterPassword(masterPassword)
-      console.log(JSON.stringify(result))
-
       if (result.success) {
-        if (onboarding === 'master') {
-          await saveOnboardingStage('recovery') // no failure check
-          setIsAuthenticated(true)
-        }
+        if (onboarding === 'master') await saveOnboardingStage('recovery')
       } else {
-        showMasterPasswordError(result.error ?? 'Unknown error', masterPassword)
+        dispatch({
+          type: 'MASTER_PASSWORD_FAILED',
+          masterPassword,
+          error: result.error ?? 'Unknown error'
+        })
       }
     },
-    [onboarding, saveOnboardingStage, showMasterPasswordError]
+    [onboarding, saveOnboardingStage]
   )
 
-  /**
-   * Handle recovery display continuation
-   */
   const handleRecoveryContinue = React.useCallback(async () => {
-    if (onboarding === 'recovery') {
-      await saveOnboardingStage('sign')
-    }
+    if (onboarding === 'recovery') await saveOnboardingStage('sign')
   }, [onboarding, saveOnboardingStage])
 
-  /**
-   * TODO: merge handleUnlock and handleRecoveryAttempt
-   * Verify if password is valid
-   */
-  const handleUnlock = React.useCallback(
-    async (masterPasswordCandidate: string) => {
-      setFormError(null)
-      const result = await verifyMasterPassword(masterPasswordCandidate)
-      if (result) {
-        setIsAuthenticated(true)
-        // Reload secrets now that encryption is available
-        const secretsResult = await getAllSecrets()
-        if (secretsResult.success && secretsResult.data) {
-          setSecrets(secretsResult.data)
-        } // no error handling as there might be no stored secrets on unlock
-      } else {
-        setFormError('Invalid master password. Please try again.')
+  // Shared unlock path: the forms supply the verification call + error label,
+  // this owns the post-unlock secrets load and dispatch of success/failure.
+  const runUnlock = React.useCallback(
+    async (attempt: () => Promise<boolean>, errorLabel: string) => {
+      const ok = await attempt()
+      if (!ok) {
+        dispatch({type: 'UNLOCK_FAILURE', error: errorLabel})
+        return
       }
+      const result = await getAllSecrets()
+      dispatch({
+        type: 'UNLOCK_SUCCESS',
+        secrets: result.success && result.data ? result.data : []
+      })
     },
     []
   )
 
-  /**
-   * Handle recovery attempt
-   */
-  const handleRecoveryAttempt = React.useCallback(async (shares: string[]) => {
-    setFormError(null)
-    const result = await verifyRecoveredMasterPassword(shares)
-    if (result) {
-      setIsAuthenticated(true)
-      setShowForm(null)
-      // Reload secrets now that encryption is available
-      const secretsResult = await getAllSecrets()
-      if (secretsResult.success && secretsResult.data) {
-        setSecrets(secretsResult.data)
-      } // no error handling as there might be no stored secrets on unlock
-    } else {
-      setFormError('Invalid recovery words. Please try again.')
-    }
-  }, [])
+  const handleUnlock = React.useCallback(
+    (password: string) =>
+      runUnlock(
+        () => verifyMasterPassword(password),
+        'Invalid master password. Please try again.'
+      ),
+    [runUnlock]
+  )
 
-  /**
-   * Handle email signup
-   */
+  const handleRecoveryAttempt = React.useCallback(
+    (shares: string[]) =>
+      runUnlock(
+        () => verifyRecoveredMasterPassword(shares),
+        'Invalid recovery words. Please try again.'
+      ),
+    [runUnlock]
+  )
+
   const handleEmail = React.useCallback(
-    async (email: string) => {
-      setFormError(null)
-      const result = await storeEmail(email)
-      if (result.success) {
-        if (onboarding === 'sign') {
-          await saveOnboardingStage('code')
-        }
-        setEmail(email)
-      } else {
-        setFormError(result.error ?? 'Unknown error')
+    async (addr: string) => {
+      const result = await storeEmail(addr)
+      if (!result.success) {
+        dispatch({type: 'SET_ERROR', error: result.error ?? 'Unknown error'})
+        return
       }
+      dispatch({type: 'SET_EMAIL', email: addr})
+      if (onboarding === 'sign') await saveOnboardingStage('code')
     },
     [onboarding, saveOnboardingStage]
   )
 
   const handleCode = React.useCallback(
-    async (code: string) => {
-      setFormError(null)
-      //const result = await verifyCode(code)
-      const result: {success: boolean; data?: string; error?: string} = {
-        success: true,
-        data: code
-      }
-      if (result.success) {
-        if (onboarding === 'code') {
-          await saveOnboardingStage('finished')
-        }
-      } else {
-        setFormError(result.error ?? 'Unknown error')
-      }
+    async (_code: string) => {
+      // TODO: wire to verifyCode(code); currently always succeeds
+      if (onboarding === 'code') await saveOnboardingStage('finished')
     },
     [onboarding, saveOnboardingStage]
   )
 
-  /**
-   * Load initial data on mount
-   */
   React.useEffect(() => {
     async function loadInitialData() {
-      if (!(await existsLocalUser())) {
-        await createLocalUser()
-        console.log(`creating local user`)
-      }
+      if (!(await existsLocalUser())) await createLocalUser()
 
-      const currentOnboardingStage = await getOnboardingStage()
-      if (currentOnboardingStage) {
-        initOnboarding(currentOnboardingStage)
-      }
+      const stage = await getOnboardingStage()
+      if (stage) dispatch({type: 'SET_ONBOARDING', stage})
 
       if (!isAuthenticated) return
 
       const secretsResult = await getAllSecrets()
-      if (secretsResult.success && secretsResult.data) {
-        setSecrets(secretsResult.data)
-      }
+      if (secretsResult.success && secretsResult.data)
+        dispatch({type: 'SET_SECRETS', secrets: secretsResult.data})
 
       const emailResult = await getEmail()
-      if (emailResult.success && emailResult.data?.email) {
-        setEmail(emailResult.data.email)
-      }
+      if (emailResult.success && emailResult.data?.email)
+        dispatch({type: 'SET_EMAIL', email: emailResult.data.email})
     }
-
     loadInitialData()
-  }, [isAuthenticated, initOnboarding])
+  }, [isAuthenticated])
+
+  const initialSecret = failedData?.kind === 'secret' ? failedData.value : null
+  const initialMasterPassword =
+    failedData?.kind === 'masterPassword' ? failedData.value : null
 
   return (
     <div className='flex flex-col items-center bg-white px-4 font-light text-black antialiased md:subpixel-antialiased'>
@@ -363,50 +225,46 @@ export default function App(): JSX.Element {
           <SecretForm
             onboarding={onboarding}
             addSecret={addSecret}
-            handleSetShowForm={handleSetShowForm}
-            formError={formError}
-            initialData={failedSecretData}
+            handleSetShowForm={setShowForm}
+            formError={error}
+            initialData={initialSecret}
           />
         )}
         {showForm === 'masterPassword' && (
           <MasterPasswordForm
             addMasterPassword={addMasterPassword}
-            handleSetShowForm={handleSetShowForm}
-            formError={formError}
-            initialData={failedMasterPasswordData}
+            handleSetShowForm={setShowForm}
+            formError={error}
+            initialData={initialMasterPassword}
           />
         )}
         {onboarding === 'recovery' && isAuthenticated && (
           <RecoveryDisplay onContinue={handleRecoveryContinue} />
         )}
         {showForm === 'sign' && isAuthenticated && (
-          <SignUpForm handleEmail={handleEmail} formError={formError} />
+          <SignUpForm handleEmail={handleEmail} formError={error} />
         )}
         {showForm === 'code' && email && (
-          <CodeForm
-            email={email}
-            handleCode={handleCode}
-            formError={formError}
-          />
+          <CodeForm email={email} handleCode={handleCode} formError={error} />
         )}
         {isAuthenticated ? (
           <StoredSecrets
             secrets={secrets}
             showForm={showForm}
-            handleSetShowForm={handleSetShowForm}
+            handleSetShowForm={setShowForm}
             removeSecret={removeSecret}
           />
         ) : showForm === 'recovery' ? (
           <RecoveryForm
             onRecoveryAttempt={handleRecoveryAttempt}
-            handleSetShowForm={handleSetShowForm}
-            formError={formError}
+            handleSetShowForm={setShowForm}
+            formError={error}
           />
         ) : (
           <UnlockForm
             tryUnlock={handleUnlock}
-            handleSetShowForm={handleSetShowForm}
-            formError={formError}
+            handleSetShowForm={setShowForm}
+            formError={error}
           />
         )}
       </Layout>
