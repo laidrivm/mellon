@@ -1,28 +1,9 @@
-import {expect, type Page, test} from '@playwright/test'
-
-/**
- * Clear IndexedDB to start fresh for onboarding tests
- */
-async function clearAppData(page: Page): Promise<void> {
-  await page.evaluate(async () => {
-    const databases = await indexedDB.databases()
-    for (const db of databases) {
-      if (db.name) {
-        indexedDB.deleteDatabase(db.name)
-      }
-    }
-  })
-}
+import {expect, test} from './fixtures.ts'
 
 test.describe('Onboarding Flow', () => {
-  test.beforeEach(async ({page}) => {
-    // Clear app data before each test to simulate fresh install
-    await page.goto('/')
-    await clearAppData(page)
-    await page.reload()
-  })
-
-  test('should show add secret form for new users', async ({page}) => {
+  test('should show add secret form for new users', async ({
+    clearedPage: page
+  }) => {
     // New users should see the secret form first
     await expect(
       page.getByRole('heading', {name: 'Add a New Secret'})
@@ -32,7 +13,9 @@ test.describe('Onboarding Flow', () => {
     ).toBeVisible()
   })
 
-  test('should require password when adding first secret', async ({page}) => {
+  test('should require password when adding first secret', async ({
+    clearedPage: page
+  }) => {
     // Try to submit without password
     await page.getByRole('button', {name: 'Add a Secret'}).click()
 
@@ -41,7 +24,7 @@ test.describe('Onboarding Flow', () => {
   })
 
   test('should add first secret and proceed to master password step', async ({
-    page
+    clearedPage: page
   }) => {
     // Fill in secret details
     await page.getByPlaceholder('Secret Name').fill('My First Secret')
@@ -62,7 +45,7 @@ test.describe('Onboarding Flow', () => {
   })
 
   test('should generate password when clicking Generate button', async ({
-    page
+    clearedPage: page
   }) => {
     // Click generate button
     await page.getByRole('button', {name: 'Generate'}).click()
@@ -76,7 +59,7 @@ test.describe('Onboarding Flow', () => {
     expect(value.length).toBe(16)
   })
 
-  test('should complete full onboarding flow', async ({page}) => {
+  test('should complete full onboarding flow', async ({clearedPage: page}) => {
     // Wait for initial form to be ready
     await expect(
       page.getByRole('heading', {name: 'Add a New Secret'})
@@ -145,7 +128,7 @@ test.describe('Onboarding Flow', () => {
   })
 
   test('should copy all recovery words to clipboard', async ({
-    page,
+    clearedPage: page,
     context
   }) => {
     // Grant clipboard permissions
@@ -182,7 +165,9 @@ test.describe('Onboarding Flow', () => {
     await expect(page.getByText('Copied')).toBeVisible()
   })
 
-  test('should auto-generate secret name if not provided', async ({page}) => {
+  test('should auto-generate secret name if not provided', async ({
+    clearedPage: page
+  }) => {
     // Only fill password and submit
     await page.getByPlaceholder('Password').fill('OnlyPassword!')
     await page.getByRole('button', {name: 'Add a Secret'}).click()
