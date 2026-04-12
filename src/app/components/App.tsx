@@ -223,7 +223,7 @@ export default function App(): JSX.Element {
         {showForm === 'sign' && isAuthenticated && (
           <SignUpForm handleEmail={handleEmail} formError={error} />
         )}
-        {showForm === 'code' && email && (
+        {showForm === 'code' && email && isAuthenticated && (
           <CodeForm email={email} handleCode={handleCode} formError={error} />
         )}
         {isAuthenticated ? (

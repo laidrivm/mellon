@@ -1,4 +1,4 @@
-import {expect, test} from './fixtures.ts'
+import {expect, TEST_MASTER_PASSWORD, test} from './fixtures.ts'
 
 test.describe('Onboarding Flow', () => {
   test('should show add secret form for new users', async ({
@@ -163,6 +163,56 @@ test.describe('Onboarding Flow', () => {
 
     // Button should show "Copied" state
     await expect(page.getByText('Copied')).toBeVisible()
+  })
+
+  test('should show unlock form (not code form) after inactivity lock on verify step', async ({
+    page
+  }) => {
+    await page.clock.install()
+    await page.goto('/')
+    await page.evaluate(async () => {
+      const databases = await indexedDB.databases()
+      for (const db of databases) {
+        if (db.name) indexedDB.deleteDatabase(db.name)
+      }
+    })
+    await page.reload()
+
+    await expect(
+      page.getByRole('heading', {name: 'Add a New Secret'})
+    ).toBeVisible()
+    await page.getByPlaceholder('Password').fill('TestPass123!')
+    await page.getByRole('button', {name: 'Add a Secret'}).click()
+
+    await expect(
+      page.getByRole('heading', {name: 'Set Master Password'})
+    ).toBeVisible({timeout: 10000})
+    await page.getByPlaceholder('Password').fill(TEST_MASTER_PASSWORD)
+    await page.getByRole('button', {name: 'Set Master Password'}).click()
+
+    await expect(
+      page.getByRole('heading', {name: 'Backup Your Recovery Words'})
+    ).toBeVisible({timeout: 10000})
+    await expect(page.locator('ol li').first()).toBeVisible()
+    await page.getByRole('button', {name: 'Continue'}).click()
+
+    await expect(page.getByRole('heading', {name: 'Sign Up'})).toBeVisible()
+    await page.getByPlaceholder('Email').fill('user@example.com')
+    await page.getByRole('button', {name: 'Sign Up'}).click()
+
+    await expect(
+      page.getByRole('heading', {name: 'Verify Email'})
+    ).toBeVisible()
+
+    await page.clock.fastForward('02:05')
+
+    await expect(
+      page.getByRole('heading', {name: 'Speak Friend and Enter'})
+    ).toBeVisible()
+    await expect(
+      page.getByRole('heading', {name: 'Verify Email'})
+    ).not.toBeVisible()
+    await expect(page.getByPlaceholder('Code')).not.toBeVisible()
   })
 
   test('should auto-generate secret name if not provided', async ({
