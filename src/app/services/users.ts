@@ -16,6 +16,7 @@ import {
   updateEncryptionWithMP
 } from './encryption.ts'
 import {localUserDB} from './pouchDB.ts'
+import {wrap} from './result.ts'
 
 export async function existsLocalUser(): Promise<boolean> {
   try {
@@ -28,25 +29,14 @@ export async function existsLocalUser(): Promise<boolean> {
   }
 }
 
-export async function createLocalUser(): Promise<ServiceResponse> {
-  try {
-    const result = await localUserDB.put({
+export function createLocalUser(): Promise<ServiceResponse> {
+  return wrap('creating a local user', () =>
+    localUserDB.put({
       _id: DocType.LOCAL_USER,
       onboarding: 'secret',
       createdAt: new Date().toISOString()
     })
-
-    return {
-      success: true,
-      data: result
-    }
-  } catch (error) {
-    console.error('Error creating a local user:', error)
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : String(error)
-    }
-  }
+  )
 }
 
 export async function getOnboardingStage(): Promise<OnboardingStage | null> {
@@ -59,31 +49,17 @@ export async function getOnboardingStage(): Promise<OnboardingStage | null> {
   }
 }
 
-export async function updateOnboardingStage(
+export function updateOnboardingStage(
   stage: OnboardingStage
 ): Promise<ServiceResponse> {
-  try {
+  return wrap('updating the onboarding stage', async () => {
     const localUserDoc = await localUserDB.get(DocType.LOCAL_USER)
-
-    const updatedUserDoc = {
+    return localUserDB.put({
       ...localUserDoc,
       onboarding: stage,
       updatedAt: new Date().toISOString()
-    }
-
-    const result = await localUserDB.put(updatedUserDoc)
-
-    return {
-      success: true,
-      data: result
-    }
-  } catch (error) {
-    console.error('Error updating the onboarding stage:', error)
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : String(error)
-    }
-  }
+    })
+  })
 }
 
 /**
@@ -170,23 +146,13 @@ export async function verifyMasterPassword(password: string): Promise<boolean> {
  * Get master password hint from the database
  * @returns {Promise<ServiceResponse<{hint: string}>>} Return hint for master password
  */
-export async function getMasterPasswordHint(): Promise<
+export function getMasterPasswordHint(): Promise<
   ServiceResponse<{hint: string}>
 > {
-  try {
-    const userDoc = await localUserDB.get(`${DocType.LOCAL_USER}`)
-
-    return {
-      success: true,
-      data: {hint: userDoc.hint ?? 'No hint available'}
-    }
-  } catch (error) {
-    console.error('Error getting master password hint:', error)
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : String(error)
-    }
-  }
+  return wrap('getting master password hint', async () => {
+    const userDoc = await localUserDB.get(DocType.LOCAL_USER)
+    return {hint: userDoc.hint ?? 'No hint available'}
+  })
 }
 
 /**
@@ -300,33 +266,16 @@ function isValidEmail(email: string): boolean {
  * @param {string} email - User email
  * @returns {Promise<ServiceResponse>} Account creation result
  */
-export async function storeEmail(email: string): Promise<ServiceResponse> {
-  try {
-    if (!isValidEmail(email)) {
-      return {success: false, error: 'Invalid email address'}
-    }
-
+export function storeEmail(email: string): Promise<ServiceResponse> {
+  return wrap('storing email', async () => {
+    if (!isValidEmail(email)) throw new Error('Invalid email address')
     const userDoc = await localUserDB.get(DocType.LOCAL_USER)
-
-    const updatedUserDoc = {
+    return localUserDB.put({
       ...userDoc,
       email,
       updatedAt: new Date().toISOString()
-    }
-
-    const result = await localUserDB.put(updatedUserDoc)
-
-    return {
-      success: true,
-      data: result
-    }
-  } catch (error) {
-    console.error('Error creating user account:', error)
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : String(error)
-    }
-  }
+    })
+  })
 }
 
 // ---------------------------------------------------------------------------------------------------
@@ -364,35 +313,24 @@ export async function getUserCredentials(): Promise<UserCredentials | null> {
  * @param {string} dbName - Database name
  * @returns {Promise<ServiceResponse>} Operation result
  */
-export async function createUserCredentials(
+export function createUserCredentials(
   uuid: string,
   password: string,
   dbName: string
 ): Promise<ServiceResponse> {
-  try {
+  return wrap('storing user credentials', async () => {
     if (!uuid || !password || !dbName) {
-      return {success: false, message: 'Invalid credentials data'}
+      throw new Error('Invalid credentials data')
     }
-
     await localUserDB.put({
-      _id: `${DocType.USER_CREDENTIALS}`,
+      _id: DocType.USER_CREDENTIALS,
       uuid,
       password,
       dbName,
       createdAt: new Date().toISOString()
     })
-
-    return {
-      success: true,
-      data: {uuid, dbName}
-    }
-  } catch (error) {
-    console.error('Error storing user credentials:', error)
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : String(error)
-    }
-  }
+    return {uuid, dbName}
+  })
 }
 
 /**

@@ -2,51 +2,35 @@ import {uuidv7} from 'uuidv7'
 import type {Secret, ServiceResponse} from '../../types.ts'
 import {decryptField, encryptField, getEncryptionKey} from './encryption.ts'
 import {localSecretsDB} from './pouchDB.ts'
+import {wrap} from './result.ts'
 import {validateSecret} from './validation.ts'
+
+async function requireEncryptionKey(): Promise<CryptoKey> {
+  const key = await getEncryptionKey()
+  if (!key) throw new Error('Encryption key not available')
+  return key
+}
 
 /**
  * Create a new secret
  * @param {Secret} secret - Secret to store
  * @returns {Promise<ServiceResponse>} Operation result
  */
-export async function createSecret(secret: Secret): Promise<ServiceResponse> {
-  try {
+export function createSecret(secret: Secret): Promise<ServiceResponse> {
+  return wrap('creating secret', async () => {
     if (!validateSecret(secret)) {
-      return {
-        success: false,
-        error: 'Invalid secret data. Name, username and password are required.'
-      }
+      throw new Error(
+        'Invalid secret data. Name, username and password are required.'
+      )
     }
-
-    const encryptionKey = await getEncryptionKey()
-    if (!encryptionKey) {
-      return {
-        success: false,
-        error: 'Encryption key not available'
-      }
-    }
-
-    const newSecret: Secret = {
+    const encryptionKey = await requireEncryptionKey()
+    return localSecretsDB.put({
       ...secret,
       _id: uuidv7(),
-      createdAt: new Date().toISOString()
-    }
-
-    newSecret.password = await encryptField(newSecret.password, encryptionKey)
-
-    const result = await localSecretsDB.put(newSecret)
-
-    return {
-      success: true,
-      data: result
-    }
-  } catch (error) {
-    console.error('Error creating secret:', error)
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : String(error)
-    }
-  }
+      createdAt: new Date().toISOString(),
+      password: await encryptField(secret.password, encryptionKey)
+    })
+  })
 }
 
 /**
@@ -54,23 +38,10 @@ export async function createSecret(secret: Secret): Promise<ServiceResponse> {
  * @param {string} id - Secret document ID
  * @returns {Promise<ServiceResponse>} Operation result
  */
-export async function deleteSecret(id: string): Promise<ServiceResponse> {
-  try {
-    const secret = await localSecretsDB.get(id)
-
-    const result = await localSecretsDB.remove(secret)
-
-    return {
-      success: true,
-      data: result
-    }
-  } catch (error) {
-    console.error('Error deleting secret:', error)
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : String(error)
-    }
-  }
+export function deleteSecret(id: string): Promise<ServiceResponse> {
+  return wrap('deleting secret', async () =>
+    localSecretsDB.remove(await localSecretsDB.get(id))
+  )
 }
 
 /**
@@ -127,54 +98,37 @@ export async function recryptSecrets(
  * Retrieve all secrets
  * @returns {Promise<ServiceResponse<Secret[]>>} All secrets
  */
-export async function getAllSecrets(): Promise<ServiceResponse<Secret[]>> {
-  try {
-    const encryptionKey = await getEncryptionKey()
-    if (!encryptionKey) {
-      return {
-        success: false,
-        error: 'Encryption key not available'
-      }
-    }
-
-    const result = await localSecretsDB.allDocs({
+export function getAllSecrets(): Promise<ServiceResponse<Secret[]>> {
+  return wrap('fetching secrets', async () => {
+    const encryptionKey = await requireEncryptionKey()
+    const {rows} = await localSecretsDB.allDocs({
       include_docs: true,
       descending: true
     })
 
-    const secrets: Secret[] = []
-
-    for (const row of result.rows) {
-      try {
-        const doc = row.doc
-        if (!doc || !doc.password) continue
-
-        const decryptedSecret: Secret = {
-          _id: doc._id,
-          name: doc.name,
-          username: doc.username,
-          password: await decryptField(doc.password, encryptionKey),
-          notes: doc.notes,
-          createdAt: doc.createdAt,
-          updatedAt: doc.updatedAt
+    const decrypted: (Secret | null)[] = await Promise.all(
+      rows.map(async ({doc}) => {
+        if (!doc || !doc.password) return null
+        try {
+          const secret: Secret = {
+            _id: doc._id,
+            name: doc.name,
+            username: doc.username,
+            password: await decryptField(doc.password, encryptionKey),
+            notes: doc.notes,
+            createdAt: doc.createdAt,
+            updatedAt: doc.updatedAt
+          }
+          return secret
+        } catch (error) {
+          console.error('Error decrypting secret:', error)
+          return null
         }
-        secrets.push(decryptedSecret)
-      } catch (error) {
-        console.error('Error decrypting secret:', error)
-      }
-    }
+      })
+    )
 
-    return {
-      success: true,
-      data: secrets
-    }
-  } catch (error) {
-    console.error('Error fetching secrets:', error)
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : String(error)
-    }
-  }
+    return decrypted.filter((s): s is Secret => s !== null)
+  })
 }
 
 /**
@@ -182,18 +136,11 @@ export async function getAllSecrets(): Promise<ServiceResponse<Secret[]>> {
  * @param {string} id - Secret document ID
  * @returns {Promise<ServiceResponse<Secret>>} Requested secret
  */
-export async function getSecret(id: string): Promise<ServiceResponse<Secret>> {
-  try {
-    const encryptionKey = await getEncryptionKey()
-    if (!encryptionKey) {
-      return {
-        success: false,
-        error: 'Encryption key not available'
-      }
-    }
+export function getSecret(id: string): Promise<ServiceResponse<Secret>> {
+  return wrap('fetching secret', async () => {
+    const encryptionKey = await requireEncryptionKey()
     const secret = await localSecretsDB.get(id)
-
-    const decryptedSecret: Secret = {
+    return {
       _id: secret._id,
       name: secret.name,
       username: secret.username,
@@ -202,18 +149,7 @@ export async function getSecret(id: string): Promise<ServiceResponse<Secret>> {
       createdAt: secret.createdAt,
       updatedAt: secret.updatedAt
     }
-
-    return {
-      success: true,
-      data: decryptedSecret
-    }
-  } catch (error) {
-    console.error('Error fetching secret:', error)
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : String(error)
-    }
-  }
+  })
 }
 
 /**
@@ -222,44 +158,26 @@ export async function getSecret(id: string): Promise<ServiceResponse<Secret>> {
  * @param {Partial<Secret>} updates - Fields to update
  * @returns {Promise<ServiceResponse>} Operation result
  */
-export async function updateSecret(
+export function updateSecret(
   id: string,
   updates: Partial<Secret>
 ): Promise<ServiceResponse> {
-  try {
+  return wrap('updating secret', async () => {
     const current = await localSecretsDB.get(id)
+    const passwordChanged =
+      updates.password !== undefined && updates.password !== current.password
+    const nextPassword = passwordChanged
+      ? await encryptField(
+          updates.password as string,
+          await requireEncryptionKey()
+        )
+      : current.password
 
-    const updatedSecret = {
+    return localSecretsDB.put({
       ...current,
       ...updates,
+      password: nextPassword,
       updatedAt: new Date().toISOString()
-    }
-
-    if (updates.password && updates.password !== current.password) {
-      const encryptionKey = await getEncryptionKey()
-      if (!encryptionKey) {
-        return {
-          success: false,
-          error: 'Encryption key not available'
-        }
-      }
-      updatedSecret.password = await encryptField(
-        updates.password,
-        encryptionKey
-      )
-    }
-
-    const result = await localSecretsDB.put(updatedSecret)
-
-    return {
-      success: true,
-      data: result
-    }
-  } catch (error) {
-    console.error('Error updating secret:', error)
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : String(error)
-    }
-  }
+    })
+  })
 }
