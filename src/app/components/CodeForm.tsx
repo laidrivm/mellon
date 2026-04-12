@@ -1,31 +1,20 @@
-import React, {type JSX} from 'react'
+import type {JSX} from 'react'
 import type {CodeFormProps} from '../../types.ts'
-import Button from './Button.tsx'
-import Input from './Input.tsx'
+import SingleInputForm from './SingleInputForm.tsx'
 
 export default function CodeForm({
   email,
   handleCode,
   formError
 }: CodeFormProps): JSX.Element {
-  const [codeInput, setCodeInput] = React.useState('')
-
-  function verifyCode(event: React.FormEvent): void {
-    event.preventDefault()
-    handleCode(codeInput)
-  }
-
   return (
-    <div className='space-y-4'>
-      <h1 className='text-center text-xl'>Verify Email</h1>
-      <p className='text-md leading-6'>
-        We sent a code to {email}. Please copy paste it here:
-      </p>
-      <form className='space-y-4' onSubmit={verifyCode}>
-        <Input name='Code' value={codeInput} setValue={setCodeInput} />
-        <Button>Verify</Button>
-      </form>
-      {formError && <div className='text-md text-red-500'>{formError}</div>}
-    </div>
+    <SingleInputForm
+      title='Verify Email'
+      description={`We sent a code to ${email}. Please copy paste it here:`}
+      inputLabel='Code'
+      buttonLabel='Verify'
+      onSubmit={handleCode}
+      formError={formError}
+    />
   )
 }
