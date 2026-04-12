@@ -128,6 +128,7 @@ export interface LocalUserDoc {
   updatedAt?: string
   key?: JsonWebKey
   encryptedKey?: string
+  encryptedKeyByRecovery?: string
   recoveryShares?: string
 }
 
