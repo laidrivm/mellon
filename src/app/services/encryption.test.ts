@@ -13,13 +13,8 @@ mock.module('./secrets.ts', () => ({
   recryptSecrets: mock(() => Promise.resolve(true))
 }))
 
-const {
-  dateToSalt,
-  encryptField,
-  decryptField,
-  deriveKeyFromPassword,
-  clearEncryptionCache
-} = await import('./encryption.ts')
+const {dateToSalt, encryptField, decryptField, deriveKeyFromPassword} =
+  await import('./encryption.ts')
 
 describe('encryption', () => {
   describe('dateToSalt', () => {
@@ -116,12 +111,6 @@ describe('encryption', () => {
       const raw2 = await crypto.subtle.exportKey('raw', key2)
 
       expect(new Uint8Array(raw1)).not.toEqual(new Uint8Array(raw2))
-    })
-  })
-
-  describe('clearEncryptionCache', () => {
-    test('clears cache without error', () => {
-      expect(() => clearEncryptionCache()).not.toThrow()
     })
   })
 })

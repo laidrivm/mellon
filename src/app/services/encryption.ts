@@ -3,10 +3,12 @@ import {DocType, type ServiceResponse} from '../../types.ts'
 import BIP39_WORDLIST from './englishMnemonics.json'
 import {localUserDB} from './pouchDB.ts'
 import {recryptSecrets} from './secrets.ts'
-
-// In-memory storage for decrypted keys (cleared on lock)
-let cachedEncryptionKey: CryptoKey | null = null
-let cachedMasterPassword: string | null = null
+import {
+  getCachedKey,
+  getCachedMasterPassword,
+  setCachedKey,
+  setCachedMasterPassword
+} from './session.ts'
 
 /**
  * Retrieve an initially unencrypted key from database
@@ -101,15 +103,13 @@ async function storeKeyInDB(key: CryptoKey): Promise<PouchDB.Core.Response> {
  * @returns {Promise<CryptoKey>} Encryption key
  */
 export async function getEncryptionKey(): Promise<CryptoKey | null> {
-  // If we have cached key, return it
-  if (cachedEncryptionKey) {
-    return cachedEncryptionKey
-  }
+  const cached = getCachedKey()
+  if (cached) return cached
 
   // Otherwise try to get from DB
   const key = await getKeyFromDB()
   if (key) {
-    cachedEncryptionKey = key
+    setCachedKey(key)
     return key
   }
 
@@ -123,7 +123,7 @@ export async function getEncryptionKey(): Promise<CryptoKey | null> {
 
   try {
     await storeKeyInDB(newKey)
-    cachedEncryptionKey = newKey
+    setCachedKey(newKey)
   } catch (error) {
     console.error('Failed to store encryption key:', error)
     return null
@@ -353,8 +353,8 @@ export async function updateEncryptionWithMP(
     await storeEncryptedKeyInDB(newEncryptionKey, keyFromMP)
 
     // Renew cached values
-    cachedEncryptionKey = newEncryptionKey
-    cachedMasterPassword = masterPassword
+    setCachedKey(newEncryptionKey)
+    setCachedMasterPassword(masterPassword)
 
     return true
   } catch (error) {
@@ -414,10 +414,10 @@ export async function getAndDecryptKeyFromDB(
       ['encrypt', 'decrypt']
     )
 
-    cachedEncryptionKey = importedKey
+    setCachedKey(importedKey)
     // Only cache string passwords, not CryptoKeys (from recovery flow)
     if (typeof masterPassword === 'string') {
-      cachedMasterPassword = masterPassword
+      setCachedMasterPassword(masterPassword)
     }
     return importedKey
   } catch (error) {
@@ -465,7 +465,8 @@ export async function generateRecoveryShares(
   createdAt: string
 ): Promise<ServiceResponse<string[]>> {
   try {
-    if (!cachedMasterPassword || typeof cachedMasterPassword !== 'string') {
+    const masterPassword = getCachedMasterPassword()
+    if (!masterPassword) {
       return {
         success: false,
         error: 'Master password not available in cache'
@@ -476,7 +477,7 @@ export async function generateRecoveryShares(
     const salt = await dateToSalt(createdAt, 32)
 
     // Derive a key from the master password
-    const derivedKey = await deriveKeyFromPassword(cachedMasterPassword, salt)
+    const derivedKey = await deriveKeyFromPassword(masterPassword, salt)
 
     // Export the key to get raw bytes for Shamir sharing
     const keyData = await crypto.subtle.exportKey('raw', derivedKey)
@@ -568,12 +569,4 @@ export async function reconstructMasterKey(mnemonicShares: string[]) {
       success: false
     }
   }
-}
-
-/**
- * Clear all cached encryption data from memory. Called on lock
- */
-export function clearEncryptionCache(): void {
-  cachedEncryptionKey = null
-  cachedMasterPassword = null
 }
