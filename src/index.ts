@@ -46,10 +46,10 @@ const devStaticRoutes = {
 const server = serve({
   // biome-ignore lint/complexity/useLiteralKeys: required by noPropertyAccessFromIndexSignature
   port: process.env['PORT'],
-  // biome-ignore lint/suspicious/noExplicitAny: dev route table includes an HTMLBundle, prod doesn't
   routes: {
     ...apiRoutes,
     ...(isProduction ? prodStaticRoutes : devStaticRoutes)
+    // biome-ignore lint/suspicious/noExplicitAny: dev route table includes an HTMLBundle, prod doesn't
   } as any,
   development: !isProduction
 })
