@@ -1,22 +1,12 @@
-import {describe, expect, mock, test} from 'bun:test'
+import {describe, expect, test} from 'bun:test'
+import {
+  dateToSalt,
+  decryptField,
+  deriveKeyFromPassword,
+  encryptField
+} from './webcrypto.ts'
 
-// Mock pouchDB to avoid database operations
-mock.module('./pouchDB.ts', () => ({
-  localUserDB: {
-    get: mock(() => Promise.reject({name: 'not_found'})),
-    put: mock(() => Promise.resolve({ok: true}))
-  }
-}))
-
-// Mock secrets to avoid circular dependency
-mock.module('./secrets.ts', () => ({
-  recryptSecrets: mock(() => Promise.resolve(true))
-}))
-
-const {dateToSalt, encryptField, decryptField, deriveKeyFromPassword} =
-  await import('./encryption.ts')
-
-describe('encryption', () => {
+describe('webcrypto', () => {
   describe('dateToSalt', () => {
     test('generates consistent salt from same date', async () => {
       const date = '2024-12-11T10:30:45.123Z'
