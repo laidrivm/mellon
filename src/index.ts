@@ -4,61 +4,53 @@ import {generateUUID} from './api/generate-uuid.ts'
 // HTML import for dev mode - Bun auto-bundles TSX/CSS
 import index from './app/assets/index.html'
 
-// Detect production mode at runtime based on NODE_ENV
 // biome-ignore lint/complexity/useLiteralKeys: required by noPropertyAccessFromIndexSignature
 const isProduction = String(process.env['NODE_ENV']) === 'production'
 
 // In production, serve from dist/public (relative to built script)
-const scriptDir = dirname(Bun.main)
-const publicDir = join(scriptDir, 'public')
+const publicDir = join(dirname(Bun.main), 'public')
 
-// Production routes - serve pre-built static files
-const productionRoutes = {
+const json = (data: unknown): Response =>
+  new Response(JSON.stringify(data), {
+    headers: {
+      'Content-Type': 'application/json',
+      'Access-Control-Allow-Origin': '*'
+    }
+  })
+
+const apiRoutes = {
+  '/api/generate-uuid': {
+    POST: async () => json(await generateUUID())
+  }
+}
+
+const prodStaticRoutes = {
   '/service-worker.js': () =>
     new Response(file(`${publicDir}/service-worker.js`)),
-  '/api/generate-uuid': {
-    POST: async () => {
-      const res = await generateUUID()
-      return new Response(JSON.stringify(res), {
-        headers: {
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*'
-        }
-      })
-    }
-  },
   '/*': {
     GET: (req: Request) => {
-      const url = new URL(req.url)
-      const pathname = url.pathname === '/' ? '/index.html' : url.pathname
-      return new Response(file(`${publicDir}${pathname}`))
+      const {pathname} = new URL(req.url)
+      const path = pathname === '/' ? '/index.html' : pathname
+      return new Response(file(`${publicDir}${path}`))
     }
   }
 }
 
-// Development routes - use Bun's HTML bundling for hot reload
-const developmentRoutes = {
+const devStaticRoutes = {
   '/service-worker.js': () =>
     new Response(file('./src/app/assets/service-worker.js')),
-  '/api/generate-uuid': {
-    POST: async () => {
-      const res = await generateUUID()
-      return new Response(JSON.stringify(res), {
-        headers: {
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*'
-        }
-      })
-    }
-  },
-  '/': index // Bun's HTML import handles TSX transpilation & hot reload
+  // Bun's HTML import handles TSX transpilation & hot reload
+  '/': index
 }
 
 const server = serve({
   // biome-ignore lint/complexity/useLiteralKeys: required by noPropertyAccessFromIndexSignature
   port: process.env['PORT'],
-  // biome-ignore lint/suspicious/noExplicitAny: routes differ between dev/prod
-  routes: (isProduction ? productionRoutes : developmentRoutes) as any,
+  // biome-ignore lint/suspicious/noExplicitAny: dev route table includes an HTMLBundle, prod doesn't
+  routes: {
+    ...apiRoutes,
+    ...(isProduction ? prodStaticRoutes : devStaticRoutes)
+  } as any,
   development: !isProduction
 })
 
