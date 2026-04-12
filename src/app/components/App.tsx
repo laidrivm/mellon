@@ -11,6 +11,7 @@ import type {
 import {createSecret, deleteSecret, getAllSecrets} from '../services/secrets.ts'
 import {startInactivityTimer} from '../services/session.ts'
 import {
+  clearRecoveryShares,
   createLocalUser,
   existsLocalUser,
   getEmail,
@@ -108,7 +109,10 @@ export default function App(): JSX.Element {
   )
 
   const handleRecoveryContinue = React.useCallback(async () => {
-    if (onboarding === 'recovery') await saveOnboardingStage('sign')
+    if (onboarding === 'recovery') {
+      await clearRecoveryShares()
+      await saveOnboardingStage('sign')
+    }
   }, [onboarding, saveOnboardingStage])
 
   // Shared unlock path: the forms supply the verification call + error label,

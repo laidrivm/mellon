@@ -154,4 +154,75 @@ test.describe('Recovery Flow', () => {
       page.getByText('Store these words in a secure, offline location')
     ).toBeVisible()
   })
+
+  test('should keep the same recovery words after reload + MP unlock', async ({
+    clearedPage: page
+  }) => {
+    await page.getByPlaceholder('Password').fill('SecretPass123!')
+    await page.getByRole('button', {name: 'Add a Secret'}).click()
+
+    await expect(
+      page.getByRole('heading', {name: 'Set Master Password'})
+    ).toBeVisible({timeout: 10000})
+    await page.getByPlaceholder('Password').fill(TEST_MASTER_PASSWORD)
+    await page.getByRole('button', {name: 'Set Master Password'}).click()
+
+    await expect(
+      page.getByRole('heading', {name: 'Backup Your Recovery Words'})
+    ).toBeVisible({timeout: 10000})
+    await expect(page.locator('ol li').first()).toBeVisible()
+    const original = await page.locator('ol li').allTextContents()
+    expect(original.length).toBeGreaterThan(0)
+
+    await page.reload()
+
+    await expect(
+      page.getByRole('heading', {name: 'Speak Friend and Enter'})
+    ).toBeVisible()
+    await page.getByPlaceholder('Password').fill(TEST_MASTER_PASSWORD)
+    await page.getByRole('button', {name: 'Unlock'}).click()
+
+    await expect(
+      page.getByRole('heading', {name: 'Backup Your Recovery Words'})
+    ).toBeVisible({timeout: 10000})
+    await expect(page.locator('ol li').first()).toBeVisible()
+    const afterUnlock = await page.locator('ol li').allTextContents()
+    expect(afterUnlock).toEqual(original)
+  })
+
+  test('should show the same recovery words after reload + recovery-word unlock', async ({
+    clearedPage: page
+  }) => {
+    await page.getByPlaceholder('Password').fill('SecretPass123!')
+    await page.getByRole('button', {name: 'Add a Secret'}).click()
+
+    await expect(
+      page.getByRole('heading', {name: 'Set Master Password'})
+    ).toBeVisible({timeout: 10000})
+    await page.getByPlaceholder('Password').fill(TEST_MASTER_PASSWORD)
+    await page.getByRole('button', {name: 'Set Master Password'}).click()
+
+    await expect(
+      page.getByRole('heading', {name: 'Backup Your Recovery Words'})
+    ).toBeVisible({timeout: 10000})
+    await expect(page.locator('ol li').first()).toBeVisible()
+    const original = await page.locator('ol li').allTextContents()
+    expect(original.length).toBeGreaterThan(0)
+
+    await page.reload()
+
+    await expect(
+      page.getByRole('heading', {name: 'Speak Friend and Enter'})
+    ).toBeVisible()
+    await page.getByRole('button', {name: 'Recover'}).click()
+    await page.getByLabel('Recovery Words').fill(original.join('\n'))
+    await page.getByRole('button', {name: 'Recover Password'}).click()
+
+    await expect(
+      page.getByRole('heading', {name: 'Backup Your Recovery Words'})
+    ).toBeVisible({timeout: 10000})
+    await expect(page.locator('ol li').first()).toBeVisible()
+    const afterUnlock = await page.locator('ol li').allTextContents()
+    expect(afterUnlock).toEqual(original)
+  })
 })

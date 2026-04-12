@@ -156,24 +156,46 @@ export function getMasterPasswordHint(): Promise<
 }
 
 /**
- * Get recovery words
- * @returns {Promise<ServiceResponse<{shares: string[]}>>} Recovery shares
+ * Get recovery words. Generates and persists an encrypted blob on first call;
+ * subsequent calls decrypt and return the same list. The blob is cleared once
+ * the user advances past the recovery onboarding stage.
+ * @returns {Promise<ServiceResponse<string[]>>} Recovery shares
  */
 export async function getRecoveryShares(): Promise<ServiceResponse<string[]>> {
   try {
     const userDoc = await localUserDB.get(DocType.LOCAL_USER)
 
     if (!userDoc.createdAt) {
-      return {
-        success: false,
-        error: 'User creation date not found'
-      }
+      return {success: false, error: 'User creation date not found'}
     }
-    const recoveryResult = await generateRecoveryShares(userDoc.createdAt)
 
-    if (!recoveryResult.success) {
-      throw new Error('Failed to generate recovery shares')
+    const encryptionKey = await getEncryptionKey()
+    if (!encryptionKey) {
+      return {success: false, error: 'Encryption key not available'}
     }
+
+    if (userDoc.recoveryShares) {
+      const decrypted = await decryptField(
+        userDoc.recoveryShares,
+        encryptionKey
+      )
+      return {success: true, data: JSON.parse(decrypted) as string[]}
+    }
+
+    const recoveryResult = await generateRecoveryShares(userDoc.createdAt)
+    if (!recoveryResult.success || !recoveryResult.data) {
+      return recoveryResult
+    }
+
+    const encryptedShares = await encryptField(
+      JSON.stringify(recoveryResult.data),
+      encryptionKey
+    )
+    await localUserDB.put({
+      ...userDoc,
+      recoveryShares: encryptedShares,
+      updatedAt: new Date().toISOString()
+    })
 
     return recoveryResult
   } catch (error) {
@@ -183,6 +205,20 @@ export async function getRecoveryShares(): Promise<ServiceResponse<string[]>> {
       error: error instanceof Error ? error.message : String(error)
     }
   }
+}
+
+/**
+ * Remove stored recovery shares blob from local DB.
+ * Called once the user confirms they have backed up the words.
+ */
+export function clearRecoveryShares(): Promise<ServiceResponse> {
+  return wrap('clearing recovery shares', async () => {
+    const doc = await localUserDB.get(DocType.LOCAL_USER)
+    if (!doc.recoveryShares) return doc
+    const next: LocalUserDoc = {...doc, updatedAt: new Date().toISOString()}
+    delete next.recoveryShares
+    return localUserDB.put(next)
+  })
 }
 
 /**
