@@ -1,6 +1,10 @@
 import type {JSX} from 'react'
-import type {SignUpFormProps} from '../../types.ts'
 import SingleInputForm from './SingleInputForm.tsx'
+
+interface SignUpFormProps {
+  handleEmail: (email: string) => void
+  formError?: string | null
+}
 
 export default function SignUpForm({
   handleEmail,

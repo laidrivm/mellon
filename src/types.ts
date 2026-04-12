@@ -138,34 +138,6 @@ export interface SecretDoc extends Secret {
   _rev?: string
 }
 
-export interface AddSecretFormProps {
-  onboarding: OnboardingStage
-  addSecret: (secret: Secret) => Promise<void>
-  handleSetShowForm: (form: FormState | null) => void
-  formError?: string | null
-  initialData?: Secret | null
-}
-
-export interface StoredSecretsProps {
-  secrets: Secret[]
-  showForm: FormState | null
-  handleSetShowForm: (form: FormState | null) => void
-  removeSecret: (secretId: string) => void
-}
-
-export interface MasterPasswordFormProps {
-  addMasterPassword: (masterPassword: MasterPassword) => void
-  handleSetShowForm: (form: FormState | null) => void
-  formError?: string | null
-  initialData?: MasterPassword | null
-}
-
-export interface UnlockFormProps {
-  tryUnlock: (masterPasswordCandidate: string) => void
-  handleSetShowForm: (form: FormState | null) => void
-  formError?: string | null
-}
-
 export type FormState =
   | 'secret'
   | 'masterPassword'
@@ -174,24 +146,3 @@ export type FormState =
   | 'emailCode'
   | 'sign'
   | 'code'
-
-export interface RecoveryDisplayProps {
-  onContinue: () => void
-}
-
-export interface RecoveryFormProps {
-  onRecoveryAttempt: (shares: string[]) => void
-  handleSetShowForm: (form: FormState | null) => void
-  formError?: string | null
-}
-
-export interface SignUpFormProps {
-  handleEmail: (email: string) => void
-  formError?: string | null
-}
-
-export interface CodeFormProps {
-  email: string
-  handleCode: (code: string) => void
-  formError?: string | null
-}

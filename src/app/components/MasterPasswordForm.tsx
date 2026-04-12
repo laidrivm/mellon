@@ -1,8 +1,15 @@
 import React, {type JSX} from 'react'
-import type {MasterPassword, MasterPasswordFormProps} from '../../types.ts'
+import type {FormState, MasterPassword} from '../../types.ts'
 import Button from './Button.tsx'
 import InputNewPassword from './InputNewPassword.tsx'
 import InputTextArea from './InputTextArea.tsx'
+
+interface MasterPasswordFormProps {
+  addMasterPassword: (masterPassword: MasterPassword) => void
+  handleSetShowForm: (form: FormState | null) => void
+  formError?: string | null
+  initialData?: MasterPassword | null
+}
 
 export default function MasterPasswordForm({
   addMasterPassword,
