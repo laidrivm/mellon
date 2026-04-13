@@ -30,10 +30,7 @@ export interface CouchClient {
     doc: T
   ) => Promise<InsertResult>
   findDoc: <T>(dbName: string, id: string) => Promise<T | null>
-  findByMango: <T>(
-    dbName: string,
-    selector: MangoSelector
-  ) => Promise<T[]>
+  findByMango: <T>(dbName: string, selector: MangoSelector) => Promise<T[]>
   deleteDoc: (dbName: string, id: string, rev: string) => Promise<void>
   putSecurity: (dbName: string, security: SecurityDocument) => Promise<boolean>
 }
