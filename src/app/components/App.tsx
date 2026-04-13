@@ -8,6 +8,7 @@ import type {
   OnboardingStage,
   Secret
 } from '../../types.ts'
+import {requestEmailCode, verifyEmailCode} from '../services/auth.ts'
 import {createSecret, deleteSecret, getAllSecrets} from '../services/secrets.ts'
 import {startInactivityTimer} from '../services/session.ts'
 import {
@@ -153,9 +154,17 @@ export default function App(): JSX.Element {
 
   const handleEmail = React.useCallback(
     async (addr: string) => {
-      const result = await storeEmail(addr)
-      if (!result.success) {
-        dispatch({type: 'SET_ERROR', error: result.error ?? 'Unknown error'})
+      const stored = await storeEmail(addr)
+      if (!stored.success) {
+        dispatch({type: 'SET_ERROR', error: stored.error ?? 'Unknown error'})
+        return
+      }
+      const requested = await requestEmailCode(addr)
+      if (!requested.success) {
+        dispatch({
+          type: 'SET_ERROR',
+          error: requested.error ?? 'Unknown error'
+        })
         return
       }
       dispatch({type: 'SET_EMAIL', email: addr})
@@ -165,11 +174,19 @@ export default function App(): JSX.Element {
   )
 
   const handleCode = React.useCallback(
-    async (_code: string) => {
-      // TODO: wire to verifyCode(code); currently always succeeds
+    async (code: string) => {
+      if (!email) {
+        dispatch({type: 'SET_ERROR', error: 'Email is not set'})
+        return
+      }
+      const result = await verifyEmailCode(email, code)
+      if (!result.success) {
+        dispatch({type: 'SET_ERROR', error: result.error ?? 'Unknown error'})
+        return
+      }
       if (onboarding === 'code') await saveOnboardingStage('finished')
     },
-    [onboarding, saveOnboardingStage]
+    [email, onboarding, saveOnboardingStage]
   )
 
   React.useEffect(() => {
