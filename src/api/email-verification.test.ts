@@ -166,7 +166,10 @@ describe('verifyEmailCode', () => {
     expect(res.success).toBe(false)
     expect(res.error).toBe(ERROR_MESSAGES.INVALID_CODE)
     expect(updateDoc).toHaveBeenCalledTimes(1)
-    const call = updateDoc.mock.calls[0] as unknown as [string, VerificationCodeDoc]
+    const call = updateDoc.mock.calls[0] as unknown as [
+      string,
+      VerificationCodeDoc
+    ]
     expect(call[1].attempts).toBe(1)
   })
 
