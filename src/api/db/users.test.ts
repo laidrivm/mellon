@@ -1,6 +1,10 @@
 import {describe, expect, mock, test} from 'bun:test'
 import type {CouchClient} from '../couch-client.ts'
-import {codeDocId, initUsersDb} from './users.ts'
+import {codeDocId, getUserDbName, initUsersDb, markUserVerified} from './users.ts'
+
+function findByMangoMock<T>(values: T[]) {
+  return mock(async () => values) as unknown as CouchClient['findByMango']
+}
 
 function makeClient(overrides: Partial<CouchClient> = {}): CouchClient {
   return {
@@ -20,6 +24,39 @@ function makeClient(overrides: Partial<CouchClient> = {}): CouchClient {
 describe('codeDocId', () => {
   test('produces namespaced id', () => {
     expect(codeDocId('user@example.com')).toBe('vcode::user@example.com')
+  })
+})
+
+describe('markUserVerified', () => {
+  test('creates userdb for a new user', async () => {
+    const client = makeClient()
+    const id = await markUserVerified('new@example.com', {client})
+
+    expect(client.insertDoc).toHaveBeenCalledTimes(1)
+    expect(client.createDb).toHaveBeenCalledTimes(1)
+    const createCall = (client.createDb as ReturnType<typeof mock>).mock
+      .calls[0]
+    expect(createCall?.[0]).toBe(getUserDbName(id))
+    expect(client.putSecurity).toHaveBeenCalledTimes(1)
+  })
+
+  test('does not create userdb for an existing user', async () => {
+    const existing = {
+      _id: 'existing-uuid',
+      _rev: '1-u',
+      type: 'user' as const,
+      email: 'old@example.com',
+      verified: false,
+      createdAt: new Date().toISOString()
+    }
+    const client = makeClient({findByMango: findByMangoMock([existing])})
+
+    const id = await markUserVerified('old@example.com', {client})
+
+    expect(id).toBe('existing-uuid')
+    expect(client.insertDoc).not.toHaveBeenCalled()
+    expect(client.createDb).not.toHaveBeenCalled()
+    expect(client.updateDoc).toHaveBeenCalledTimes(1)
   })
 })
 
