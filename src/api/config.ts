@@ -67,5 +67,6 @@ export function getCouchDbConfig(): CouchDbConfig {
 }
 
 export function getEmailServiceUrl(): string {
+  // biome-ignore lint/complexity/useLiteralKeys: required by noPropertyAccessFromIndexSignature
   return process.env['EMAIL_SERVICE_URL'] ?? 'http://mellon-email:3001'
 }

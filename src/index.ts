@@ -20,12 +20,21 @@ const json = (data: unknown): Response =>
     }
   })
 
-async function readJson(req: Request): Promise<Record<string, unknown> | null> {
+interface AuthBody {
+  email?: unknown
+  code?: unknown
+}
+
+async function readJson(req: Request): Promise<AuthBody> {
   try {
-    return (await req.json()) as Record<string, unknown>
+    return (await req.json()) as AuthBody
   } catch {
-    return null
+    return {}
   }
+}
+
+function asString(value: unknown): string {
+  return typeof value === 'string' ? value : ''
 }
 
 const apiRoutes = {
@@ -35,8 +44,7 @@ const apiRoutes = {
   '/api/auth/email/request': {
     POST: async (req: Request) => {
       const body = await readJson(req)
-      const email = typeof body?.['email'] === 'string' ? body['email'] : ''
-      const result = await requestEmailCode(email)
+      const result = await requestEmailCode(asString(body.email))
       return new Response(JSON.stringify(result), {
         status: result.success ? 200 : 400,
         headers: {'Content-Type': 'application/json'}
@@ -46,9 +54,10 @@ const apiRoutes = {
   '/api/auth/email/verify': {
     POST: async (req: Request) => {
       const body = await readJson(req)
-      const email = typeof body?.['email'] === 'string' ? body['email'] : ''
-      const code = typeof body?.['code'] === 'string' ? body['code'] : ''
-      const result = await verifyEmailCode(email, code)
+      const result = await verifyEmailCode(
+        asString(body.email),
+        asString(body.code)
+      )
       return new Response(JSON.stringify(result), {
         status: result.success ? 200 : 400,
         headers: {'Content-Type': 'application/json'}
