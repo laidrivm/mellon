@@ -41,10 +41,10 @@ export default function VerificationCode({
       <Head />
       <Body style={bodyStyle}>
         <Container style={containerStyle}>
-          <Heading>Подтверждение почты</Heading>
-          <Text>Ваш код:</Text>
+          <Heading>Mellon Email Verifiaction</Heading>
+          <Text>Your code:</Text>
           <Text style={codeStyle}>{code}</Text>
-          <Text>Код действителен 10 минут.</Text>
+          <Text>Valid for 10 minutes.</Text>
         </Container>
       </Body>
     </Html>
