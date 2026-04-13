@@ -1,6 +1,11 @@
 import {uuidv7} from 'uuidv7'
 import {COUCHDB_CONSTANTS} from '../config.ts'
 import {type CouchClient, createCouchClient} from '../couch-client.ts'
+import {getUserDbName} from '../database-repository.ts'
+
+// UserDoc._id is the user's UUID (uuidv7). The user's per-user CouchDB database
+// is `userdb-<_id>` — see getUserDbName(). No dbName field is stored because the
+// mapping is deterministic.
 
 const DB = COUCHDB_CONSTANTS.USERS_APP_DB
 
@@ -117,5 +122,13 @@ export async function markUserVerified(
     verifiedAt: now
   }
   await client.insertDoc(DB, doc)
+  const userDbName = getUserDbName(id)
+  await client.createDb(userDbName)
+  await client.putSecurity(userDbName, {
+    admins: {names: [], roles: []},
+    members: {names: [id], roles: []}
+  })
   return id
 }
+
+export {getUserDbName}
