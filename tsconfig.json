@@ -35,5 +35,6 @@
     "tsBuildInfoFile": ".tsbuildinfo",
 
     "baseUrl": "."
-  }
+  },
+  "exclude": ["email-service", "node_modules", "dist"]
 }

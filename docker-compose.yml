@@ -11,6 +11,18 @@ services:
     depends_on:
       couchdb-init:
         condition: service_completed_successfully
+      mellon-email:
+        condition: service_started
+    networks:
+      - web-network
+    restart: always
+
+  mellon-email:
+    build: ./email-service
+    container_name: mellon-email
+    environment:
+      - RESEND_API_KEY=${RESEND_API_KEY}
+      - FROM_EMAIL=${FROM_EMAIL}
     networks:
       - web-network
     restart: always
