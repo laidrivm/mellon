@@ -6,6 +6,7 @@ services:
       - "3000:3000"
     environment:
       - COUCH_HOST=mellon-couchdb
+      - EMAIL_SERVICE_URL=http://mellon-email:3001
     volumes:
       - ./.env:/app/.env
     depends_on:
