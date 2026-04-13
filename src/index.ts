@@ -1,5 +1,7 @@
 import {dirname, join} from 'node:path'
 import {file, serve} from 'bun'
+import {initUsersDb} from './api/db/users.ts'
+import {requestEmailCode, verifyEmailCode} from './api/email-verification.ts'
 import {generateUUID} from './api/generate-uuid.ts'
 // HTML import for dev mode - Bun auto-bundles TSX/CSS
 import index from './app/assets/index.html'
@@ -18,9 +20,40 @@ const json = (data: unknown): Response =>
     }
   })
 
+async function readJson(req: Request): Promise<Record<string, unknown> | null> {
+  try {
+    return (await req.json()) as Record<string, unknown>
+  } catch {
+    return null
+  }
+}
+
 const apiRoutes = {
   '/api/generate-uuid': {
     POST: async () => json(await generateUUID())
+  },
+  '/api/auth/email/request': {
+    POST: async (req: Request) => {
+      const body = await readJson(req)
+      const email = typeof body?.['email'] === 'string' ? body['email'] : ''
+      const result = await requestEmailCode(email)
+      return new Response(JSON.stringify(result), {
+        status: result.success ? 200 : 400,
+        headers: {'Content-Type': 'application/json'}
+      })
+    }
+  },
+  '/api/auth/email/verify': {
+    POST: async (req: Request) => {
+      const body = await readJson(req)
+      const email = typeof body?.['email'] === 'string' ? body['email'] : ''
+      const code = typeof body?.['code'] === 'string' ? body['code'] : ''
+      const result = await verifyEmailCode(email, code)
+      return new Response(JSON.stringify(result), {
+        status: result.success ? 200 : 400,
+        headers: {'Content-Type': 'application/json'}
+      })
+    }
   }
 }
 
@@ -41,6 +74,12 @@ const devStaticRoutes = {
     new Response(file('./src/app/assets/service-worker.js')),
   // Bun's HTML import handles TSX transpilation & hot reload
   '/': index
+}
+
+try {
+  await initUsersDb()
+} catch (err) {
+  console.error('[initUsersDb] failed:', err)
 }
 
 const server = serve({

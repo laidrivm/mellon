@@ -8,7 +8,20 @@ export const COUCHDB_CONSTANTS = {
   USER_PREFIX: 'org.couchdb.user:',
   USER_DB_PREFIX: 'userdb-',
   SECURITY_PATH: '_security',
-  USER_TYPE: 'user'
+  USER_TYPE: 'user',
+  USERS_APP_DB: 'mellon-users',
+  CODE_DOC_PREFIX: 'vcode::',
+  VERIFICATION_CODE_TYPE: 'verification_code',
+  APP_USER_TYPE: 'user'
+} as const
+
+export const EMAIL_VERIFICATION = {
+  CODE_TTL_MS: 10 * 60 * 1000,
+  MAX_ATTEMPTS: 5,
+  RATE_LIMIT_WINDOW_MS: 15 * 60 * 1000,
+  RATE_LIMIT_MAX: 3,
+  CODE_LENGTH: 6,
+  EMAIL_REGEX: /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 } as const
 
 export const PASSWORD_CONSTANTS = {
@@ -23,7 +36,13 @@ export const ERROR_MESSAGES = {
   DB_CREATION_ERROR: 'Failed to create user database',
   DB_SECURITY_ERROR: 'Could not set security for database',
   UUID_GENERATION_ERROR: 'Failed to generate UUID or create user',
-  CONNECTION_ERROR: 'Database connection failed'
+  CONNECTION_ERROR: 'Database connection failed',
+  INVALID_EMAIL: 'Invalid email address',
+  INVALID_CODE: 'Invalid or expired code',
+  CODE_EXPIRED: 'Code has expired',
+  TOO_MANY_ATTEMPTS: 'Too many attempts',
+  RATE_LIMITED: 'Too many requests, try again later',
+  EMAIL_SEND_FAILED: 'Failed to send verification email'
 } as const
 
 export const SUCCESS_MESSAGES = {
@@ -45,4 +64,8 @@ export interface CouchDbConfig {
 export function getCouchDbConfig(): CouchDbConfig {
   const url = process.env['COUCH_URL'] ?? 'http://localhost:5984'
   return {url}
+}
+
+export function getEmailServiceUrl(): string {
+  return process.env['EMAIL_SERVICE_URL'] ?? 'http://mellon-email:3001'
 }
