@@ -24,7 +24,7 @@ export async function sendVerificationEmail(
     const {error} = await resend.emails.send({
       from: fromEmail,
       to: email,
-      subject: 'Подтверждение почты',
+      subject: 'Mellon Email Verification',
       html
     })
 
