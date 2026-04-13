@@ -1,6 +1,11 @@
 import {describe, expect, mock, test} from 'bun:test'
 import type {CouchClient} from '../couch-client.ts'
-import {codeDocId, getUserDbName, initUsersDb, markUserVerified} from './users.ts'
+import {
+  codeDocId,
+  getUserDbName,
+  initUsersDb,
+  markUserVerified
+} from './users.ts'
 
 function findByMangoMock<T>(values: T[]) {
   return mock(async () => values) as unknown as CouchClient['findByMango']
