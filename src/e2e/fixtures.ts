@@ -16,6 +16,25 @@ async function clearIndexedDb(page: Page): Promise<void> {
   })
 }
 
+// E2E tests run without the email microservice. Stub both auth endpoints so
+// the UI flow doesn't depend on a live Resend connection.
+async function mockEmailAuthRoutes(page: Page): Promise<void> {
+  await page.route('**/api/auth/email/request', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({success: true})
+    })
+  )
+  await page.route('**/api/auth/email/verify', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({success: true, userId: 'test-user-id'})
+    })
+  )
+}
+
 async function completeOnboarding(page: Page): Promise<string[]> {
   await expect(
     page.getByRole('heading', {name: 'Add a New Secret'})
@@ -60,6 +79,10 @@ interface Fixtures {
 }
 
 export const test = base.extend<Fixtures>({
+  page: async ({page}, use) => {
+    await mockEmailAuthRoutes(page)
+    await use(page)
+  },
   clearedPage: async ({page}, use) => {
     await page.goto('/')
     await clearIndexedDb(page)
