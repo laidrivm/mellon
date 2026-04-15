@@ -6,12 +6,14 @@ export default function Button({
   children,
   style = 'primary',
   type = 'submit',
-  onClick
+  onClick,
+  disabled = false
 }: {
   children: ReactNode
   style?: ButtonStyle
   type?: 'submit' | 'button' | 'reset'
   onClick?: (event: MouseEvent<HTMLButtonElement>) => void
+  disabled?: boolean
 }): ReactNode {
   let className = ''
 
@@ -31,8 +33,17 @@ export default function Button({
       break
   }
 
+  const finalClassName = disabled
+    ? `${className} opacity-50 cursor-not-allowed`
+    : className
+
   return (
-    <button type={type} className={className} onClick={onClick}>
+    <button
+      type={type}
+      className={finalClassName}
+      onClick={onClick}
+      disabled={disabled}
+    >
       {children}
     </button>
   )

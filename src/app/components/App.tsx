@@ -175,6 +175,12 @@ export default function App(): JSX.Element {
     [onboarding, saveOnboardingStage]
   )
 
+  const handleResend = React.useCallback(async () => {
+    if (!email) return {success: false, error: 'Email is not set'}
+    const res = await requestEmailCode(email)
+    return {success: res.success, error: res.error}
+  }, [email])
+
   const handleCode = React.useCallback(
     async (code: string) => {
       if (!email) {
@@ -245,7 +251,12 @@ export default function App(): JSX.Element {
           <SignUpForm handleEmail={handleEmail} formError={error} />
         )}
         {showForm === 'code' && email && isAuthenticated && (
-          <CodeForm email={email} handleCode={handleCode} formError={error} />
+          <CodeForm
+            email={email}
+            handleCode={handleCode}
+            handleResend={handleResend}
+            formError={error}
+          />
         )}
         {isAuthenticated ? (
           <StoredSecrets
