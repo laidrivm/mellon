@@ -1,9 +1,10 @@
-import {beforeEach, describe, expect, mock, test} from 'bun:test'
+import {describe, expect, mock, test} from 'bun:test'
 import {EMAIL_VERIFICATION, ERROR_MESSAGES} from './config.ts'
 import type {CouchClient} from './couch-client.ts'
 import type {VerificationCodeDoc} from './db/users.ts'
 import {
-  _defaultRateLimiter,
+  createCouchRateLimitStore,
+  createMemoryRateLimitStore,
   requestEmailCode,
   verifyEmailCode
 } from './email-verification.ts'
@@ -39,15 +40,16 @@ async function sha256Hex(input: string): Promise<string> {
     .join('')
 }
 
-beforeEach(() => {
-  _defaultRateLimiter.clear()
-})
-
 describe('requestEmailCode', () => {
   test('rejects invalid email format', async () => {
     const client = makeClient()
     const sendEmail = mock(async () => true)
-    const res = await requestEmailCode('not-an-email', {client, sendEmail})
+    const rateLimitStore = createMemoryRateLimitStore()
+    const res = await requestEmailCode('not-an-email', {
+      client,
+      sendEmail,
+      rateLimitStore
+    })
     expect(res.success).toBe(false)
     expect(res.error).toBe(ERROR_MESSAGES.INVALID_EMAIL)
     expect(sendEmail).not.toHaveBeenCalled()
@@ -56,7 +58,12 @@ describe('requestEmailCode', () => {
   test('generates code, saves doc, calls email service on happy path', async () => {
     const client = makeClient()
     const sendEmail = mock(async () => true)
-    const res = await requestEmailCode('user@example.com', {client, sendEmail})
+    const rateLimitStore = createMemoryRateLimitStore()
+    const res = await requestEmailCode('user@example.com', {
+      client,
+      sendEmail,
+      rateLimitStore
+    })
     expect(res.success).toBe(true)
     expect(client.updateDoc).toHaveBeenCalledTimes(1)
     expect(sendEmail).toHaveBeenCalledTimes(1)
@@ -68,7 +75,12 @@ describe('requestEmailCode', () => {
   test('returns error when email service fails', async () => {
     const client = makeClient()
     const sendEmail = mock(async () => false)
-    const res = await requestEmailCode('user@example.com', {client, sendEmail})
+    const rateLimitStore = createMemoryRateLimitStore()
+    const res = await requestEmailCode('user@example.com', {
+      client,
+      sendEmail,
+      rateLimitStore
+    })
     expect(res.success).toBe(false)
     expect(res.error).toBe(ERROR_MESSAGES.EMAIL_SEND_FAILED)
   })
@@ -76,16 +88,96 @@ describe('requestEmailCode', () => {
   test('silently drops 4th request within rate-limit window', async () => {
     const client = makeClient()
     const sendEmail = mock(async () => true)
-    const rateLimiter = new Map<string, number[]>()
+    const rateLimitStore = createMemoryRateLimitStore()
     const email = 'user@example.com'
     for (let i = 0; i < EMAIL_VERIFICATION.RATE_LIMIT_MAX; i++) {
-      await requestEmailCode(email, {client, sendEmail, rateLimiter})
+      await requestEmailCode(email, {client, sendEmail, rateLimitStore})
     }
     expect(sendEmail).toHaveBeenCalledTimes(EMAIL_VERIFICATION.RATE_LIMIT_MAX)
 
-    const res = await requestEmailCode(email, {client, sendEmail, rateLimiter})
+    const res = await requestEmailCode(email, {
+      client,
+      sendEmail,
+      rateLimitStore
+    })
     expect(res.success).toBe(true)
     expect(sendEmail).toHaveBeenCalledTimes(EMAIL_VERIFICATION.RATE_LIMIT_MAX)
+  })
+})
+
+describe('createMemoryRateLimitStore', () => {
+  test('returns empty array for unknown email', async () => {
+    const store = createMemoryRateLimitStore()
+    expect(await store.load('nobody@example.com')).toEqual([])
+  })
+
+  test('round-trips hits per email', async () => {
+    const store = createMemoryRateLimitStore()
+    await store.save('a@x.com', [1, 2, 3])
+    await store.save('b@x.com', [9])
+    expect(await store.load('a@x.com')).toEqual([1, 2, 3])
+    expect(await store.load('b@x.com')).toEqual([9])
+  })
+})
+
+describe('createCouchRateLimitStore', () => {
+  function makeClient(overrides: Partial<CouchClient> = {}): CouchClient {
+    return {
+      createDb: mock(async () => undefined),
+      ensureDb: mock(async () => undefined),
+      ensureIndex: mock(async () => undefined),
+      insertDoc: mock(async () => ({ok: true, id: 'id', rev: '1-a'})),
+      updateDoc: mock(async () => ({ok: true, id: 'id', rev: '1-a'})),
+      findDoc: mock(async () => null) as unknown as CouchClient['findDoc'],
+      findByMango: mock(
+        async () => []
+      ) as unknown as CouchClient['findByMango'],
+      deleteDoc: mock(async () => undefined),
+      putSecurity: mock(async () => true),
+      ...overrides
+    }
+  }
+
+  test('load returns empty array when no doc exists', async () => {
+    const store = createCouchRateLimitStore(makeClient())
+    expect(await store.load('user@example.com')).toEqual([])
+  })
+
+  test('load returns hits from existing doc', async () => {
+    const client = makeClient({
+      findDoc: mock(async () => ({
+        _id: 'rl::user@example.com',
+        _rev: '1-a',
+        type: 'rate_limit',
+        hits: [10, 20]
+      })) as unknown as CouchClient['findDoc']
+    })
+    const store = createCouchRateLimitStore(client)
+    expect(await store.load('user@example.com')).toEqual([10, 20])
+  })
+
+  test('save swallows 409 conflict and does not throw', async () => {
+    const conflict = Object.assign(new Error('conflict'), {statusCode: 409})
+    const updateDoc = mock(async () => {
+      throw conflict
+    }) as unknown as CouchClient['updateDoc']
+    const client = makeClient({updateDoc})
+
+    const store = createCouchRateLimitStore(client)
+    await expect(
+      store.save('user@example.com', [1, 2])
+    ).resolves.toBeUndefined()
+  })
+
+  test('save rethrows non-conflict errors', async () => {
+    const boom = Object.assign(new Error('boom'), {statusCode: 500})
+    const updateDoc = mock(async () => {
+      throw boom
+    }) as unknown as CouchClient['updateDoc']
+    const client = makeClient({updateDoc})
+
+    const store = createCouchRateLimitStore(client)
+    await expect(store.save('user@example.com', [1])).rejects.toThrow('boom')
   })
 })
 
