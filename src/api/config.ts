@@ -12,7 +12,9 @@ export const COUCHDB_CONSTANTS = {
   USERS_APP_DB: 'mellon-users',
   CODE_DOC_PREFIX: 'vcode::',
   VERIFICATION_CODE_TYPE: 'verification_code',
-  APP_USER_TYPE: 'user'
+  APP_USER_TYPE: 'user',
+  RATE_LIMIT_DOC_PREFIX: 'rl::',
+  RATE_LIMIT_TYPE: 'rate_limit'
 } as const
 
 export const EMAIL_VERIFICATION = {

@@ -1,9 +1,14 @@
 import {
+  COUCHDB_CONSTANTS,
   EMAIL_VERIFICATION,
   ERROR_MESSAGES,
   getEmailServiceUrl
 } from './config.ts'
-import type {CouchClient} from './couch-client.ts'
+import {
+  type CouchClient,
+  createCouchClient,
+  isConflictError
+} from './couch-client.ts'
 import {
   codeDocId,
   deleteVerificationCode,
@@ -25,14 +30,70 @@ export interface VerifyResult {
   error?: string
 }
 
+export interface RateLimitStore {
+  load: (email: string) => Promise<number[]>
+  save: (email: string, hits: number[]) => Promise<void>
+}
+
 export interface EmailVerificationDeps {
   client?: CouchClient
   sendEmail?: (email: string, code: string) => Promise<boolean>
   now?: () => number
-  rateLimiter?: Map<string, number[]>
+  rateLimitStore?: RateLimitStore
 }
 
-const defaultRateLimiter = new Map<string, number[]>()
+interface RateLimitDoc {
+  _id: string
+  _rev?: string
+  type: typeof COUCHDB_CONSTANTS.RATE_LIMIT_TYPE
+  hits: number[]
+}
+
+function rlDocId(email: string): string {
+  return `${COUCHDB_CONSTANTS.RATE_LIMIT_DOC_PREFIX}${email}`
+}
+
+export function createMemoryRateLimitStore(): RateLimitStore {
+  const map = new Map<string, number[]>()
+  return {
+    load: async (email) => map.get(email) ?? [],
+    save: async (email, hits) => {
+      map.set(email, hits)
+    }
+  }
+}
+
+// Couch-backed store. Conflicts on save are swallowed: under concurrent
+// requests the limiter may let a few extra hits through, which self-corrects
+// once load/save sees the newer rev — acceptable for rate limiting.
+export function createCouchRateLimitStore(
+  client: CouchClient,
+  dbName: string = COUCHDB_CONSTANTS.USERS_APP_DB
+): RateLimitStore {
+  return {
+    load: async (email) => {
+      const doc = await client.findDoc<RateLimitDoc>(dbName, rlDocId(email))
+      return doc?.hits ?? []
+    },
+    save: async (email, hits) => {
+      const existing = await client.findDoc<RateLimitDoc>(
+        dbName,
+        rlDocId(email)
+      )
+      const doc: RateLimitDoc = {
+        _id: rlDocId(email),
+        _rev: existing?._rev,
+        type: COUCHDB_CONSTANTS.RATE_LIMIT_TYPE,
+        hits
+      }
+      try {
+        await client.updateDoc(dbName, doc)
+      } catch (err) {
+        if (!isConflictError(err)) throw err
+      }
+    }
+  }
+}
 
 function isValidEmail(email: string): boolean {
   return EMAIL_VERIFICATION.EMAIL_REGEX.test(email)
@@ -53,20 +114,19 @@ async function sha256Hex(input: string): Promise<string> {
     .join('')
 }
 
-function checkRateLimit(
-  limiter: Map<string, number[]>,
+async function checkRateLimit(
+  store: RateLimitStore,
   email: string,
   now: number
-): boolean {
+): Promise<boolean> {
   const window = EMAIL_VERIFICATION.RATE_LIMIT_WINDOW_MS
   const max = EMAIL_VERIFICATION.RATE_LIMIT_MAX
-  const hits = (limiter.get(email) ?? []).filter((t) => now - t < window)
-  if (hits.length >= max) {
-    limiter.set(email, hits)
+  const fresh = (await store.load(email)).filter((t) => now - t < window)
+  if (fresh.length >= max) {
+    await store.save(email, fresh)
     return false
   }
-  hits.push(now)
-  limiter.set(email, hits)
+  await store.save(email, [...fresh, now])
   return true
 }
 
@@ -96,8 +156,10 @@ export async function requestEmailCode(
   }
 
   const now = deps.now?.() ?? Date.now()
-  const limiter = deps.rateLimiter ?? defaultRateLimiter
-  if (!checkRateLimit(limiter, email, now)) {
+  const store =
+    deps.rateLimitStore ??
+    createCouchRateLimitStore(deps.client ?? createCouchClient())
+  if (!(await checkRateLimit(store, email, now))) {
     return {success: true}
   }
 
@@ -156,5 +218,3 @@ export async function verifyEmailCode(
   const userId = await markUserVerified(email, deps)
   return {success: true, userId}
 }
-
-export {defaultRateLimiter as _defaultRateLimiter}
