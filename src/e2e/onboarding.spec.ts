@@ -152,15 +152,6 @@ test.describe('Onboarding Flow', () => {
       }
     })
 
-    page.on('request', (req) => {
-      if (
-        req.url().includes('/api/auth/email/verify') &&
-        req.method() === 'POST'
-      ) {
-        captured.body = req.postDataJSON() as VerifyBody
-      }
-    })
-
     await expect(
       page.getByRole('heading', {name: 'Add a New Secret'})
     ).toBeVisible()
@@ -189,11 +180,18 @@ test.describe('Onboarding Flow', () => {
       page.getByRole('heading', {name: 'Verify Email'})
     ).toBeVisible()
     await page.getByPlaceholder('Code').fill('123456')
+
+    const verifyRequest = page.waitForRequest(
+      (req) =>
+        req.url().includes('/api/auth/email/verify') && req.method() === 'POST'
+    )
     await page.getByRole('button', {name: 'Verify'}).click()
+    const req = await verifyRequest
+    captured.body = req.postDataJSON() as VerifyBody
 
     await expect(
-      page.getByRole('heading', {name: 'Stored Secrets'})
-    ).toBeVisible()
+      page.getByRole('heading', {name: 'Verify Email'})
+    ).not.toBeVisible()
 
     expect(captured.uuid).toBeTruthy()
     expect(captured.body).not.toBeNull()
@@ -204,7 +202,7 @@ test.describe('Onboarding Flow', () => {
     await page.reload()
 
     await expect(
-      page.getByRole('heading', {name: 'Stored Secrets'})
+      page.getByRole('heading', {name: 'Speak Friend and Enter'})
     ).toBeVisible()
     await expect(
       page.getByRole('heading', {name: 'Verify Email'})
