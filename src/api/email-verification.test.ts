@@ -123,6 +123,18 @@ describe('verifyEmailCode', () => {
     expect(client.insertDoc).toHaveBeenCalledTimes(1)
   })
 
+  test('reuses supplied userId without creating a new userdb', async () => {
+    const doc = await makeDoc()
+    const client = makeClient({
+      findDoc: findDocMock(doc)
+    })
+    const res = await verifyEmailCode(email, code, {client, userId: 'my-uuid'})
+    expect(res.success).toBe(true)
+    expect(res.userId).toBe('my-uuid')
+    expect(client.createDb).not.toHaveBeenCalled()
+    expect(client.putSecurity).not.toHaveBeenCalled()
+  })
+
   test('returns existing userId and marks verified when user already exists', async () => {
     const doc = await makeDoc()
     const existingUser = {

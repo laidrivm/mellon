@@ -29,10 +29,15 @@ export function requestEmailCode(email: string): Promise<ServiceResponse> {
 
 export function verifyEmailCode(
   email: string,
-  code: string
+  code: string,
+  userId?: string
 ): Promise<ServiceResponse<{userId: string}>> {
   return wrap('verifying email code', async () => {
-    const data = await postJson('/api/auth/email/verify', {email, code})
+    const data = await postJson('/api/auth/email/verify', {
+      email,
+      code,
+      ...(userId ? {userId} : {})
+    })
     if (!data.userId) throw new Error('Missing userId in response')
     return {userId: data.userId}
   })
