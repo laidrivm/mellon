@@ -1,4 +1,4 @@
-import {sendVerificationEmail} from './sender.ts'
+import {type SendResult, sendVerificationEmail} from './sender.ts'
 
 interface RequestBody {
   email?: unknown
@@ -35,7 +35,14 @@ function json(status: number, body: unknown): Response {
   })
 }
 
-export async function handle(request: Request): Promise<Response> {
+export interface HandleDeps {
+  send?: (email: string, code: string) => Promise<SendResult>
+}
+
+export async function handle(
+  request: Request,
+  deps: HandleDeps = {}
+): Promise<Response> {
   const url = new URL(request.url)
   if (url.pathname !== '/') return new Response('Not Found', {status: 404})
   if (request.method !== 'POST')
@@ -47,13 +54,14 @@ export async function handle(request: Request): Promise<Response> {
   const valid = validate(body)
   if (!valid) return json(400, {error: 'email and code are required'})
 
-  const result = await sendVerificationEmail(valid.email, valid.code)
+  const send = deps.send ?? sendVerificationEmail
+  const result = await send(valid.email, valid.code)
   if (!result.ok) return json(500, {error: result.error})
   return new Response(null, {status: 204})
 }
 
 if (import.meta.main) {
   const port = Number(process.env.PORT ?? 3001)
-  Bun.serve({port, fetch: handle})
+  Bun.serve({port, fetch: (req) => handle(req)})
   console.log(`Email service listening on port ${port}`)
 }
