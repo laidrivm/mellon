@@ -18,6 +18,7 @@ import {
   getEmail,
   getOnboardingStage,
   getUserCredentials,
+  markEmailVerified,
   storeEmail,
   storeMasterPassword,
   updateOnboardingStage,
@@ -186,6 +187,7 @@ export default function App(): JSX.Element {
         dispatch({type: 'SET_ERROR', error: result.error ?? 'Unknown error'})
         return
       }
+      if (result.data?.userId) await markEmailVerified(result.data.userId)
       if (onboarding === 'code') await saveOnboardingStage('finished')
     },
     [email, onboarding, saveOnboardingStage]

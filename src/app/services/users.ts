@@ -303,6 +303,30 @@ export function storeEmail(email: string): Promise<ServiceResponse> {
   })
 }
 
+/**
+ * Pure transform: attach verified-user markers to a local user doc.
+ * Kept separate from DB access so it can be unit-tested without a DB mock.
+ */
+export function withEmailVerified(
+  doc: LocalUserDoc,
+  userId: string,
+  now: string
+): LocalUserDoc {
+  return {...doc, verifiedUserId: userId, verifiedAt: now, updatedAt: now}
+}
+
+/**
+ * Persist the link between the local account and the server-side verified user.
+ * Called once the email verification code succeeds.
+ */
+export function markEmailVerified(userId: string): Promise<ServiceResponse> {
+  return wrap('marking email verified', async () => {
+    const userDoc = await localUserDB.get(DocType.LOCAL_USER)
+    const now = new Date().toISOString()
+    return localUserDB.put(withEmailVerified(userDoc, userId, now))
+  })
+}
+
 // ---------------------------------------------------------------------------------------------------
 // refactoring line ----------------------------------------------------------------------------------
 // ---------------------------------------------------------------------------------------------------
