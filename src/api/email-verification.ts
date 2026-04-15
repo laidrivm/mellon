@@ -127,7 +127,7 @@ export async function requestEmailCode(
 export async function verifyEmailCode(
   email: string,
   code: string,
-  deps: EmailVerificationDeps = {}
+  deps: EmailVerificationDeps & {userId?: string} = {}
 ): Promise<VerifyResult> {
   if (!isValidEmail(email) || !code) {
     return {success: false, error: ERROR_MESSAGES.INVALID_CODE}

@@ -95,14 +95,35 @@ export async function findUserByEmail(
   return docs[0] ?? null
 }
 
+// When `userId` is supplied, we attach the email to the existing anonymous
+// user (provisioned earlier via /api/generate-uuid) — the per-user database
+// already exists, so we only upsert the app-level UserDoc.
+// TODO: once request-level auth is in place, require ownership proof instead
+// of trusting the client-supplied userId.
 export async function markUserVerified(
   email: string,
-  deps: UsersDbDeps = {}
+  deps: UsersDbDeps & {userId?: string} = {}
 ): Promise<string> {
   const client = getClient(deps)
-  const existing = await findUserByEmail(email, {client})
   const now = new Date().toISOString()
 
+  if (deps.userId) {
+    const existingById = await client.findDoc<UserDoc>(DB, deps.userId)
+    const doc: UserDoc = existingById
+      ? {...existingById, email, verified: true, verifiedAt: now}
+      : {
+          _id: deps.userId,
+          type: 'user',
+          email,
+          verified: true,
+          createdAt: now,
+          verifiedAt: now
+        }
+    await client.updateDoc(DB, doc)
+    return deps.userId
+  }
+
+  const existing = await findUserByEmail(email, {client})
   if (existing) {
     await client.updateDoc(DB, {
       ...existing,

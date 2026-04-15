@@ -17,6 +17,7 @@ import {
   existsLocalUser,
   getEmail,
   getOnboardingStage,
+  getUserCredentials,
   storeEmail,
   storeMasterPassword,
   updateOnboardingStage,
@@ -179,7 +180,8 @@ export default function App(): JSX.Element {
         dispatch({type: 'SET_ERROR', error: 'Email is not set'})
         return
       }
-      const result = await verifyEmailCode(email, code)
+      const creds = await getUserCredentials()
+      const result = await verifyEmailCode(email, code, creds?.uuid)
       if (!result.success) {
         dispatch({type: 'SET_ERROR', error: result.error ?? 'Unknown error'})
         return

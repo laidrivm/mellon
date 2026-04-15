@@ -23,6 +23,7 @@ const json = (data: unknown): Response =>
 interface AuthBody {
   email?: unknown
   code?: unknown
+  userId?: unknown
 }
 
 async function readJson(req: Request): Promise<AuthBody> {
@@ -54,9 +55,11 @@ const apiRoutes = {
   '/api/auth/email/verify': {
     POST: async (req: Request) => {
       const body = await readJson(req)
+      const userId = asString(body.userId)
       const result = await verifyEmailCode(
         asString(body.email),
-        asString(body.code)
+        asString(body.code),
+        userId ? {userId} : {}
       )
       return new Response(JSON.stringify(result), {
         status: result.success ? 200 : 400,

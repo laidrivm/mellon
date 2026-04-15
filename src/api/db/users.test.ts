@@ -4,11 +4,16 @@ import {
   codeDocId,
   getUserDbName,
   initUsersDb,
-  markUserVerified
+  markUserVerified,
+  type UserDoc
 } from './users.ts'
 
 function findByMangoMock<T>(values: T[]) {
   return mock(async () => values) as unknown as CouchClient['findByMango']
+}
+
+function findDocMock<T>(value: T | null) {
+  return mock(async () => value) as unknown as CouchClient['findDoc']
 }
 
 function makeClient(overrides: Partial<CouchClient> = {}): CouchClient {
@@ -43,6 +48,49 @@ describe('markUserVerified', () => {
       .calls[0]
     expect(createCall?.[0]).toBe(getUserDbName(id))
     expect(client.putSecurity).toHaveBeenCalledTimes(1)
+  })
+
+  test('attaches email to an existing anonymous user when userId is passed', async () => {
+    const existingAnon: UserDoc = {
+      _id: 'anon-uuid',
+      _rev: '1-a',
+      type: 'user',
+      email: '',
+      verified: false,
+      createdAt: new Date().toISOString()
+    }
+    const client = makeClient({findDoc: findDocMock(existingAnon)})
+
+    const id = await markUserVerified('new@example.com', {
+      client,
+      userId: 'anon-uuid'
+    })
+
+    expect(id).toBe('anon-uuid')
+    expect(client.updateDoc).toHaveBeenCalledTimes(1)
+    expect(client.insertDoc).not.toHaveBeenCalled()
+    expect(client.createDb).not.toHaveBeenCalled()
+    expect(client.putSecurity).not.toHaveBeenCalled()
+    const updateCall = (client.updateDoc as ReturnType<typeof mock>).mock
+      .calls[0]
+    const written = updateCall?.[1] as UserDoc
+    expect(written._id).toBe('anon-uuid')
+    expect(written.email).toBe('new@example.com')
+    expect(written.verified).toBe(true)
+  })
+
+  test('inserts UserDoc keyed by userId when no anonymous doc exists yet', async () => {
+    const client = makeClient({findDoc: findDocMock(null)})
+
+    const id = await markUserVerified('new@example.com', {
+      client,
+      userId: 'anon-uuid'
+    })
+
+    expect(id).toBe('anon-uuid')
+    expect(client.updateDoc).toHaveBeenCalledTimes(1)
+    expect(client.createDb).not.toHaveBeenCalled()
+    expect(client.putSecurity).not.toHaveBeenCalled()
   })
 
   test('does not create userdb for an existing user', async () => {

@@ -79,6 +79,29 @@ describe('verifyEmailCode', () => {
     expect(res.error).toBe('Invalid or expired code')
   })
 
+  test('forwards userId in the request body when supplied', async () => {
+    mockFetch(200, {success: true, userId: 'uuid-existing'})
+    await verifyEmailCode('user@example.com', '123456', 'uuid-existing')
+
+    const call = fetchMock.mock.calls[0] as unknown as [string, RequestInit]
+    expect(JSON.parse(String(call[1]?.body))).toEqual({
+      email: 'user@example.com',
+      code: '123456',
+      userId: 'uuid-existing'
+    })
+  })
+
+  test('omits userId from body when not supplied', async () => {
+    mockFetch(200, {success: true, userId: 'uuid-any'})
+    await verifyEmailCode('user@example.com', '123456')
+
+    const call = fetchMock.mock.calls[0] as unknown as [string, RequestInit]
+    expect(JSON.parse(String(call[1]?.body))).toEqual({
+      email: 'user@example.com',
+      code: '123456'
+    })
+  })
+
   test('fails when response lacks userId', async () => {
     mockFetch(200, {success: true})
     const res = await verifyEmailCode('user@example.com', '123456')
