@@ -3,6 +3,7 @@ import {file, serve} from 'bun'
 import {initUsersDb} from './api/db/users.ts'
 import {requestEmailCode, verifyEmailCode} from './api/email-verification.ts'
 import {generateUUID} from './api/generate-uuid.ts'
+import {startSweepLoop} from './api/sweep.ts'
 // HTML import for dev mode - Bun auto-bundles TSX/CSS
 import index from './app/assets/index.html'
 
@@ -93,6 +94,8 @@ try {
 } catch (err) {
   console.error('[initUsersDb] failed:', err)
 }
+
+startSweepLoop()
 
 const server = serve({
   // biome-ignore lint/complexity/useLiteralKeys: required by noPropertyAccessFromIndexSignature
