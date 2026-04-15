@@ -124,6 +124,8 @@ export interface LocalUserDoc {
   password?: string
   hint?: string
   email?: string
+  verifiedUserId?: string
+  verifiedAt?: string
   createdAt?: string
   updatedAt?: string
   key?: JsonWebKey
