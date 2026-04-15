@@ -84,6 +84,28 @@ export async function incrementCodeAttempts(
   await getClient(deps).updateDoc(DB, {...doc, attempts: doc.attempts + 1})
 }
 
+// Sweeps verification_code docs whose expiresAt is before `now`. Individual
+// delete failures (conflicts from a concurrent update, or already-deleted
+// docs) are swallowed — the next sweep will pick up whatever remains.
+// TODO: extend to rate_limit docs once they noticeably grow.
+export async function sweepExpiredVerificationCodes(
+  now: number,
+  deps: UsersDbDeps = {}
+): Promise<number> {
+  const client = getClient(deps)
+  const expired = await client.findByMango<VerificationCodeDoc>(DB, {
+    type: COUCHDB_CONSTANTS.VERIFICATION_CODE_TYPE,
+    expiresAt: {$lt: new Date(now).toISOString()}
+  })
+  const deletable = expired.filter(
+    (doc): doc is VerificationCodeDoc & {_rev: string} => Boolean(doc._rev)
+  )
+  const results = await Promise.allSettled(
+    deletable.map((doc) => client.deleteDoc(DB, doc._id, doc._rev))
+  )
+  return results.filter((r) => r.status === 'fulfilled').length
+}
+
 export async function findUserByEmail(
   email: string,
   deps: UsersDbDeps = {}

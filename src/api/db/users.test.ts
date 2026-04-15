@@ -5,7 +5,9 @@ import {
   getUserDbName,
   initUsersDb,
   markUserVerified,
-  type UserDoc
+  sweepExpiredVerificationCodes,
+  type UserDoc,
+  type VerificationCodeDoc
 } from './users.ts'
 
 function findByMangoMock<T>(values: T[]) {
@@ -110,6 +112,96 @@ describe('markUserVerified', () => {
     expect(client.insertDoc).not.toHaveBeenCalled()
     expect(client.createDb).not.toHaveBeenCalled()
     expect(client.updateDoc).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('sweepExpiredVerificationCodes', () => {
+  function makeCodeDoc(
+    id: string,
+    expiresAt: string,
+    rev: string | null = '1-a'
+  ): VerificationCodeDoc {
+    return {
+      _id: id,
+      ...(rev === null ? {} : {_rev: rev}),
+      type: 'verification_code',
+      email: id.replace('vcode::', ''),
+      codeHash: 'hash',
+      attempts: 0,
+      expiresAt,
+      createdAt: '2026-04-15T09:00:00.000Z'
+    }
+  }
+
+  test('deletes all expired docs and returns the count', async () => {
+    const now = Date.parse('2026-04-15T10:00:00.000Z')
+    const expired = [
+      makeCodeDoc('vcode::a@x.com', '2026-04-15T09:50:00.000Z'),
+      makeCodeDoc('vcode::b@x.com', '2026-04-15T09:55:00.000Z')
+    ]
+    const deleteDoc = mock(
+      async (_db: string, _id: string, _rev: string) => undefined
+    )
+    const client = makeClient({
+      findByMango: findByMangoMock(expired),
+      deleteDoc
+    })
+
+    const count = await sweepExpiredVerificationCodes(now, {client})
+
+    expect(count).toBe(2)
+    expect(deleteDoc).toHaveBeenCalledTimes(2)
+    expect(deleteDoc.mock.calls[0]).toEqual([
+      'mellon-users',
+      'vcode::a@x.com',
+      '1-a'
+    ])
+    expect(deleteDoc.mock.calls[1]).toEqual([
+      'mellon-users',
+      'vcode::b@x.com',
+      '1-a'
+    ])
+  })
+
+  test('skips docs without a _rev', async () => {
+    const now = Date.now()
+    const docs = [
+      makeCodeDoc('vcode::a@x.com', '2020-01-01T00:00:00.000Z', null),
+      makeCodeDoc('vcode::b@x.com', '2020-01-01T00:00:00.000Z')
+    ]
+    const deleteDoc = mock(
+      async (_db: string, _id: string, _rev: string) => undefined
+    )
+    const client = makeClient({
+      findByMango: findByMangoMock(docs),
+      deleteDoc
+    })
+
+    const count = await sweepExpiredVerificationCodes(now, {client})
+
+    expect(count).toBe(1)
+    expect(deleteDoc).toHaveBeenCalledTimes(1)
+    expect(deleteDoc.mock.calls[0]?.[1]).toBe('vcode::b@x.com')
+  })
+
+  test('tolerates individual delete failures', async () => {
+    const now = Date.now()
+    const docs = [
+      makeCodeDoc('vcode::a@x.com', '2020-01-01T00:00:00.000Z'),
+      makeCodeDoc('vcode::b@x.com', '2020-01-01T00:00:00.000Z')
+    ]
+    const deleteDoc = mock(async (_db: string, id: string) => {
+      if (id === 'vcode::a@x.com') throw new Error('conflict')
+    })
+    const client = makeClient({
+      findByMango: findByMangoMock(docs),
+      deleteDoc
+    })
+
+    const count = await sweepExpiredVerificationCodes(now, {client})
+
+    expect(count).toBe(1)
+    expect(deleteDoc).toHaveBeenCalledTimes(2)
   })
 })
 
