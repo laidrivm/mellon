@@ -1,21 +1,14 @@
-import {afterAll, beforeAll, describe, expect, mock, test} from 'bun:test'
+import {beforeEach, describe, expect, mock, test} from 'bun:test'
+import {handle} from './index.ts'
+import type {SendResult} from './sender.ts'
 
-const sendMock = mock(async () => ({ok: true as const}))
+const sendMock = mock(
+  async (_email: string, _code: string): Promise<SendResult> => ({ok: true})
+)
 
-mock.module('./sender.ts', () => ({
-  sendVerificationEmail: (email: string, code: string) => sendMock(email, code)
-}))
-
-const {handle} = await import('./index.ts')
-
-const originalFetch = globalThis.fetch
-
-beforeAll(() => {
-  sendMock.mockClear()
-})
-
-afterAll(() => {
-  globalThis.fetch = originalFetch
+beforeEach(() => {
+  sendMock.mockReset()
+  sendMock.mockImplementation(async () => ({ok: true}))
 })
 
 function post(body: unknown, init: RequestInit = {}): Request {
@@ -28,8 +21,10 @@ function post(body: unknown, init: RequestInit = {}): Request {
 
 describe('email service HTTP', () => {
   test('sends email on valid payload', async () => {
-    sendMock.mockClear()
-    const res = await handle(post({email: 'user@example.com', code: '123456'}))
+    const res = await handle(
+      post({email: 'user@example.com', code: '123456'}),
+      {send: sendMock}
+    )
 
     expect(res.status).toBe(204)
     expect(sendMock).toHaveBeenCalledTimes(1)
@@ -37,32 +32,34 @@ describe('email service HTTP', () => {
   })
 
   test('rejects missing email', async () => {
-    sendMock.mockClear()
-    const res = await handle(post({code: '123456'}))
+    const res = await handle(post({code: '123456'}), {send: sendMock})
 
     expect(res.status).toBe(400)
     expect(sendMock).not.toHaveBeenCalled()
   })
 
   test('rejects missing code', async () => {
-    sendMock.mockClear()
-    const res = await handle(post({email: 'user@example.com'}))
+    const res = await handle(post({email: 'user@example.com'}), {
+      send: sendMock
+    })
 
     expect(res.status).toBe(400)
     expect(sendMock).not.toHaveBeenCalled()
   })
 
   test('rejects blank fields', async () => {
-    sendMock.mockClear()
-    const res = await handle(post({email: '   ', code: '   '}))
+    const res = await handle(post({email: '   ', code: '   '}), {
+      send: sendMock
+    })
 
     expect(res.status).toBe(400)
     expect(sendMock).not.toHaveBeenCalled()
   })
 
   test('rejects non-POST', async () => {
-    sendMock.mockClear()
-    const res = await handle(new Request('http://localhost/'))
+    const res = await handle(new Request('http://localhost/'), {
+      send: sendMock
+    })
 
     expect(res.status).toBe(405)
     expect(sendMock).not.toHaveBeenCalled()
@@ -70,19 +67,19 @@ describe('email service HTTP', () => {
 
   test('rejects unknown path', async () => {
     const res = await handle(
-      new Request('http://localhost/other', {method: 'POST'})
+      new Request('http://localhost/other', {method: 'POST'}),
+      {send: sendMock}
     )
     expect(res.status).toBe(404)
   })
 
   test('returns 500 when sender fails', async () => {
-    sendMock.mockClear()
-    sendMock.mockImplementationOnce(async () => ({
-      ok: false as const,
-      error: 'boom'
-    }))
+    sendMock.mockImplementationOnce(async () => ({ok: false, error: 'boom'}))
 
-    const res = await handle(post({email: 'user@example.com', code: '123456'}))
+    const res = await handle(
+      post({email: 'user@example.com', code: '123456'}),
+      {send: sendMock}
+    )
 
     expect(res.status).toBe(500)
     const body = (await res.json()) as {error: string}
