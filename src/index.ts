@@ -89,12 +89,7 @@ const devStaticRoutes = {
   '/': index
 }
 
-try {
-  await initUsersDb()
-} catch (err) {
-  console.error('[initUsersDb] failed:', err)
-}
-
+await initUsersDb()
 startSweepLoop()
 
 const server = serve({
