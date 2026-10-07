@@ -1,0 +1,107 @@
+{
+  "permissions": {
+    "deny": [
+      "Bash(npx *)",
+      "Bash(npm *)",
+      "Bash(pnpm *)",
+      "Bash(yarn *)",
+      "Bash(gh pr comment *)",
+      "Bash(gh issue comment *)",
+      "Bash(gh pr review *)",
+      "Edit(.npmrc)"
+    ],
+    "ask": [
+      "Bash(bun add *)",
+      "Bash(bun a *)",
+      "Bash(bun install *)",
+      "Bash(bun i *)",
+      "Bash(bun remove *)",
+      "Bash(bun rm *)",
+      "Bash(bun r *)",
+      "Bash(bun uninstall *)",
+      "Bash(bun update *)",
+      "Bash(bun up *)",
+      "Bash(bun patch *)",
+      "Bash(bun patch-commit *)",
+      "Bash(bun pm pkg *)",
+      "Bash(bun pm version *)",
+      "Bash(bun pm trust *)",
+      "Edit(bunfig.toml)"
+    ],
+    "allow": [
+      "Bash(bun test *)",
+      "Bash(bun run *)",
+      "Bash(bun audit *)",
+      "Bash(bun --version)",
+      "Bash(bunx --no-install openspec *)",
+      "Bash(bunx --no-install biome *)",
+      "Bash(bunx --no-install tsc *)",
+      "Bash(bunx --no-install playwright *)",
+      "Bash(bunx --no-install simple-git-hooks *)",
+      "Bash(bunx --no-install stryker *)",
+      "Bash(openspec --version)",
+      "Bash(openspec archive *)",
+      "Bash(openspec instructions *)",
+      "Bash(openspec list *)",
+      "Bash(openspec new *)",
+      "Bash(openspec status *)",
+      "Bash(openspec validate *)",
+      "Bash(coderabbit --version)",
+      "Bash(coderabbit doctor *)",
+      "Bash(coderabbit review *)",
+      "Bash(actionlint *)",
+      "Bash(git log *)",
+      "Bash(git grep *)",
+      "Bash(git ls-tree *)",
+      "Bash(git ls-remote *)",
+      "Bash(git rev-list *)",
+      "Bash(git cherry *)",
+      "Bash(git check-ignore *)",
+      "Bash(git help *)",
+      "Bash(git branch *)",
+      "Bash(git fetch *)",
+      "Bash(git switch *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(gh run *)",
+      "Bash(grep *)",
+      "Bash(command -v *)",
+      "Bash(curl -s https://api.npmjs.org/downloads/point/last-week/*)",
+      "Skill(coderabbit-local)",
+      "Skill(opsx:apply)",
+      "Skill(opsx:archive)",
+      "Skill(opsx:explore)",
+      "Skill(opsx:propose)",
+      "Skill(opsx:sync)",
+      "Skill(opsx:update)",
+      "Skill(playwright-cli)",
+      "Skill(triage)",
+      "Skill(warm)",
+      "Skill(zombies)",
+      "WebFetch(domain:bun.com)",
+      "WebFetch(domain:docs.claude.com)",
+      "WebFetch(domain:docs.coderabbit.ai)",
+      "WebFetch(domain:docs.github.com)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebFetch(domain:storage.googleapis.com)",
+      "WebSearch",
+      "mcp__claude-design__list_projects",
+      "mcp__claude-design__list_files",
+      "mcp__claude-design__read_file"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "g=\"$CLAUDE_PROJECT_DIR/node_modules/harness/bun/command-guard.ts\"; if [ -f \"$g\" ]; then bun \"$g\" || exit 2; exit 0; fi; bun -e 'const c = JSON.parse(await Bun.stdin.text()).tool_input?.command ?? \"\"; if (/^bun (install|i)( --frozen-lockfile)?$/.test(c.trim())) process.exit(0); console.error(\"The harness is not installed: run bun install first.\"); process.exit(2)' || exit 2"
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -2,3 +2,8 @@
 env = "BUN_PUBLIC_*"
 plugins = ["bun-plugin-tailwind"]
 logLevel = "debug"
+
+[install]
+exact = true
+minimumReleaseAge = 259200 # seconds = 3 days
+minimumReleaseAgeExcludes = []

@@ -20,31 +20,81 @@
     "prepare": "simple-git-hooks",
     "docker:build": "docker build . -t mellon",
     "docker:run": "docker-compose up -d --build",
-    "docker:stop": "docker compose down"
+    "docker:stop": "docker compose down",
+    "harness:check": "bun node_modules/harness/bun/check.ts"
   },
   "simple-git-hooks": {
     "pre-commit": "bun biome check --staged --write --no-errors-on-unmatched && bun run test",
     "pre-push": "bun run type-check:fast && bun run test:e2e"
   },
   "dependencies": {
-    "bun-plugin-tailwind": "^0.0.15",
-    "nano": "^10.1.4",
-    "normalize.css": "^8.0.1",
-    "pouchdb-browser": "^9.0.0",
-    "react": "^19.2.3",
-    "react-dom": "^19.2.3",
-    "shamir-secret-sharing": "^0.0.4",
-    "tailwindcss": "^4.1.18",
-    "uuidv7": "^1.1.0"
+    "bun-plugin-tailwind": "0.0.15",
+    "nano": "10.1.4",
+    "normalize.css": "8.0.1",
+    "pouchdb-browser": "9.0.0",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "shamir-secret-sharing": "0.0.4",
+    "tailwindcss": "4.1.18",
+    "uuidv7": "1.1.0",
+    "harness": "github:laidrivm/harness#dbbea022084327337f3a5dcf0ee519e98f27a365"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.3.10",
-    "@playwright/test": "^1.57.0",
-    "@types/bun": "^1.3.5",
-    "@types/pouchdb": "^6.4.2",
-    "@types/react": "^19.2.7",
-    "@types/react-dom": "^19.2.3",
-    "simple-git-hooks": "^2.13.1",
-    "typescript": "^5.9.3"
+    "@biomejs/biome": "2.3.10",
+    "@playwright/test": "1.57.0",
+    "@types/bun": "1.3.5",
+    "@types/pouchdb": "6.4.2",
+    "@types/react": "19.2.7",
+    "@types/react-dom": "19.2.3",
+    "simple-git-hooks": "2.13.1",
+    "typescript": "5.9.3"
+  },
+  "harness": {
+    "uncitedFloor": {
+      "count": 0,
+      "why": "no OpenSpec specs yet"
+    },
+    "rootFiles": {
+      "CLAUDE.md": "always-on agent rules, read at the start of every session",
+      "README.md": "the front door, where a reader arrives before any directory",
+      "package.json": "the manifest bun resolves from the root and nowhere else",
+      "bun.lock": "the lockfile bun writes beside the manifest",
+      "bunfig.toml": "bun's own configuration, read from the root",
+      "tsconfig.json": "the compiler reads it from the root of the project",
+      "biome.json": "biome resolves its configuration from the root",
+      "playwright.config.ts": "playwright resolves its configuration from the root",
+      "build.ts": "the production build script `bun run build` runs",
+      ".gitignore": "git reads it from the root, and it governs the whole tree",
+      ".env.example": "copied to `.env`, which tooling reads from the root",
+      "local.ini.example": "copied to `local.ini`, the CouchDB config docker-compose mounts",
+      "Dockerfile": "the build context's root is the directory holding it",
+      ".dockerignore": "read from the build context's root, beside the Dockerfile",
+      "docker-compose.yml": "the deployment's project file, resolved from the root"
+    },
+    "suppressions": {
+      "src/api/config.ts biome-ignore": {
+        "count": 1,
+        "why": "process.env['X'] is what noPropertyAccessFromIndexSignature demands and useLiteralKeys rejects"
+      },
+      "src/index.ts biome-ignore": {
+        "count": 3,
+        "why": "two: process.env['X'] is what noPropertyAccessFromIndexSignature demands and useLiteralKeys rejects; one: the dev route table holds an HTMLBundle that prod's does not"
+      },
+      "src/app/components/Header.tsx @ts-expect-error": {
+        "count": 1,
+        "why": "an SVG import, which tsc has no module declaration for"
+      },
+      "package.json biome-ignore": {
+        "count": 3,
+        "why": "the approval keys in this object, which the scanner counts as suppressions"
+      },
+      "package.json @ts-expect-error": {
+        "count": 2,
+        "why": "the approval keys in this object, which the scanner counts as suppressions"
+      }
+    },
+    "diffBudgetExclude": [
+      "bun.lock"
+    ]
   }
 }
