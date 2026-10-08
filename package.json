@@ -25,10 +25,11 @@
   },
   "simple-git-hooks": {
     "pre-commit": "bun biome check --staged --write --no-errors-on-unmatched && bun run test",
-    "pre-push": "bun run type-check:fast && bun run test:e2e"
+    "pre-push": "bun run harness:check && bun run type-check:fast && bun run test:e2e"
   },
   "dependencies": {
     "bun-plugin-tailwind": "0.0.15",
+    "harness": "github:laidrivm/harness#d9e506bd7d4c50d730c8e63a186fade475231d49",
     "nano": "10.1.4",
     "normalize.css": "8.0.1",
     "pouchdb-browser": "9.0.0",
@@ -36,8 +37,7 @@
     "react-dom": "19.2.3",
     "shamir-secret-sharing": "0.0.4",
     "tailwindcss": "4.1.18",
-    "uuidv7": "1.1.0",
-    "harness": "github:laidrivm/harness#dbbea022084327337f3a5dcf0ee519e98f27a365"
+    "uuidv7": "1.1.0"
   },
   "devDependencies": {
     "@biomejs/biome": "2.3.10",
@@ -83,14 +83,6 @@
       "src/app/components/Header.tsx @ts-expect-error": {
         "count": 1,
         "why": "an SVG import, which tsc has no module declaration for"
-      },
-      "package.json biome-ignore": {
-        "count": 3,
-        "why": "the approval keys in this object, which the scanner counts as suppressions"
-      },
-      "package.json @ts-expect-error": {
-        "count": 2,
-        "why": "the approval keys in this object, which the scanner counts as suppressions"
       }
     },
     "diffBudgetExclude": [

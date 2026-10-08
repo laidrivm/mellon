@@ -22,6 +22,8 @@ jobs:
             command: bun run biome check
           - name: type-check
             command: bun run type-check
+          - name: harness
+            command: bun run harness:check
           - name: test
             command: bun run test
           - name: e2e
