@@ -9,10 +9,15 @@ import type {
   Secret
 } from '../../types.ts'
 import {requestEmailCode, verifyEmailCode} from '../services/auth.ts'
+import {
+  clearRecoveryShares,
+  storeMasterPassword,
+  verifyMasterPassword,
+  verifyRecoveredMasterPassword
+} from '../services/masterPassword.ts'
 import {createSecret, deleteSecret, getAllSecrets} from '../services/secrets.ts'
 import {startInactivityTimer} from '../services/session.ts'
 import {
-  clearRecoveryShares,
   createLocalUser,
   existsLocalUser,
   getEmail,
@@ -20,10 +25,7 @@ import {
   getUserCredentials,
   markEmailVerified,
   storeEmail,
-  storeMasterPassword,
-  updateOnboardingStage,
-  verifyMasterPassword,
-  verifyRecoveredMasterPassword
+  updateOnboardingStage
 } from '../services/users.ts'
 import {appReducer, initialAppState} from '../state/appReducer.ts'
 import CodeForm from './CodeForm.tsx'

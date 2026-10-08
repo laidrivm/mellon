@@ -1,5 +1,5 @@
 import React, {type JSX} from 'react'
-import {getRecoveryShares} from '../services/users.ts'
+import {getRecoveryShares} from '../services/masterPassword.ts'
 import Button from './Button.tsx'
 
 interface RecoveryDisplayProps {
