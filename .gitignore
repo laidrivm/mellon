@@ -42,8 +42,8 @@ local.ini
 # Subsequent checks artefact
 .tsbuildinfo
 
-# Claude Code settings
-.claude
+# Claude Code local settings
+.claude/settings.local.json
 
 # Playwright artefacts
 playwright-report
