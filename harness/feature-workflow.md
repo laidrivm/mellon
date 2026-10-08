@@ -28,6 +28,13 @@ completes, name the next step and the exact command.
 - Before the proposal is finalised: run `/zombies "<feature description>"`
   against the proposal text. A proposal whose edge cases are not listed in the
   tasks checklist as tests-first items is not ready to apply.
+- Before pushing `spec/<proposal-slug>`, run the pre-PR sequence's path for a
+  branch of documentation, rules or config (`review-toolkit.md`) in the same
+  turn: a proposal branch is that kind of branch, and `/zombies` alone is not
+  its sequence.
+- A change to a gate the harness ships is measured against every consumer's
+  tree before it is proposed, not only the consumer that reported it: the fix
+  for one consumer's false positive can be another's new failure.
 - A seam between steps carries a working stub: when a step depends on a
   capability a later step delivers, the earlier one ships a temporary
   substitute that works and the later one deletes it in the pull request

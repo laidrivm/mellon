@@ -73,7 +73,11 @@ design, because settling it is the user's.
 
 Before every PR that changes code — a feature, a bugfix, a chore alike, and
 whether or not it goes through the OpenSpec stages. Completing a task group
-starts the sequence in the same turn; never ask whether to run it.
+starts the sequence in the same turn, and `bun/turn-gate.ts` refuses a turn
+that commits a group's last task and ends without the gate lines or a
+`BLOCKED` naming what only the user can settle. What it does not see: a pull
+request that changes code outside a task group starts the sequence too, and a
+gate line reports the sequence — it does not prove it ran.
 
 1. `bun run diff-budget`, first, because over budget says the reviewable unit
    was cut too wide rather than that the code is wrong — and re-cutting it

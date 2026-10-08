@@ -95,6 +95,8 @@ describes is rewritten, the rule is a candidate for deletion.
   filesystem; never `.pathname`, which stays percent-encoded.
 - Compare prose across a line wrap by normalising whitespace, never by matching
   a raw substring.
+- Pin a hook's registration on every field that decides whether it runs and can
+  block, never on its command string alone.
 
 #### Process
 
