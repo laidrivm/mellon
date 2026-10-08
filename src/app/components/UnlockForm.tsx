@@ -1,6 +1,6 @@
 import React, {type JSX} from 'react'
 import type {FormState} from '../../types.ts'
-import {getMasterPasswordHint} from '../services/users.ts'
+import {getMasterPasswordHint} from '../services/masterPassword.ts'
 import Button from './Button.tsx'
 import InputNewPassword from './InputNewPassword.tsx'
 
