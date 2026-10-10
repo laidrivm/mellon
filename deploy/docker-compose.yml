@@ -1,6 +1,6 @@
 # Production stack, run from ~/mellon on the VM beside its .env and local.ini.
-# CI pulls the images and runs `docker-compose up -d`; it does not copy this
-# file, so copy it to the VM by hand after changing it.
+# CI's deploy step downloads this file from the deployed commit, replaces the
+# VM's copy, pulls the images and runs `docker-compose up -d`.
 services:
   mellon-app:
     image: laidrivm/mellon:latest
