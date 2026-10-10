@@ -188,7 +188,7 @@ jobs:
           # download stops here, before any container is touched.
           script: |
             curl -fsSL "https://raw.githubusercontent.com/${{ github.repository }}/${{ github.sha }}/deploy/docker-compose.yml" -o mellon/docker-compose.yml.new || exit 1
-            mv mellon/docker-compose.yml.new mellon/docker-compose.yml
+            mv mellon/docker-compose.yml.new mellon/docker-compose.yml || exit 1
             docker stop ${{ secrets.DOCKER_CONTAINER }} || true
             docker rm ${{ secrets.DOCKER_CONTAINER }} || true
             docker stop mellon-email || true
