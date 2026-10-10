@@ -17,8 +17,12 @@ export async function generateUUID(): Promise<UserCreationResponse> {
   try {
     const uuid = uuidv7()
 
+    // A non-ok CouchDB reply doesn't throw, so check the flags explicitly
+    // or we'd report success for a user and database that were never written.
     const user = await createCouchDbUser(uuid)
+    if (!user.success) throw new Error(user.message)
     const db = await createUserDatabase(uuid)
+    if (!db.success) throw new Error(db.message)
 
     return {
       success: true,
