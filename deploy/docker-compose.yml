@@ -13,8 +13,10 @@ services:
     volumes:
       - ./.env:/app/.env
     depends_on:
-      - mellon-couchdb
-      - mellon-email
+      couchdb-init:
+        condition: service_completed_successfully
+      mellon-email:
+        condition: service_started
     networks:
       - web-network
     restart: always
@@ -42,9 +44,16 @@ services:
           echo "Waiting for CouchDB..."
           sleep 2
         done
-        curl -X PUT http://${COUCH_USER}:${COUCH_PASSWORD}@mellon-couchdb:5984/_users
-        curl -X PUT http://${COUCH_USER}:${COUCH_PASSWORD}@mellon-couchdb:5984/_replicator
-        curl -X PUT http://${COUCH_USER}:${COUCH_PASSWORD}@mellon-couchdb:5984/_global_changes
+        # $$ defers expansion to this shell, so the password reaches curl as one
+        # quoted argument; 412 means the database already exists.
+        for db in _users _replicator _global_changes; do
+          code=$$(curl -s -o /dev/null -w '%{http_code}' -X PUT \
+            -u "$$COUCH_USER:$$COUCH_PASSWORD" "http://mellon-couchdb:5984/$$db")
+          case "$$code" in
+            201|202|412) ;;
+            *) echo "PUT $$db failed with HTTP $$code"; exit 1 ;;
+          esac
+        done
         echo "CouchDB initialized"
     environment:
       - COUCH_USER=${COUCH_USER}
