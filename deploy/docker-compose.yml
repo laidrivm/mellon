@@ -1,0 +1,75 @@
+# Production stack, run from ~/mellon on the VM beside its .env and local.ini.
+# CI pulls the images and runs `docker-compose up -d`; it does not copy this
+# file, so copy it to the VM by hand after changing it.
+services:
+  mellon-app:
+    image: laidrivm/mellon:latest
+    container_name: mellon-app
+    environment:
+      - EMAIL_SERVICE_URL=http://mellon-email:3001
+      # Set here, not in .env: the environment wins over .env in Bun, and the
+      # public host answers 301, which nano follows as a GET and loses the write.
+      - COUCH_URL=http://${COUCH_USER}:${COUCH_PASSWORD}@mellon-couchdb:5984
+    volumes:
+      - ./.env:/app/.env
+    depends_on:
+      - mellon-couchdb
+      - mellon-email
+    networks:
+      - web-network
+    restart: always
+
+  mellon-email:
+    image: laidrivm/mellon-email:latest
+    container_name: mellon-email
+    environment:
+      - RESEND_API_KEY=${RESEND_API_KEY}
+      - FROM_EMAIL=hey@mellon.sh
+    networks:
+      - web-network
+    restart: always
+
+  couchdb-init:
+    image: curlimages/curl:latest
+    depends_on:
+      - mellon-couchdb
+    networks:
+      - web-network
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        until curl -s http://mellon-couchdb:5984/ > /dev/null; do
+          echo "Waiting for CouchDB..."
+          sleep 2
+        done
+        curl -X PUT http://${COUCH_USER}:${COUCH_PASSWORD}@mellon-couchdb:5984/_users
+        curl -X PUT http://${COUCH_USER}:${COUCH_PASSWORD}@mellon-couchdb:5984/_replicator
+        curl -X PUT http://${COUCH_USER}:${COUCH_PASSWORD}@mellon-couchdb:5984/_global_changes
+        echo "CouchDB initialized"
+    environment:
+      - COUCH_USER=${COUCH_USER}
+      - COUCH_PASSWORD=${COUCH_PASSWORD}
+
+  mellon-couchdb:
+    image: couchdb:latest
+    container_name: mellon-couchdb
+    environment:
+      - COUCHDB_USER=${COUCH_USER}
+      - COUCHDB_PASSWORD=${COUCH_PASSWORD}
+      - COUCHDB_BIND_ADDRESS=0.0.0.0
+      - COUCHDB_SECRET=${COUCHDB_SECRET}
+      - NODENAME=mellon-couchdb
+    volumes:
+      - couchdb-data:/opt/couchdb/data
+      - ./local.ini:/opt/couchdb/etc/local.d/local.ini
+    networks:
+      - web-network
+    restart: always
+
+volumes:
+  couchdb-data:
+
+# Shared with nginx-proxy, which terminates TLS for mellon.sh and :5984.
+networks:
+  web-network:
+    external: true
