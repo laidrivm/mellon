@@ -82,6 +82,11 @@ describe('startInactivityTimer', () => {
 
   afterEach(() => {
     lock()
+    // Drop the stubs: a later file that imports nano would otherwise load axios
+    // with a window lacking location, and axios throws at import time.
+    const g = globalThis as {window?: unknown; document?: unknown}
+    delete g.window
+    delete g.document
   })
 
   test('schedules lock + onLock after timeout', () => {
