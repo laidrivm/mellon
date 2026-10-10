@@ -60,6 +60,39 @@ describe('generateUUID', () => {
     expect(result.message).toBe(ERROR_MESSAGES.UUID_GENERATION_ERROR)
   })
 
+  test('returns error response when user creation is not ok', async () => {
+    ;(createCouchDbUser as ReturnType<typeof mock>).mockResolvedValue({
+      success: false,
+      uuid: 'test-uuid',
+      message: ERROR_MESSAGES.USER_CREATION_FAILED
+    })
+
+    const result = await generateUUID()
+
+    expect(result.success).toBe(false)
+    expect(result.error).toBe(ERROR_MESSAGES.USER_CREATION_FAILED)
+    expect(createUserDatabase).not.toHaveBeenCalled()
+  })
+
+  test('returns error response when database security is not set', async () => {
+    ;(createCouchDbUser as ReturnType<typeof mock>).mockResolvedValue({
+      success: true,
+      uuid: 'test-uuid',
+      password: 'test-pass',
+      message: SUCCESS_MESSAGES.USER_CREATED
+    })
+    ;(createUserDatabase as ReturnType<typeof mock>).mockResolvedValue({
+      success: false,
+      db: 'userdb-test-uuid',
+      message: ERROR_MESSAGES.DB_SECURITY_ERROR
+    })
+
+    const result = await generateUUID()
+
+    expect(result.success).toBe(false)
+    expect(result.error).toBe(ERROR_MESSAGES.DB_SECURITY_ERROR)
+  })
+
   test('returns error response when database creation throws', async () => {
     const errorMessage = 'Database creation failed'
     ;(createCouchDbUser as ReturnType<typeof mock>).mockResolvedValue({
