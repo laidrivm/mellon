@@ -98,7 +98,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "g=\"$CLAUDE_PROJECT_DIR/node_modules/harness/bun/command-guard.ts\"; if [ -f \"$g\" ]; then bun \"$g\" || exit 2; exit 0; fi; bun -e 'const c = JSON.parse(await Bun.stdin.text()).tool_input?.command ?? \"\"; if (/^bun (install|i)( --frozen-lockfile)?$/.test(c.trim())) process.exit(0); console.error(\"The harness is not installed: run bun install first.\"); process.exit(2)' || exit 2"
+            "command": "g=\"$CLAUDE_PROJECT_DIR/node_modules/harness/bun/command-guard.ts\"; if [ -f \"$g\" ]; then bun \"$g\" || exit 2; exit 0; fi; bun -e 'const c = JSON.parse(await Bun.stdin.text()).tool_input?.command ?? \"\"; if (/^bun (install|i)( --frozen-lockfile)?$/.test(c.trim())) process.exit(0); console.error(\"The harness is not installed: run bun install first.\"); process.exit(2)' || exit 2 # harness-managed"
           }
         ]
       }
@@ -108,7 +108,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "g=\"$CLAUDE_PROJECT_DIR/node_modules/harness/bun/turn-gate.ts\"; if [ -f \"$g\" ]; then bun \"$g\" mark; fi"
+            "command": "g=\"$CLAUDE_PROJECT_DIR/node_modules/harness/bun/turn-gate.ts\"; if [ -f \"$g\" ]; then bun \"$g\" mark; fi # harness-managed"
           }
         ]
       }
@@ -118,7 +118,17 @@
         "hooks": [
           {
             "type": "command",
-            "command": "g=\"$CLAUDE_PROJECT_DIR/node_modules/harness/bun/turn-gate.ts\"; if [ -f \"$g\" ]; then bun \"$g\" stop; fi"
+            "command": "g=\"$CLAUDE_PROJECT_DIR/node_modules/harness/bun/turn-gate.ts\"; if [ -f \"$g\" ]; then bun \"$g\" stop; fi # harness-managed"
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bun -e 'const fs = require(\"node:fs\"); const d = process.env.CLAUDE_PROJECT_DIR ?? \".\"; if (!fs.existsSync(d + \"/node_modules/harness\")) { console.log(\"The harness is not installed: run bun install.\"); process.exit(0); } try { const pin = (JSON.parse(fs.readFileSync(d + \"/package.json\", \"utf8\")).dependencies?.harness ?? \"\").match(/#([0-9a-f]{40})$/)?.[1]; const tag = fs.readFileSync(d + \"/node_modules/harness/.bun-tag\", \"utf8\").trim().match(/-([0-9a-f]{7,40})$/)?.[1]; if (pin && tag && !pin.startsWith(tag)) console.log(\"The installed harness is \" + tag + \", the pin \" + pin.slice(0, 7) + \": run bun install.\"); } catch {}' || true # harness-managed"
           }
         ]
       }
