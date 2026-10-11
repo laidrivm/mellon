@@ -31,12 +31,8 @@ To start a development server:
 
 ```bash
 cp .env.example .env
-docker run -d --name couchdb -p 5984:5984 -e COUCHDB_USER=admin -e COUCHDB_PASSWORD=password couchdb:latest
-docker exec couchdb curl -X PUT http://admin:password@localhost:5984/_users
-docker exec couchdb curl -X PUT http://admin:password@localhost:5984/_node/nonode@nohost/_config/httpd/enable_cors -d '"true"'
-docker exec couchdb curl -X PUT http://admin:password@localhost:5984/_node/nonode@nohost/_config/cors/origins -d '"*"'
-docker exec couchdb curl -X PUT http://admin:password@localhost:5984/_node/nonode@nohost/_config/cors/credentials -d '"true"'
-docker restart couchdb
+cp local.ini.example local.ini
+bun docker:couch
 bun dev
 ```
 
@@ -46,6 +42,8 @@ To run for production:
 bun run build
 bun prod
 ```
+
+The pre-push hook runs the e2e suite, which needs that CouchDB: `bun docker:couch` starts it and creates the system databases, and `bun docker:stop` stops it.
 
 To bypass the hooks, use `SKIP_SIMPLE_GIT_HOOKS=1 git commit` or `SKIP_SIMPLE_GIT_HOOKS=1 git push`.
 

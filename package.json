@@ -21,6 +21,7 @@
     "docker:build": "docker build . -t mellon",
     "docker:run": "docker-compose up -d --build",
     "docker:stop": "docker compose down",
+    "docker:couch": "docker compose run --rm couchdb-init",
     "harness:check": "bun node_modules/harness/bun/check.ts"
   },
   "simple-git-hooks": {
