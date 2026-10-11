@@ -22,6 +22,13 @@ single-source rule this file inherits.
   derived them.
 - Arrange the filesystem or clock state a case rests on — a shared timestamp,
   a coarse tick — rather than waiting for the machine to produce it.
+- Build the environment a spawned command runs under from what the case needs,
+  and start it in a directory holding no `.env` — bun fills a variable the case
+  left out from the `.env` where the process starts.
+- Verify a test file's split by the full describe path of every test, never by
+  their count — a block absorbed into its neighbour runs exactly as many.
+- A suite that may skip locally fails the CI job that owns it when it skips
+  there — supply what it needs, and assert it ran.
 - Route `/zombies` findings by layer: Zero/One/Many/Boundaries/Interface/
   Exceptions → unit or integration tests; Simple scenarios marked
   `(e2e candidate)` → the Playwright smoke suite.

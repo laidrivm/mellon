@@ -74,9 +74,10 @@ entry, a hook or a CI check leaves this file the way it would leave
   summary, or the text of an acceptance criterion — CodeRabbit generates
   those on every run.
 - Re-check the branch `HEAD` is on and, where it is pushed, its PR state
-  before every commit to it *and before starting a review pass over it*, as a
-  call whose output you read before the work — a check chained into the same
-  command as the commit runs but cannot stop it. A merged PR strands anything
+  before every commit or push to it *and before starting a review pass over
+  it*, as a call whose output you read before the work — a check chained into
+  the same command as the commit or the push runs but cannot stop it. A merged
+  PR strands anything
   added afterwards, whichever merge style closed it; a branch that moved under
   the pass makes the pass's fixes duplicates of what is already there; and a
   tree that has held more than one branch this session may not be on the one
@@ -126,6 +127,22 @@ they route through `CLAUDE.md`'s fix & capture loop like every other rule.
   <old base> <branch>`, never `git rebase <new base>`.
 - Commit the work before a probe whose undo touches the stash or the working
   tree — `git checkout <path>`, `git reset --hard`, `git stash`.
+- Restore a file a probe edited from a copy taken before it, never with `git
+  checkout` or `git stash` — the first discards every unstaged change in
+  that file rather than the probe alone, and the second unstages what the
+  index was holding.
+- A rules or docs edit that no artefact of the change under way asks for goes
+  in its own commit.
+- Write a commit message from the staged diff, never from the last change made.
+- Apply a rule the branch adds to the artefacts the branch already carries,
+  before it is pushed.
+- After re-pinning a Git dependency with `bun add`, run `bun install` and
+  confirm the lockfile's workspace block names it once — bun writes the new
+  specifier beside the old.
+- Commit an edit in a repo another session works in before handing the turn
+  back — its `git add -A` takes whatever the tree holds.
+- Check who holds a checkout before routing work around it — a non-default
+  branch is not evidence of another session.
 - Never move the working tree off a branch whose work is unpushed — cut the
   next branch in a worktree instead.
 - Stage explicit paths in a worktree you scaffolded, and wherever the tree

@@ -97,6 +97,10 @@ describes is rewritten, the rule is a candidate for deletion.
   a raw substring.
 - Pin a hook's registration on every field that decides whether it runs and can
   block, never on its command string alone.
+- Recognise the entries a tool owns in a shared file by a mark only that tool
+  writes, never by a substring a user's own entry can also contain.
+- Pin a name one system looks up in another with a test that reads it where it
+  is defined, whenever a missing match reads as nothing to do.
 
 #### Process
 
@@ -104,15 +108,6 @@ Rules about how work is carried out here. They do not age with the code.
 
 - Confirm a path is tracked before a check or a claim depends on it — a
   gitignored file is present for the author and absent in a clone.
-- Build the environment a spawned command runs under from what the case needs,
-  and start it in a directory holding no `.env` — bun fills a variable the case
-  left out from the `.env` where the process starts.
-- Restore a file a probe edited from a copy taken before it, never with `git
-  checkout` or `git stash` — the first discards every uncommitted change in
-  that file rather than the probe alone, and the second unstages what the
-  index was holding.
-- A rules or docs edit that no artefact of the change under way asks for goes
-  in its own commit.
 - Never silence a linter or type-checker finding by disabling its rule in
   configuration; fix the code or ask the user to approve a suppression.
 - All repo artefacts — docs, plans, specs, code comments, commit messages —
@@ -123,36 +118,12 @@ Rules about how work is carried out here. They do not age with the code.
   count and a silent no-op all read as a successful edit.
 - Edit a file with the editing tool, never a shell heredoc, when its text
   carries a backtick or `${`.
-- Write a commit message from the staged diff, never from the last change made.
-- Verify a test file's split by the full describe path of every test, never by
-  their count — a block absorbed into its neighbour runs exactly as many.
 - Split a file to the cap that will apply to it, not the one that applies
   today, and re-measure the diff budget afterwards — a split counts its moved
   lines in it twice.
-- A suite that may skip locally fails the CI job that owns it when it skips
-  there — supply what it needs, and assert it ran.
-- Cite the requirement that fixes a value; never restate the value in another
-  requirement.
-- Grep a claim's own wording when correcting it, never the files it was noticed
-  in — a claim repeats wherever its subject is discussed, and a renaming or
-  renumbering repeats at every member of its series.
-- Apply a rule the branch adds to the artefacts the branch already carries,
-  before it is pushed.
-- Commit an edit in a repo another session works in before handing the turn
-  back — its `git add -A` takes whatever the tree holds.
-- Re-measure a count gate in the commit that moves its count, whichever task
-  the list files the re-measure under — a commit between the two is red on the
-  default branch.
-- State the count a task expects from a measurement of the tree the step will
-  leave, never from what the step intends.
-- After re-pinning a Git dependency with `bun add`, run `bun install` and
-  confirm the lockfile's workspace block names it once — bun writes the new
-  specifier beside the old.
-- Fix a verified defect in what the branch ships, or file it as a card, in the
-  same turn — a non-goal defers rewording, never a reference that no longer
-  resolves.
-- List the files a plan routes, moves or deletes, and confirm each exists,
-  before the plan is written.
+- Ask the user to run a command that prompts for a password in a terminal of
+  their own, never through the `!` prefix — the prompt there reads no input,
+  and the command fails as if the password were wrong.
 
 #### Safety
 
@@ -175,3 +146,7 @@ not age with the code.
 - After a generator runs, compare the directories it writes against a listing
   taken before it, ignored ones included — `git status` hides what
   `.gitignore` covers.
+- Push from a repository's own checkout, never a `git worktree` — a hook there
+  hands the tests it runs an absolute `GIT_DIR`.
+- Delete a branch, local or remote, only when the user asks for it — never
+  folded into a command run for another purpose.

@@ -121,7 +121,9 @@ for them is already here.
   `openspec/specs/**`, the cards on the boards, and the README ownership map.
   Three are files and are grepped; the fourth is read through the saved
   `Board view`, a board being no part of this tree. Search the wording of the
-  claim being replaced, never the wording replacing it, and reconcile each
+  claim being replaced, never the wording replacing it nor only the files it
+  was noticed in — a renaming or renumbering repeats at every member of its
+  series — and reconcile each
   site in the step that makes it false or name the change that will — a later
   step of the same change leaves it false on the default branch until it
   merges.
@@ -143,17 +145,25 @@ for them is already here.
   The same turn keeps the card's links and summary, which `task-board`'s
   *A card can be ranked without opening the repository* fixes. The turn a
   pull request opens adds its link under the card's `Ссылки` line, with its
-  number and kind (`proposal`, `step 2`, `archive`); the turn a proposal
+  number and kind (`proposal`, `step 2`, `archive`) — or, when the user
+  opened it, the first turn that learns it exists, at the latest the one told
+  it merged; the turn a proposal
   merges adds its `proposal.md` on the default branch; the archive re-points
   that link to the archived path. An edit to a proposal's *Why* or *What
   Changes* re-reads the card's summary in that turn. A card citing a commit
   names the pull request until it merges and the commit on the default branch
   after, never a branch's commit — a rebase merge rewrites every hash on it.
 
-  Write every repository path in a card's body inside backticks. Notion turns
-  a bare `CLAUDE.md` into a link to a host of that name, so a card meant to
-  cite a file in this tree ships a dead external link instead — and the card
-  is read through the board, where no gate here can see it.
+  Write every repository path and every domain name in a card's body inside
+  backticks. Notion turns a bare `CLAUDE.md` or `example.com` into a link to a
+  host of that name, so a card meant to cite a file in this tree ships a dead
+  external link instead — and the card is read through the board, where no
+  gate here can see it. A later `update_content` quoting the bare name then
+  matches nothing, since the page now holds the link.
+
+  Set a card's status and pointer with `update_properties`, and re-fetch the
+  card before reporting it moved. `update_content` drops the `properties` it
+  is handed without an error, so a card reported `done` stayed `proposed`.
 
   Three of the nine statuses a reconciliation can repair, because the
   harness's `board-state.ts` derives them from the tree: `proposing`,
@@ -190,6 +200,18 @@ for them is already here.
   user's drag, and a session reordering it overwrites the only instrument
   they have for ranking a column. `done` is no column of that view — its
   cards are read through the view named `Done`, newest archive first.
+- List the files a plan routes, moves or deletes, and confirm each exists,
+  before the plan is written.
+- Cite the requirement that fixes a value; never restate the value in another
+  requirement.
+- State the count a task expects from a measurement of the tree the step will
+  leave, never from what the step intends.
+- Re-measure a count gate in the commit that moves its count, whichever task
+  the list files the re-measure under — a commit between the two is red on the
+  default branch.
+- Fix a verified defect in what the branch ships, or file it as a card, in the
+  same turn — a non-goal defers rewording, never a reference that no longer
+  resolves.
 - Let an enumeration be its own count — never state a total in the prose
   introducing a list, which grows while the total does not. A number and the
   members it counts in one sentence cannot drift apart unseen; a number in the
