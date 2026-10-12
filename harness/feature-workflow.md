@@ -154,16 +154,22 @@ for them is already here.
   names the pull request until it merges and the commit on the default branch
   after, never a branch's commit — a rebase merge rewrites every hash on it.
 
-  Write every repository path and every domain name in a card's body inside
-  backticks. Notion turns a bare `CLAUDE.md` or `example.com` into a link to a
-  host of that name, so a card meant to cite a file in this tree ships a dead
-  external link instead — and the card is read through the board, where no
-  gate here can see it. A later `update_content` quoting the bare name then
-  matches nothing, since the page now holds the link.
+  Write every repository path, file name and domain name in a card's title and
+  body inside backticks. Notion turns a bare `CLAUDE.md` or `example.com` into
+  a link to a host of that name, in the title as in the body, so a card meant
+  to cite a file in this tree ships a dead external link instead — and the
+  card is read through the board, where no gate here can see it. A later
+  `update_content` quoting the bare name then matches nothing, since the page
+  now holds the link.
 
   Set a card's status and pointer with `update_properties`, and re-fetch the
   card before reporting it moved. `update_content` drops the `properties` it
   is handed without an error, so a card reported `done` stayed `proposed`.
+
+  Anchor an `update_content` edit on plain text. An `old_str` holding a
+  `<mention-page>` tag matches nothing. A bullet added to the end of a section
+  anchors on that section's last line, never on the first item under the next
+  heading — a replacement there that restates the heading leaves it twice.
 
   Three of the nine statuses a reconciliation can repair, because the
   harness's `board-state.ts` derives them from the tree: `proposing`,
@@ -212,6 +218,9 @@ for them is already here.
 - Fix a verified defect in what the branch ships, or file it as a card, in the
   same turn — a non-goal defers rewording, never a reference that no longer
   resolves.
+- A card proposing a new artefact or mechanism names the existing card or
+  OpenSpec artefact closest to it, or says none was found — `design.md`'s
+  Decisions already record what an ADR would.
 - Let an enumeration be its own count — never state a total in the prose
   introducing a list, which grows while the total does not. A number and the
   members it counts in one sentence cannot drift apart unseen; a number in the

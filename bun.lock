@@ -6,7 +6,7 @@
       "name": "bun-react-template",
       "dependencies": {
         "bun-plugin-tailwind": "0.0.15",
-        "harness": "github:laidrivm/harness#1cf6eb1bef01cf54d136155d12aff09862ed1bdc",
+        "harness": "github:laidrivm/harness#5c5998a989ba5a991cd29b34941264691743227e",
         "nano": "10.1.4",
         "normalize.css": "8.0.1",
         "pouchdb-browser": "9.0.0",
@@ -137,7 +137,7 @@
 
     "gopd": ["gopd@1.2.0", "", {}, "sha512-ZUKRh6/kUFoAiTAtTYPZJ3hw9wNxx+BIBOijnlG9PnrJsCcSjs1wyyD6vJpaYtgnzDrKYRSqf3OO6Rfa93xsRg=="],
 
-    "harness": ["harness@github:laidrivm/harness#1cf6eb1", {}, "laidrivm-harness-1cf6eb1", "sha512-v4m/i6xH8+Y6+AVWI14gaAnzI2MR2I/eGSpuI6G7viER8+IYL1OdpbuNHGspJAOGW2XfUc8jiGEsnpYTTmi8OQ=="],
+    "harness": ["harness@github:laidrivm/harness#5c5998a", {}, "laidrivm-harness-5c5998a", "sha512-4+IInoqXqoFFqc0B2dOb+WQ24MzJVZC0jEzPy9DSon3cr+ZMUzeZuEvyVr6fNzFUxMr3ER/NmKh+QsTrMPShaA=="],
 
     "has-symbols": ["has-symbols@1.1.0", "", {}, "sha512-1cDNdwJ2Jaohmb3sg4OmKaMBwuC48sYni5HUw2DvsC8LjGTLK9h+eb1X6RyuOHe4hT0ULCW68iomhjUoKUqlPQ=="],
 

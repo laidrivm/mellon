@@ -124,6 +124,9 @@ Rules about how work is carried out here. They do not age with the code.
 - Ask the user to run a command that prompts for a password in a terminal of
   their own, never through the `!` prefix — the prompt there reads no input,
   and the command fails as if the password were wrong.
+- Before the first `/opsx:` command of a task, find or create its card on the
+  board `feature-workflow.md` names and move it to that stage's status — no
+  `/opsx:` skill points there, so the card is otherwise missed.
 
 #### Safety
 
