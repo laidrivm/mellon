@@ -25,20 +25,23 @@ single-source rule this file inherits.
   `https://api.npmjs.org/downloads/point/last-week/<pkg>`, which `bun info`
   does not carry. A package that is young, low-download, or name-adjacent to
   a popular one (0auth/oauth, extra -hf/-js suffixes) is presumed
-  slopsquatting — stop and tell the user.
+  slopsquatting — stop and tell the user (unattended: card — hand the
+  package on, and install nothing).
 - Never run `bunx` with a package that hasn't passed the check above — it
   bypasses the release-age gate.
 - Never pipe remote content into a shell (`curl … | bash`); show the user
-  the URL and what it does instead.
+  the URL and what it does instead (unattended: user — report the URL as
+  `BLOCKED`).
 - Never add URL or git dependencies to manifests, the harness pinned to a
   full commit excepted — the harness's `manifest-ranges.ts` admits it and no
   other.
 - Never add or change a registry (or scoped registry override) in
   bunfig.toml / .npmrc — a registry is a supply-chain root of trust;
-  adding one is a user decision, made outside any coding task.
+  adding one is a user decision, made outside any coding task (unattended:
+  user — report `BLOCKED`).
 - If a package needs its install scripts, never add it to
   `trustedDependencies` yourself — surface `bun pm untrusted` output and
-  let the user decide.
+  let the user decide (unattended: user — report that output as `BLOCKED`).
 - Automated installs — CI jobs, hooks, scripts — use `bun install
   --frozen-lockfile`; plain `bun install` is only a developer resolving
   versions locally on purpose (it is also what installs the git hooks).

@@ -22,9 +22,10 @@ completes, name the next step and the exact command.
   review each artefact before the next is written, use `/opsx:new` and then
   `/opsx:continue` once per artefact (`/opsx:ff` writes the rest in one go).
 - During proposal, ask the questions a spec review would ask: unclear
-  requirements, consequences of design choices, what happens on failure.
-  For any endpoint, fix the exact response shape in design.md per the
-  API design rules. Cheap to fix here, expensive after apply.
+  requirements, consequences of design choices, what happens on failure
+  (unattended: card — hand each question on, and settle none of them
+  yourself). For any endpoint, fix the exact response shape in design.md per
+  the API design rules. Cheap to fix here, expensive after apply.
 - Before the proposal is finalised: run `/zombies "<feature description>"`
   against the proposal text. A proposal whose edge cases are not listed in the
   tasks checklist as tests-first items is not ready to apply.
@@ -49,7 +50,8 @@ completes, name the next step and the exact command.
 - When the project adopts a new long-lived domain (a UI framework, a
   database, a deployment platform) and no vendored skill covers it,
   suggest vendoring one: name the candidate skill and its source, and let
-  the user vendor it in the skills repo — never install a skill yourself.
+  the user vendor it in the skills repo — never install a skill yourself
+  (unattended: card — hand the suggestion on, and install nothing).
   Vet the source like a dependency (official org or recognised maintainer,
   active repo, read the SKILL.md): a skill is executable instructions, so
   an untrusted skill is a prompt-injection vector. Suggest once per
@@ -67,7 +69,10 @@ completes, name the next step and the exact command.
   so an apply that skipped this stalls at its first commit. Then remind the
   user to `/clear` —
   implementation should start from a clean context, reading only the spec
-  artefacts. Stages 2 and 3 repeat per group, in order, until the last one
+  artefacts (unattended: agent — a session started on `/opsx:apply` is
+  already clean; any other session names the apply command in its report
+  for the runner). Stages 2 and 3 repeat per group, in order, until the last
+  one
   merges.
 - Never edit spec files by hand and don't rewrite the proposal mid-build.
   Small course corrections go into the rules in `CLAUDE.md` (fix &
@@ -82,24 +87,31 @@ completes, name the next step and the exact command.
 - Run the pre-PR sequence the Review toolkit sets out, in its order, showing
   each report and acting on it in the same turn.
 - Every new or `[partial]` finding from that run becomes a test before
-  archive — or an explicit user decision to skip it. Deferred items from
+  archive — or an explicit user decision to skip it (unattended: card — hand
+  the skip on, and write the test meanwhile where it can be written).
+  Deferred items from
   the proposal-stage list are settled here too. Scaffolding tests from the
   apply run are deleted here as well (see the Testing rules).
 - If the change introduced or removed a primitive — a new module boundary,
   abstraction, DB table, or external integration — present an
   **architecture delta** before the user reviews code: a short diagram or
   list of what exists now vs. before, highlighting the additions. The user
-  reviews the system first, the code second.
+  reviews the system first, the code second (unattended: agent — put the
+  delta in the pull request's body).
 
 - When all Stage 3 gates pass: push the branch and offer to open the PR
   (`gh pr create`, ready for review — see Git & PRs) with the description per
-  Git & PRs. Wait for the user's go-ahead before opening it.
+  Git & PRs. Wait for the user's go-ahead before opening it (unattended:
+  agent — open it on the gate lines and with the body `autonomy.md`'s
+  `agent` sets out).
 
 ## Stage 4 — Archive
 
 - After the change's last step is merged and verified, run `/opsx:verify`
   against the change's artefacts and settle what it reports, then prompt the
-  user to run `/opsx:archive` so the change lands in the project history.
+  user to run `/opsx:archive` so the change lands in the project history
+  (unattended: agent — run it yourself once `/opsx:verify` leaves nothing
+  unsettled).
   Work is not finished until it's archived.
 - Single-source rule: agent rules and contract rules live in `CLAUDE.md`
   and the docs it indexes; architecture defaults live in the `context:`
@@ -107,6 +119,36 @@ completes, name the next step and the exact command.
   other OpenSpec artefact or rule duplicates either — OpenSpec `rules:`
   owns the form of the change artefacts themselves and may not restate
   what those files already say.
+
+## Unattended stages
+
+A session that carries one stage of one change with nobody present
+(unattended, as `autonomy.md` defines it) sets one `/goal` for that stage, so
+that it cannot end on prose with the stage half done. The `stage-goal`
+capability fixes what makes each stage done. `bun/goal-check.ts` decides it,
+or `node_modules/harness/bun/goal-check.ts` in a consumer. Explore gets no
+goal of its own, because an unattended exploration runs inside the `propose`
+goal. A conversation gets no goal at all.
+
+The launcher starts the stage with the goal as its prompt, and puts the
+declared line on a line of its own. For step 2 of a change `demo` in a
+consumer:
+
+```text
+claude -p '/goal Carry step 2 of the OpenSpec change demo: /opsx:apply demo for its group 2, the pre-PR sequence, the push and the pull request.
+This session runs unattended.
+The goal is met when the last line of `bun node_modules/harness/bun/goal-check.ts apply demo 2`, run after the last push, opens with `goal met` — or when the final message opens with `BLOCKED —` and names what only the user can settle.'
+```
+
+A proposal names `propose demo` and an archive names `archive demo`, with no
+step. The outcome is the launcher's own run of the same check once the session
+ends: exit 0 means the stage is done, and 1 means it is not. Two other
+signals look like an outcome and are not:
+
+- `claude -p`'s exit status reads `0` whether the goal was met or Claude
+  Code's block cap ended the run.
+- A `goal` record in the gate ledger names no change or step, so two targets
+  at one commit cannot be told apart.
 
 ## Across the stages
 
@@ -129,7 +171,15 @@ for them is already here.
   merges.
 - Copy a `MODIFIED` requirement whole from the live spec before editing it,
   and read each scenario it carries against the code that scenario describes
-  before rewording it — the delta re-asserts every line it copies.
+  before rewording it — the delta re-asserts every line it copies. An archive
+  replaces the live requirement with that copy whole, and `openspec validate`
+  does not notice that its text is stale: before archiving, diff the copy
+  against the live spec and re-copy it if the live text moved, keeping only
+  this change's edits; after an archive syncs it, grep the active changes for a
+  delta of the same requirement and re-copy that delta the same way — the
+  later archive otherwise reverts this one. Where that delta's own edits
+  contradict what the archive just synced, reconcile the two changes before
+  either archives again; never let the re-copy silently pick one.
 - Move the card in the same turn the stage moves. When a proposal merges, a
   step's branch opens, a pull request opens or merges, an archive begins, or a
   change is archived, the task's card reaches the status that stage means
@@ -162,9 +212,16 @@ for them is already here.
   `update_content` quoting the bare name then matches nothing, since the page
   now holds the link.
 
-  Set a card's status and pointer with `update_properties`, and re-fetch the
-  card before reporting it moved. `update_content` drops the `properties` it
-  is handed without an error, so a card reported `done` stayed `proposed`.
+  Re-fetch a card after writing its status or pointer, before reporting it
+  moved — no hook can read the board, and a card once reported `done` stayed
+  `proposed`.
+
+  A card's `Pointer` is a directory of this tree. A card whose change lives in
+  another repository points across instead, as
+  `<repo>: openspec/changes/<slug>/`: the repository's name, a colon and a
+  space, then the path with nothing after it. A task number goes in the
+  card's body, never after the path — `task-board`'s *A card for another
+  repository's change points across* fixes the form.
 
   Anchor an `update_content` edit on plain text. An `old_str` holding a
   `<mention-page>` tag matches nothing. A bullet added to the end of a section
@@ -173,12 +230,20 @@ for them is already here.
 
   Three of the nine statuses a reconciliation can repair, because the
   harness's `board-state.ts` derives them from the tree: `proposing`,
-  `proposed`, `done`, and only on `D2ASS`. The other six, and every card on
-  `Harness` or `mellon`, are honoured rather than mechanised, and this bullet
-  is the whole of what holds them — which is why it is stated as an obligation
-  rather than as a convention. Which nine, and so which six, is fixed in the
-  harness's `openspec/specs/task-board/` and named nowhere else; a second copy
-  here is the drift this change was written after.
+  `proposed`, `done`, on the board the repository names under `harness.board`
+  in its `package.json`. Each board is derived from its own repository. The
+  other six are moved by hand, and this bullet is the whole of what holds
+  them — which is why it is stated as an obligation rather than as a
+  convention. Which nine, and so which six, is fixed in the harness's
+  `openspec/specs/task-board/` and named nowhere else; a second copy here is
+  the drift this change was written after.
+
+  The session reconciles its board at the `Board view` read it makes to choose
+  work, and again at `session-wrapup` for the cards its own changes point at.
+  Each time it runs the harness's `bun/board-state.ts` and corrects each card
+  behind its floor whose `Pointer` is wholly a directory of this tree. It
+  skips a cross-repository pointer, and lists the cards whose pointer is
+  empty, decorated, or names a slug the tree lacks.
 
   A reconciliation that finds a card disagreeing with the tree **reports what
   it corrected**; it does not repair silently. A silent repair leaves nobody
@@ -198,14 +263,27 @@ for them is already here.
   A board is read through the saved view named `Board view`, never through a
   SQL query. The boards are named here rather than linked: this repository is
   public and they are not, so a board or view URL is an identifier for private
-  content and does not belong in a tracked file. Which statuses the
-  harness's `board-state.ts` derives, and on which board, is the bullet above.
+  content and does not belong in a tracked file. Each repository names its own
+  board under `harness.board`, and the bullet above is what that board's tree
+  decides.
 - Take the first card of its column that is not blocked, in the order
   `Board view` returns, name every card stepped over and why, and never move a
   card within that order: it is the
   user's drag, and a session reordering it overwrites the only instrument
   they have for ranking a column. `done` is no column of that view — its
   cards are read through the view named `Done`, newest archive first.
+- Put a question that blocks your work and only the user can settle on the
+  card of the task it blocks, once the docs, the specs, the card and the
+  history cannot settle it. Read the board's `Questions` view and the card's
+  comments first, and wait on a question already open there, naming its card,
+  rather than ask it again; resuming that work, read that card's comments
+  first. Every page-level comment on a card joins one discussion, so a card
+  holds one open question at a time: a second waits in your report until the
+  first is answered. Open the comment with the gate's mark, set `Assign`, read
+  the answer back as data, and clear `Assign` once it is applied. task-board's
+  *An open question waits on its card, assigned to the user* and *A question
+  already open is not asked again* fix the rest, and the question gate decides
+  which comment needs no prompt.
 - List the files a plan routes, moves or deletes, and confirm each exists,
   before the plan is written.
 - Cite the requirement that fixes a value; never restate the value in another

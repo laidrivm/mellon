@@ -16,7 +16,8 @@ capture it exactly like a bug, so future runs don't repeat the old style:
 2. Capture the lesson, in the same turn, before treating the task as done:
    - If it's about how code should be written here → propose a one-line rule
      for the matching sublist of "Rules" below — Code, Process or Safety —
-     and add it after the user confirms.
+     and add it after the user confirms (unattended: card — hand the wording
+     on, as for the skills-repo wording below).
    - If it's about how reviews should be run → say the fix belongs in the
      corresponding skill in the shared skills repo, and propose the exact
      wording (do not edit the skill from this project).
@@ -24,9 +25,10 @@ capture it exactly like a bug, so future runs don't repeat the old style:
      rule only when the reason is a settled project convention the bot
      cannot know; a one-off keeps its reason in the report and becomes no
      rule. A rule here *or in the docs this file indexes* is read back by the
-     next review, since `.coderabbit.yaml` points `code_guidelines` at both
-     `**/CLAUDE.md` and `docs/*.md` — so being read back never decides which
-     of the two a rule goes in, and the always-on budget is free to.
+     next review wherever the repository's `.coderabbit.yaml` names, under
+     `code_guidelines`, the paths this file and those docs sit at — so being
+     read back never decides which of the two a rule goes in, and the
+     always-on budget is free to.
    - If it's a one-off (typo, misread requirement, wrong file) → say
      "not capturing this" and why. Not every bug becomes a rule.
 
@@ -55,6 +57,8 @@ never a second always-on file.
 
 What counts as evidence for a claim — environments, external contracts,
 observability, causal claims — see [verification.md](verification.md).
+What a session does at a step that names the user when it runs unattended —
+see [autonomy.md](autonomy.md).
 
 #### Code
 
@@ -107,9 +111,11 @@ describes is rewritten, the rule is a candidate for deletion.
 Rules about how work is carried out here. They do not age with the code.
 
 - Confirm a path is tracked before a check or a claim depends on it — a
-  gitignored file is present for the author and absent in a clone.
+  gitignored file is present for the author and absent in a clone, and a glob
+  matches a path string whether or not the file exists.
 - Never silence a linter or type-checker finding by disabling its rule in
-  configuration; fix the code or ask the user to approve a suppression.
+  configuration; fix the code or ask the user to approve a suppression
+  (unattended: card — hand the suppression on).
 - All repo artefacts — docs, plans, specs, code comments, commit messages —
   are written in British English by default (`behaviour`, `afterwards`);
   identifiers and third-party API names keep whatever spelling they ship with.
@@ -123,10 +129,27 @@ Rules about how work is carried out here. They do not age with the code.
   lines in it twice.
 - Ask the user to run a command that prompts for a password in a terminal of
   their own, never through the `!` prefix — the prompt there reads no input,
-  and the command fails as if the password were wrong.
+  and the command fails as if the password were wrong (unattended: user —
+  report `BLOCKED`, naming the command).
 - Before the first `/opsx:` command of a task, find or create its card on the
   board `feature-workflow.md` names and move it to that stage's status — no
   `/opsx:` skill points there, so the card is otherwise missed.
+- Commit or push in another checkout with `git -C <literal path>` — never `cd`
+  into it, since the command guard also checks the directory the call starts
+  in, nor through a shell variable, which the guard cannot resolve and refuses.
+- Name in `after:` only a change whose directory the branch already holds,
+  under `openspec/changes/` or its archive — `bun/board-state.ts` refuses any
+  other slug and `bun/board-state-hygiene.test.ts` runs it over the repository;
+  keep the order in the proposal's prose until that change merges.
+- Pass a CI gate the base it measures from as the checked-out merge commit's
+  first parent, never `pull_request.base.sha`, which does not follow the base
+  branch.
+- Pass `--full-tree` to a `git ls-tree` whose pathspec names a path from the
+  repository root — a working directory below the root resolves it against
+  itself and lists nothing.
+- Before a commit, run the build's own scan over every file the commit writes
+  that the scan covers, since a fixture in a test can be valid input to the
+  scan it tests.
 
 #### Safety
 
@@ -152,4 +175,9 @@ not age with the code.
 - Push from a repository's own checkout, never a `git worktree` — a hook there
   hands the tests it runs an absolute `GIT_DIR`.
 - Delete a branch, local or remote, only when the user asks for it — never
-  folded into a command run for another purpose.
+  folded into a command run for another purpose (unattended: user — delete
+  nothing, and name the branch in the report).
+- Never run an act the command guard or a permission entry refuses or asks
+  about — a commit, a push, a `gh` write, a package command, an edit to a gated
+  file — through an interpreter (`python3 -c`, `bun -e`, `node -e`) or a
+  throwaway script; both read only the call's own words, so the act walks past.

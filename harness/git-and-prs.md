@@ -33,7 +33,8 @@ entry, a hook or a CI check leaves this file the way it would leave
   by amending. An amend rewrites what the remote holds, so the next push is
   refused as a non-fast-forward and only a force gets past it — and a force
   is a destructive act put to the user for a defect that cost one commit to
-  fix. The extra commits vanish at squash-merge, which is what this
+  fix (unattended: user — never force; report `BLOCKED`). The extra commits
+  vanish at squash-merge, which is what this
   repository does.
 - Ask `git ls-remote` before rewriting a branch at all — amend, rebase or
   reset alike — never memory. The rule above names the amend because that is
@@ -76,18 +77,24 @@ entry, a hook or a CI check leaves this file the way it would leave
 - Re-check the branch `HEAD` is on and, where it is pushed, its PR state
   before every commit or push to it *and before starting a review pass over
   it*, as a call whose output you read before the work — a check chained into
-  the same command as the commit or the push runs but cannot stop it. A merged
-  PR strands anything
-  added afterwards, whichever merge style closed it; a branch that moved under
-  the pass makes the pass's fixes duplicates of what is already there; and a
-  tree that has held more than one branch this session may not be on the one
-  the last command left it on.
+  the same command as the commit or the push runs but cannot stop it. The
+  command guard refuses a commit once at least one of the branch's commits is
+  already upstream as an equivalent patch; the PR state is what catches a
+  merge that leaves no such commit — a merge commit or a fast-forward always,
+  a squash of several commits usually — and a branch pruned and merged but
+  not yet fetched. Where a refused commit's work goes is
+  yours to decide; a branch that moved under the pass makes the pass's fixes
+  duplicates of what is already there; and a tree that has held more than one
+  branch this session may not be on the one the last command left it on.
 - Commit a session's wrap-up artefacts — the pipeline-yield ledger, a save
   point — to the branch in hand, never a branch of their own.
-- Never reply, comment or review under the user's name anywhere the `gh` deny
-  entries do not reach — a tracker, a forum, any external service: report what
-  you would have written and let them send it. Opening the pull request they
-  asked for is not that.
+- Send, reply, comment or review under the user's name only through a call the
+  user approved at its prompt; the `gh` writes stay refused. Never through a
+  channel no permission entry reaches — a browser form, a direct HTTP call:
+  report what you would have written and let them send it. Opening the pull
+  request they asked for is not that, and nor is a question the question gate
+  lets through without a prompt (`agent-permissions`, *A question to the user
+  on a board card needs no prompt*).
 - Never re-run a check whose own output already proved it passed and whose
   inputs have not changed since — a later command's success is not that proof.
 - Never wait on a result someone else produces — CI, a review bot, a queue:
@@ -106,7 +113,8 @@ Rules about how work is carried out here. They do not age with the code, and
 they route through `CLAUDE.md`'s fix & capture loop like every other rule.
 
 - Never bypass a git hook with `--no-verify`, `SKIP_SIMPLE_GIT_HOOKS` or a
-  `core.hooksPath` override; run it or ask.
+  `core.hooksPath` override; run it or ask (unattended: user — report the
+  hook's failure as `BLOCKED`, and never ask to bypass it).
 - Never chain a commit onto a check in one command — the check runs, prints,
   and does not stop it; read its result first.
 - Treat an edit to the `simple-git-hooks` *block* in `package.json` as a gate

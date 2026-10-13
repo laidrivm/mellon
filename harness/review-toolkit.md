@@ -41,13 +41,20 @@ design, because settling it is the user's.
   wrong costs a `git checkout`. Dismissing a 🟠 Major or 🔴 Critical goes the
   other way: it is put to the user with what the bot missed, and the gate line
   reads `OPEN` until they settle it, because a wrong dismissal reaches the
-  merge where a wrong fix does not. At most three reviews with fixes between them; stop
+  merge where a wrong fix does not (unattended: card — hand it on with what
+  the bot missed, and list it in the pull request's body as `autonomy.md`'s
+  `agent` sets out). At most three reviews with fixes between them; stop
   early the moment a review returns nothing above 🟡 Minor, and if Major or
-  above survives the third, report it and stop rather than starting a fourth.
+  above survives the third, report it and stop rather than starting a fourth
+  (unattended: agent — push and open the pull request, listing the finding
+  as still open).
   Collect Minor findings across all passes and report them once at the end,
-  each fixed or skipped with its reason. The CLI does not read
-  `.coderabbit.yaml` on its own, so the skill passes it explicitly — a local
-  review that skips that is a differently aligned reviewer, not a cheaper one.
+  each fixed or skipped with its reason. The CLI looks for
+  `.coderabbit.yaml` on its own only while no `--config` is given, and the
+  skill always gives one. So the skill passes the config explicitly, together
+  with the guideline files that the config's `code_guidelines` patterns match.
+  A local review that skips them is a differently aligned reviewer, not a
+  cheaper one.
 - `/coderabbit [pr]` — chews the bot's PR comments. Its
   `disable-model-invocation` flag reserves it for the user, because the bot's
   review arrives on its own schedule and waiting for it burns a session doing
@@ -74,13 +81,19 @@ design, because settling it is the user's.
 Before every PR that changes code — a feature, a bugfix, a chore alike, and
 whether or not it goes through the OpenSpec stages. Completing a task group
 starts the sequence in the same turn, and `bun/turn-gate.ts` refuses a turn
-that commits a group's last task and ends without the gate lines or a
-`BLOCKED` naming what only the user can settle. What it does not see: a pull
-request that changes code outside a task group starts the sequence too, and a
-gate line reports the sequence — it does not prove it ran.
+that commits a group's last task and ends without the gate lines and the
+runner's record of the commit it ends on, or a `BLOCKED` naming what only the
+user can settle. What it does not see: a pull request that changes code
+outside a task group starts the sequence too. The record proves that step 1
+ran at that commit; the other steps' gate lines report them, and nothing
+proves they ran.
 
-1. `bun run diff-budget`, first, because over budget says the reviewable unit
-   was cut too wide rather than that the code is wrong — and re-cutting it
+1. The runner, `bun bun/pre-pr.ts` (`bun node_modules/harness/bun/pre-pr.ts`
+   where the harness is installed), first, and again after the sequence's last
+   commit, since its record names the commit it read. It runs the diff budget
+   and records the run; the pre-push hook and CI measure the budget without
+   recording. The budget goes first because over budget says the reviewable
+   unit was cut too wide rather than that the code is wrong — and re-cutting it
    changes the diff every gate below reads. It reports how many lines the
    reviewer must read, and names its own thresholds and, where it has one, the
    remedy in the gate line, so a reader never looks either up here. A gate
