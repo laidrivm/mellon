@@ -51,6 +51,7 @@
     "typescript": "5.9.3"
   },
   "harness": {
+    "board": "mellon",
     "uncitedFloor": {
       "count": 0,
       "why": "no OpenSpec specs yet"
