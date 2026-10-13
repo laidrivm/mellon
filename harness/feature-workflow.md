@@ -150,6 +150,14 @@ signals look like an outcome and are not:
 - A `goal` record in the gate ledger names no change or step, so two targets
   at one commit cannot be told apart.
 
+A goal run that will not converge ends at the round ceiling `stage-goal`
+fixes. When the stops that the goal itself continued since the prompt reach
+it, the turn gate ends the session with a `goal-ceiling:` reason and a
+`goal`/`rounds`/`ceiling` record, and leaves the goal set. The check then
+still reports `goal open`. To go on, resume the session with a prompt, which
+starts the count again: `claude -p --resume <session id> 'go on'`. To give
+the stage up instead, run `/goal clear` in it.
+
 ## Across the stages
 
 Discipline every artefact of a change is written under, whichever stage

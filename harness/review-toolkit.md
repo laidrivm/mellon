@@ -84,9 +84,10 @@ starts the sequence in the same turn, and `bun/turn-gate.ts` refuses a turn
 that commits a group's last task and ends without the gate lines and the
 runner's record of the commit it ends on, or a `BLOCKED` naming what only the
 user can settle. What it does not see: a pull request that changes code
-outside a task group starts the sequence too. The record proves that step 1
-ran at that commit; the other steps' gate lines report them, and nothing
-proves they ran.
+outside a task group starts the sequence too. A `/goal` run that reaches its
+round ceiling ends without the refusal, since refusing would only continue
+it. The record proves that step 1 ran at that commit; the other steps' gate
+lines report them, and nothing proves they ran.
 
 1. The runner, `bun bun/pre-pr.ts` (`bun node_modules/harness/bun/pre-pr.ts`
    where the harness is installed), first, and again after the sequence's last
