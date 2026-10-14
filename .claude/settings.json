@@ -114,6 +114,14 @@
             "command": "g=\"$CLAUDE_PROJECT_DIR/node_modules/harness/bun/notion-guard.ts\"; if [ -f \"$g\" ]; then bun \"$g\"; fi # harness-managed"
           }
         ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "g=\"$CLAUDE_PROJECT_DIR/node_modules/harness/bun/loop-guard.ts\"; if [ -f \"$g\" ]; then bun \"$g\"; fi # harness-managed"
+          }
+        ]
       }
     ],
     "UserPromptSubmit": [
@@ -141,7 +149,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bun -e 'const fs = require(\"node:fs\"); const d = process.env.CLAUDE_PROJECT_DIR ?? \".\"; if (!fs.existsSync(d + \"/node_modules/harness\")) { console.log(\"The harness is not installed: run bun install.\"); process.exit(0); } try { const pin = (JSON.parse(fs.readFileSync(d + \"/package.json\", \"utf8\")).dependencies?.harness ?? \"\").match(/#([0-9a-f]{40})$/)?.[1]; const tag = fs.readFileSync(d + \"/node_modules/harness/.bun-tag\", \"utf8\").trim().match(/-([0-9a-f]{7,40})$/)?.[1]; if (pin && tag && !pin.startsWith(tag)) console.log(\"The installed harness is \" + tag + \", the pin \" + pin.slice(0, 7) + \": run bun install.\"); } catch {}' || true # harness-managed"
+            "command": "bun -e 'const fs = require(\"node:fs\"); const d = process.env.CLAUDE_PROJECT_DIR ?? \".\"; if (!fs.existsSync(d + \"/node_modules/harness\")) { console.log(\"The harness is not installed: run bun install.\"); process.exit(0); } try { const m = JSON.parse(fs.readFileSync(d + \"/package.json\", \"utf8\")); const pin = (m.dependencies?.harness ?? m.devDependencies?.harness ?? \"\").match(/#([0-9a-f]{40})$/)?.[1]; const tag = fs.readFileSync(d + \"/node_modules/harness/.bun-tag\", \"utf8\").trim().match(/-([0-9a-f]{7,40})$/)?.[1]; if (pin && tag && !pin.startsWith(tag)) console.log(\"The installed harness is \" + tag + \", the pin \" + pin.slice(0, 7) + \": run bun install.\"); } catch {}' || true # harness-managed"
           }
         ]
       }
@@ -153,6 +161,16 @@
           {
             "type": "command",
             "command": "g=\"$CLAUDE_PROJECT_DIR/node_modules/harness/bun/question-gate.ts\"; if [ -f \"$g\" ]; then bun \"$g\"; fi # harness-managed"
+          }
+        ]
+      }
+    ],
+    "PostToolUseFailure": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "g=\"$CLAUDE_PROJECT_DIR/node_modules/harness/bun/loop-guard.ts\"; if [ -f \"$g\" ]; then bun \"$g\"; fi # harness-managed"
           }
         ]
       }

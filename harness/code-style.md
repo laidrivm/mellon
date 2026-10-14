@@ -27,11 +27,10 @@ single-source rule this file inherits.
   a popular one (0auth/oauth, extra -hf/-js suffixes) is presumed
   slopsquatting — stop and tell the user (unattended: card — hand the
   package on, and install nothing).
-- Never run `bunx` with a package that hasn't passed the check above — it
-  bypasses the release-age gate.
-- Never pipe remote content into a shell (`curl … | bash`); show the user
-  the URL and what it does instead (unattended: user — report the URL as
-  `BLOCKED`).
+- Never run a script downloaded to a file (`curl -o i.sh … && sh i.sh`) —
+  the command guard refuses one piped into a shell, not one run by its path;
+  show the user the URL and what it does instead (unattended: user — report
+  the URL as `BLOCKED`).
 - Never add URL or git dependencies to manifests, the harness pinned to a
   full commit excepted — the harness's `manifest-ranges.ts` admits it and no
   other.

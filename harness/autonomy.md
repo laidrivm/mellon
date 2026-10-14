@@ -68,10 +68,10 @@ gate lines stay as the review set them, and the merge stays with the user.
 
 ### `card`
 
-The session hands the question on as `task-board` (the card-questions
-change) fixes in *An open question waits on its card, assigned to the user*
-and *A question already open is not asked again*. The work that waits on the
-answer stops, and other work goes on. Handing a question on never answers
+The session hands the question on as `task-board` fixes in *An open
+question waits on its card, assigned to the user* and *A question already
+open is not asked again*. The work that waits on the answer stops, and other
+work goes on. Handing a question on never answers
 it: the session does not proceed on its own recommendation.
 
 ### `user`

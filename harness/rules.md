@@ -68,6 +68,9 @@ describes is rewritten, the rule is a candidate for deletion.
 - Inline a single-caller helper only after grepping for the logic it duplicates
   elsewhere, and keep one whose comment documents a decision its call site would
   bury.
+- Write logic a second time only by lifting it into one module both callers
+  import, switching the first caller in the same change — two copies kept in
+  step by hand drift, and the stale one fails silently.
 - A guard against malformed input must cover the whole value, not a prefix —
   anchor both ends or parse it.
 - Read a value a tool consumes from the structure that tool parses, and where it
@@ -105,6 +108,12 @@ describes is rewritten, the rule is a candidate for deletion.
   writes, never by a substring a user's own entry can also contain.
 - Pin a name one system looks up in another with a test that reads it where it
   is defined, whenever a missing match reads as nothing to do.
+- Never treat reading extra text as commands as a command scan's safe side —
+  a quote that text leaves open hides what follows; probe a claim about how a
+  shell parses before a design rests on it.
+- Pin a scan's frame-level state with a case whose newline falls inside the
+  frame — a state the frame's close discards passes every case that closes it
+  first.
 
 #### Process
 
@@ -147,6 +156,9 @@ Rules about how work is carried out here. They do not age with the code.
 - Pass `--full-tree` to a `git ls-tree` whose pathspec names a path from the
   repository root — a working directory below the root resolves it against
   itself and lists nothing.
+- Mark a pull request draft (`gh pr ready --undo`) while an agent still pushes
+  to it, and mark it ready only once its report is in — a merge button that
+  works merges the half-done branch.
 - Before a commit, run the build's own scan over every file the commit writes
   that the scan covers, since a fixture in a test can be valid input to the
   scan it tests.
@@ -162,9 +174,9 @@ not age with the code.
 - Reconcile a vendored skill's `allowed-tools` and `disable-model-invocation`
   against this project's policy before the skill is used.
 - Run every npm-family command the `playwright-cli` skill or its references
-  name through bun instead — `npx` as `bunx`, `npm run` as `bun run`,
-  `npm install -g` as `bun add -g`, `npm init` as `bun create` — since its own
-  are denied here.
+  name through bun instead — `npx` as `bunx --no-install`, `npm run` as
+  `bun run`, `npm install -g` as `bun add -g`, `npm init` as `bun create` —
+  since its own are denied here.
 - Beside a pinned image, binary or digest that no dependency manifest tracks,
   write which tool updates the pin, or that nothing does.
 - Gate a suite that runs destructive SQL on a variable saying the database is
