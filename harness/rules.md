@@ -129,8 +129,9 @@ Rules about how work is carried out here. They do not age with the code.
   are written in British English by default (`behaviour`, `afterwards`);
   identifiers and third-party API names keep whatever spelling they ship with.
 - Script a string replacement only for a pattern repeating across files, assert
-  the match count, and read the changed passage back — a diff stat, a token
-  count and a silent no-op all read as a successful edit.
+  the match count, and read every changed passage back, the editing tool's
+  `replace_all` included — a diff stat, a token count, a silent no-op and a
+  dropped trailing space all read as a successful edit.
 - Edit a file with the editing tool, never a shell heredoc, when its text
   carries a backtick or `${`.
 - Split a file to the cap that will apply to it, not the one that applies
