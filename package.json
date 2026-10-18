@@ -30,7 +30,7 @@
   },
   "dependencies": {
     "bun-plugin-tailwind": "0.0.15",
-    "harness": "github:laidrivm/harness#dc107b3b6c4625f2e3ad86a5ef363448cee64fcc",
+    "harness": "github:laidrivm/harness#fa6f4bf971e74e0cb11948e2b891df91948b3e70",
     "nano": "10.1.4",
     "normalize.css": "8.0.1",
     "pouchdb-browser": "9.0.0",

@@ -25,6 +25,10 @@ single-source rule this file inherits.
 - Build the environment a spawned command runs under from what the case needs,
   and start it in a directory holding no `.env` — bun fills a variable the case
   left out from the `.env` where the process starts.
+- Give a stub that a spawned command finds on a `PATH` the fixture builds only
+  shell builtins, or put each tool it calls on that `PATH` — a call to a
+  missing tool fails inside the stub, and a stub that runs on reads the
+  failure as false and changes nothing visible.
 - Verify a test file's split by the full describe path of every test, never by
   their count — a block absorbed into its neighbour runs exactly as many.
 - A suite that may skip locally fails the CI job that owns it when it skips

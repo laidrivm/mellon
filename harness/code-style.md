@@ -7,6 +7,12 @@ single-source rule this file inherits.
   code, walk the ladder — does this need to exist → is it already in the
   codebase → does the stdlib do it → does Bun/the platform do it natively.
 - Prefer deleting code over abstracting it. No speculative flexibility (YAGNI).
+- Default to functional code: return a new value rather than change an
+  argument, pass a function that judges something the values it judges rather
+  than a path, URL or command to fetch them, and write a class only where a
+  framework or the platform needs one, an `Error` subclass included — a
+  variable the function made itself may still mutate, and working code is not
+  rewritten to this shape.
 - Escape a literal `_` or `%` in a `LIKE` pattern with an explicit `ESCAPE`
   clause, never a backslash inside a template literal, which removes it before
   SQL is parsed.

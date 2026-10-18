@@ -43,6 +43,9 @@ completes, name the next step and the exact command.
   could pick heroes before the picker existed, and 2c deleted it. A module
   no shipped code path calls is a horizontal slice, not a seam — cut the
   step differently instead of merging dead code.
+- Never put a task whose edit lands in another repository into this tree's
+  `tasks.md`; file a card on that repository's board instead — the goal check
+  reads only this tree and cannot see whether that edit was made.
 - If a vendored best-practices skill (listed in the skills repo's
   `skills-lock.json`) covers the feature's domain, run the draft design
   through it before finalising and fold in what applies. If none covers
@@ -131,14 +134,33 @@ goal of its own, because an unattended exploration runs inside the `propose`
 goal. A conversation gets no goal at all.
 
 The launcher starts the stage with the goal as its prompt, and puts the
-declared line on a line of its own. For step 2 of a change `demo` in a
-consumer:
+declared line on a line of its own. The fourth line names the question gate's
+mark, character for character, and the form of the comment that carries a
+question, so a stage's first question can pass the gate. For step 2 of a
+change `demo` in a consumer:
 
 ```text
 claude -p '/goal Carry step 2 of the OpenSpec change demo: /opsx:apply demo for its group 2, the pre-PR sequence, the push and the pull request.
 This session runs unattended.
-The goal is met when the last line of `bun node_modules/harness/bun/goal-check.ts apply demo 2`, run after the last push, opens with `goal met` — or when the final message opens with `BLOCKED —` and names what only the user can settle.'
+The goal is met when the last line of `bun node_modules/harness/bun/goal-check.ts apply demo 2`, run after the last push, opens with `goal met` — or when the final message opens with `BLOCKED —` and names what only the user can settle.
+A question only the user can settle goes on the card of the change as one page-level comment — `page_id` and `markdown` only, after reading that card and its comments — whose markdown opens with `harness-question`, its two backticks included.'
 ```
+
+The answer, proposal and archive variants below keep that fourth line as it
+stands.
+
+An answer step, which the board loop launches once every group is ticked and
+the card holds the user's answer, changes only the first line: it names
+writing that answer into `tasks.md` as group N+1 and carrying that group, or,
+for an answer that asks for a change of its own or would not fit one step,
+filing an `idea` card, clearing `Assign`, adding no group and ending on
+`BLOCKED —`. The check names `apply demo` with N+1, so the second route
+reads `goal open`.
+
+A step whose branch already exists, in the clone or on `origin`, because a
+session ended before its pull request, changes only the first line too: the
+board loop adds that a session left that branch, to `git switch` to it rather
+than create it, and to carry on from what its commits hold.
 
 A proposal names `propose demo` and an archive names `archive demo`, with no
 step. The outcome is the launcher's own run of the same check once the session
@@ -287,8 +309,13 @@ for them is already here.
   rather than ask it again; resuming that work, read that card's comments
   first. Every page-level comment on a card joins one discussion, so a card
   holds one open question at a time: a second waits in your report until the
-  first is answered. Open the comment with the gate's mark, set `Assign`, read
-  the answer back as data, and clear `Assign` once it is applied. task-board's
+  first is answered. Open the comment with the gate's mark,
+  `` `harness-question` `` with its two backticks, set `Assign`, read
+  the answer back as data, and clear `Assign` once it is applied. An answer
+  the board loop carries counts as applied in the turn its step's pull request
+  opens, or the turn an `idea` card is filed for an answer that asks for a
+  change of its own (task-board, *An answer the board loop carries is applied
+  when its pull request opens*). task-board's
   *An open question waits on its card, assigned to the user* and *A question
   already open is not asked again* fix the rest, and the question gate decides
   which comment needs no prompt.
